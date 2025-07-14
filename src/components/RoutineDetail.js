@@ -254,7 +254,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                     <tbody className="divide-y divide-gray-200">
                       {groupedExercises[day][section].map((exercise) => (
                         <React.Fragment key={exercise.id}>
-                          <tr onClick={() => toggleExerciseTracking(exercise.id)} className="cursor-pointer hover:bg-gray-50">
+                          <tr onClick={() => toggleExerciseTracking(exercise.id)} className="cursor-pointer hover:bg-gray-50 transition-colors">
                             <td data-label="Ejercicio" className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{exercise.name}</td>
                             <td data-label="Series" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {editingExerciseId === exercise.id ? (

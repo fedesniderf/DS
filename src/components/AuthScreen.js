@@ -25,7 +25,7 @@ const AuthScreen = ({ onLogin, onGoToRegister }) => {
           <input
             type="email"
             id="email"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder="tu@ejemplo.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -39,7 +39,7 @@ const AuthScreen = ({ onLogin, onGoToRegister }) => {
           <input
             type="password"
             id="password"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder=""
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -48,14 +48,14 @@ const AuthScreen = ({ onLogin, onGoToRegister }) => {
 
         <button
           onClick={() => handleLogin('email')}
-          className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md mb-4"
+          className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-all duration-300 ease-in-out font-semibold shadow-md mb-4"
         >
           Iniciar Sesión
         </button>
 
         <p className="text-center text-gray-600 text-sm">
           ¿No tienes una cuenta?{' '}
-          <button onClick={onGoToRegister} className="text-black font-semibold hover:underline">
+          <button onClick={onGoToRegister} className="text-black font-semibold hover:underline hover-text-effect">
             Regístrate aquí
           </button>
         </p>
