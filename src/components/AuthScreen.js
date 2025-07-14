@@ -53,19 +53,6 @@ const AuthScreen = ({ onLogin, onGoToRegister }) => {
           Iniciar Sesión
         </button>
 
-        {/* Se elimina el botón de Iniciar Sesión con Google */}
-        {/*
-        <button
-          onClick={() => handleLogin('google')}
-          className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-md flex items-center justify-center space-x-2 mb-4"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12.24 10.285V11.99h4.84c-.09 1.17-1.09 3.47-4.84 3.47-2.91 0-5.29-2.4-5.29-5.35 0-2.96 2.38-5.35 5.29-5.35 1.62 0 2.86.7 3.51 1.32l1.3-1.27c-.94-.92-2.19-1.87-4.81-1.87-3.97 0-7.2 3.28-7.2 7.32s3.23 7.32 7.2 7.32c4.28 0 6.9-3.04 6.9-7.18 0-.49-.05-.88-.13-1.27h-6.77zm0-6.6c-2.04 0-3.72 1.68-3.72 3.72s1.68 3.72 3.72 3.72 3.72-1.68 3.72-3.72-1.68-3.72-3.72-3.72z" />
-          </svg>
-          <span>Iniciar Sesión con Google</span>
-        </button>
-        */}
-
         <p className="text-center text-gray-600 text-sm">
           ¿No tienes una cuenta?{' '}
           <button onClick={onGoToRegister} className="text-black font-semibold hover:underline">

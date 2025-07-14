@@ -255,8 +255,8 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                       {groupedExercises[day][section].map((exercise) => (
                         <React.Fragment key={exercise.id}>
                           <tr onClick={() => toggleExerciseTracking(exercise.id)} className="cursor-pointer hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{exercise.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td data-label="Ejercicio" className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{exercise.name}</td>
+                            <td data-label="Series" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {editingExerciseId === exercise.id ? (
                                 <input
                                   type="text"
@@ -268,7 +268,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                                 exercise.sets
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td data-label="Repeticiones" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {editingExerciseId === exercise.id ? (
                                 <input
                                   type="text"
@@ -280,7 +280,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                                 exercise.reps
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td data-label="Peso (kg)" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {editingExerciseId === exercise.id ? (
                                 <input
                                   type="text"
@@ -292,7 +292,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                                 exercise.weight
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td data-label="Tiempo" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {editingExerciseId === exercise.id ? (
                                 <input
                                   type="text"
@@ -304,7 +304,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                                 exercise.time || 'N/A'
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td data-label="Descanso" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {editingExerciseId === exercise.id ? (
                                 <input
                                   type="text"
@@ -316,7 +316,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                                 exercise.rest || 'N/A'
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td data-label="Media" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {editingExerciseId === exercise.id ? (
                                 <input
                                   type="text"
@@ -333,7 +333,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                                 ) : 'N/A'
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td data-label="Notas" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {editingExerciseId === exercise.id ? (
                                 <textarea
                                   value={editedNotes}
@@ -347,7 +347,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                               )}
                             </td>
                             {isEditable && (
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                              <td data-label="Acciones" className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                 {editingExerciseId === exercise.id ? (
                                   <>
                                     <button
