@@ -8,8 +8,8 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
   const [editedWeight, setEditedWeight] = useState('');
   const [editedMedia, setEditedMedia] = useState('');
   const [editedNotes, setEditedNotes] = useState('');
-  const [editedTime, setEditedTime] = useState(''); // Nuevo estado para el tiempo
-  const [editedRest, setEditedRest] = useState(''); // Nuevo estado para el descanso
+  const [editedTime, setEditedTime] = useState('');
+  const [editedRest, setEditedRest] = useState('');
 
   // Estados para la edición de la rutina
   const [editingRoutineDetails, setEditingRoutineDetails] = useState(false);
@@ -18,6 +18,9 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
   const [editedEndDate, setEditedEndDate] = useState(routine.endDate);
   const [editedDescription, setEditedDescription] = useState(routine.description || '');
 
+  // Estado para colapsar/expandir el seguimiento de cada ejercicio
+  const [expandedExerciseTracking, setExpandedExerciseTracking] = useState({});
+
   const handleEditClick = (exercise) => {
     setEditingExerciseId(exercise.id);
     setEditedSets(exercise.sets);
@@ -25,8 +28,8 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
     setEditedWeight(exercise.weight);
     setEditedMedia(exercise.media || '');
     setEditedNotes(exercise.notes || '');
-    setEditedTime(exercise.time || ''); // Cargar el valor de tiempo
-    setEditedRest(exercise.rest || ''); // Cargar el valor de descanso
+    setEditedTime(exercise.time || '');
+    setEditedRest(exercise.rest || '');
   };
 
   const handleSaveClick = (exerciseId) => {
@@ -39,8 +42,8 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
             weight: editedWeight,
             media: editedMedia,
             notes: editedNotes,
-            time: editedTime, // Guardar el valor de tiempo
-            rest: editedRest, // Guardar el valor de descanso
+            time: editedTime,
+            rest: editedRest,
           }
         : ex
     );
@@ -101,6 +104,39 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
   });
 
   const sectionOrder = ['Warm Up', 'Fuerza', 'Cardio', 'Estiramiento', 'Cool Down', 'Otros'];
+
+  const calculateWeeks = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.ceil(diffDays / 7);
+  };
+
+  const handleTrackingDataChange = (exerciseId, weekIndex, field, value) => {
+    const updatedExercises = routine.exercises.map(ex => {
+      if (ex.id === exerciseId) {
+        const updatedWeeklyData = { ...ex.weeklyData || {} }; // Asegura que weeklyData exista
+        if (!updatedWeeklyData[weekIndex]) {
+          updatedWeeklyData[weekIndex] = { weight: '', generalNotes: '' };
+        }
+        updatedWeeklyData[weekIndex][field] = value;
+        return { ...ex, weeklyData: updatedWeeklyData };
+      }
+      return ex;
+    });
+    onUpdateRoutine({ ...routine, exercises: updatedExercises });
+  };
+
+  const toggleExerciseTracking = (exerciseId) => {
+    setExpandedExerciseTracking(prevState => ({
+      ...prevState,
+      [exerciseId]: !prevState[exerciseId]
+    }));
+  };
+
+  const numWeeks = routine.startDate && routine.endDate ? calculateWeeks(routine.startDate, routine.endDate) : 0;
+  const weeksArray = Array.from({ length: numWeeks }, (_, i) => i + 1);
 
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md">
@@ -206,8 +242,8 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Series</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Repeticiones</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peso (kg)</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tiempo</th> {/* Nuevo encabezado */}
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descanso</th> {/* Nuevo encabezado */}
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tiempo</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descanso</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Media</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
                         {isEditable && (
@@ -217,132 +253,172 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {groupedExercises[day][section].map((exercise) => (
-                        <tr key={exercise.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{exercise.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {editingExerciseId === exercise.id ? (
-                              <input
-                                type="text"
-                                value={editedSets}
-                                onChange={(e) => setEditedSets(e.target.value)}
-                                className="w-20 px-2 py-1 border rounded-md"
-                              />
-                            ) : (
-                              exercise.sets
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {editingExerciseId === exercise.id ? (
-                              <input
-                                type="text"
-                                value={editedReps}
-                                onChange={(e) => setEditedReps(e.target.value)}
-                                className="w-20 px-2 py-1 border rounded-md"
-                              />
-                            ) : (
-                              exercise.reps
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {editingExerciseId === exercise.id ? (
-                              <input
-                                type="text"
-                                value={editedWeight}
-                                onChange={(e) => setEditedWeight(e.target.value)}
-                                className="w-20 px-2 py-1 border rounded-md"
-                              />
-                            ) : (
-                              exercise.weight
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"> {/* Campo de Tiempo */}
-                            {editingExerciseId === exercise.id ? (
-                              <input
-                                type="text"
-                                value={editedTime}
-                                onChange={(e) => setEditedTime(e.target.value)}
-                                className="w-20 px-2 py-1 border rounded-md"
-                              />
-                            ) : (
-                              exercise.time || 'N/A'
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"> {/* Campo de Descanso */}
-                            {editingExerciseId === exercise.id ? (
-                              <input
-                                type="text"
-                                value={editedRest}
-                                onChange={(e) => setEditedRest(e.target.value)}
-                                className="w-20 px-2 py-1 border rounded-md"
-                              />
-                            ) : (
-                              exercise.rest || 'N/A'
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {editingExerciseId === exercise.id ? (
-                              <input
-                                type="text"
-                                value={editedMedia}
-                                onChange={(e) => setEditedMedia(e.target.value)}
-                                className="w-32 px-2 py-1 border rounded-md"
-                                placeholder="URL de media"
-                              />
-                            ) : (
-                              exercise.media ? (
-                                <a href={exercise.media} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                  Ver Media
-                                </a>
-                              ) : 'N/A'
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {editingExerciseId === exercise.id ? (
-                              <textarea
-                                value={editedNotes}
-                                onChange={(e) => setEditedNotes(e.target.value)}
-                                className="w-40 px-2 py-1 border rounded-md resize-y"
-                                rows="2"
-                                placeholder="Notas del ejercicio"
-                              ></textarea>
-                            ) : (
-                              exercise.notes || 'N/A'
-                            )}
-                          </td>
-                          {isEditable && (
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <React.Fragment key={exercise.id}>
+                          <tr onClick={() => toggleExerciseTracking(exercise.id)} className="cursor-pointer hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{exercise.name}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {editingExerciseId === exercise.id ? (
-                                <>
-                                  <button
-                                    onClick={() => handleSaveClick(exercise.id)}
-                                    className="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-xs font-semibold"
-                                  >
-                                    Guardar
-                                  </button>
-                                  <button
-                                    onClick={handleCancelEditExercise}
-                                    className="px-3 py-1 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition-colors text-xs font-semibold"
-                                  >
-                                    Cancelar
-                                  </button>
-                                </>
+                                <input
+                                  type="text"
+                                  value={editedSets}
+                                  onChange={(e) => setEditedSets(e.target.value)}
+                                  className="w-20 px-2 py-1 border rounded-md"
+                                />
                               ) : (
-                                <button
-                                  onClick={() => handleEditClick(exercise)}
-                                  className="px-3 py-1 rounded-lg bg-yellow-600 text-white hover:bg-yellow-700 transition-colors text-xs font-semibold"
-                                >
-                                  Editar
-                                </button>
+                                exercise.sets
                               )}
-                              <button
-                                onClick={() => handleDeleteExercise(exercise.id)}
-                                className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold"
-                              >
-                                Eliminar
-                              </button>
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {editingExerciseId === exercise.id ? (
+                                <input
+                                  type="text"
+                                  value={editedReps}
+                                  onChange={(e) => setEditedReps(e.target.value)}
+                                  className="w-20 px-2 py-1 border rounded-md"
+                                />
+                              ) : (
+                                exercise.reps
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {editingExerciseId === exercise.id ? (
+                                <input
+                                  type="text"
+                                  value={editedWeight}
+                                  onChange={(e) => setEditedWeight(e.target.value)}
+                                  className="w-20 px-2 py-1 border rounded-md"
+                                />
+                              ) : (
+                                exercise.weight
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {editingExerciseId === exercise.id ? (
+                                <input
+                                  type="text"
+                                  value={editedTime}
+                                  onChange={(e) => setEditedTime(e.target.value)}
+                                  className="w-20 px-2 py-1 border rounded-md"
+                                />
+                              ) : (
+                                exercise.time || 'N/A'
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {editingExerciseId === exercise.id ? (
+                                <input
+                                  type="text"
+                                  value={editedRest}
+                                  onChange={(e) => setEditedRest(e.target.value)}
+                                  className="w-20 px-2 py-1 border rounded-md"
+                                />
+                              ) : (
+                                exercise.rest || 'N/A'
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {editingExerciseId === exercise.id ? (
+                                <input
+                                  type="text"
+                                  value={editedMedia}
+                                  onChange={(e) => setEditedMedia(e.target.value)}
+                                  className="w-32 px-2 py-1 border rounded-md"
+                                  placeholder="URL de media"
+                                />
+                              ) : (
+                                exercise.media ? (
+                                  <a href={exercise.media} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                    Ver Media
+                                  </a>
+                                ) : 'N/A'
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {editingExerciseId === exercise.id ? (
+                                <textarea
+                                  value={editedNotes}
+                                  onChange={(e) => setEditedNotes(e.target.value)}
+                                  className="w-40 px-2 py-1 border rounded-md resize-y"
+                                  rows="2"
+                                  placeholder="Notas del ejercicio"
+                                ></textarea>
+                              ) : (
+                                exercise.notes || 'N/A'
+                              )}
+                            </td>
+                            {isEditable && (
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                {editingExerciseId === exercise.id ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleSaveClick(exercise.id)}
+                                      className="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-xs font-semibold"
+                                    >
+                                      Guardar
+                                    </button>
+                                    <button
+                                      onClick={handleCancelEditExercise}
+                                      className="px-3 py-1 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition-colors text-xs font-semibold"
+                                    >
+                                      Cancelar
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    onClick={() => handleEditClick(exercise)}
+                                    className="px-3 py-1 rounded-lg bg-yellow-600 text-white hover:bg-yellow-700 transition-colors text-xs font-semibold"
+                                  >
+                                    Editar
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteExercise(exercise.id)}
+                                  className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold"
+                                >
+                                  Eliminar
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                          {/* Sección de Seguimiento para cada ejercicio, se muestra/oculta al hacer clic en la fila */}
+                          {expandedExerciseTracking[exercise.id] && (
+                            <tr>
+                              <td colSpan={isEditable ? 10 : 9} className="p-4 bg-gray-50 border-t border-gray-200">
+                                <h5 className="text-lg font-semibold text-gray-700 mb-3 flex items-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                  </svg>
+                                  Seguimiento de {exercise.name}
+                                </h5>
+                                <div className="space-y-4">
+                                  {weeksArray.map(week => (
+                                    <div key={week} className="flex flex-col p-3 border border-gray-200 rounded-md bg-white">
+                                      <span className="text-sm font-medium text-gray-700 mb-2">Semana {week}:</span>
+                                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-2 sm:space-y-0">
+                                        <input
+                                          type="number"
+                                          className="w-full sm:w-24 px-2 py-1 border border-gray-300 rounded-md text-center text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                                          placeholder="Peso (kg)"
+                                          value={exercise.weeklyData?.[week]?.weight || ''}
+                                          onChange={(e) => handleTrackingDataChange(exercise.id, week, 'weight', e.target.value)}
+                                          disabled={!isEditable} // Editable por admin y cliente
+                                        />
+                                        <input
+                                          type="text"
+                                          className="w-full flex-grow px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                                          placeholder="Notas (ej. cómo me sentí)"
+                                          value={exercise.weeklyData?.[week]?.generalNotes || ''}
+                                          onChange={(e) => handleTrackingDataChange(exercise.id, week, 'generalNotes', e.target.value)}
+                                          disabled={!isEditable} // Editable por admin y cliente
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
                           )}
-                        </tr>
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>
