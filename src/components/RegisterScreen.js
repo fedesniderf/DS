@@ -36,7 +36,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
           <input
             type="text"
             id="fullName"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder="Tu nombre completo"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -50,7 +50,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
           <input
             type="email"
             id="email"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder="tu@ejemplo.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -64,7 +64,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
           <input
             type="password"
             id="password"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder=""
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -78,7 +78,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
           <input
             type="password"
             id="confirmPassword"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder=""
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -92,7 +92,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
           <input
             type="number"
             id="age"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder="Ej. 30"
             value={age}
             onChange={(e) => setAge(e.target.value)}
@@ -106,7 +106,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
           <input
             type="number"
             id="weight"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder="Ej. 75"
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
@@ -120,7 +120,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
           <input
             type="number"
             id="height"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder="Ej. 170"
             value={height}
             onChange={(e) => setHeight(e.target.value)}
@@ -134,7 +134,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
           <input
             type="text"
             id="goals"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder="Ej. Ganar masa muscular, Perder peso"
             value={goals}
             onChange={(e) => setGoals(e.target.value)}
@@ -148,7 +148,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
           <input
             type="tel"
             id="phone"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder="Ej. 5512345678"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -157,14 +157,14 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
 
         <button
           onClick={handleRegister}
-          className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md mb-4"
+          className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-all duration-300 ease-in-out font-semibold shadow-md mb-4"
         >
           Registrarse
         </button>
 
         <p className="text-center text-gray-600 text-sm">
           ¿Ya tienes una cuenta?{' '}
-          <button onClick={onGoToLogin} className="text-black font-semibold hover:underline">
+          <button onClick={onGoToLogin} className="text-black font-semibold hover:underline hover-text-effect">
             Inicia sesión aquí
           </button>
         </p>
