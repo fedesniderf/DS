@@ -34,10 +34,7 @@ const App = () => {
     if (method === 'email') {
       const user = memoizedUsers.find(u => u.email === email && u.password === password);
       if (user) {
-        if (roleAttempt && user.role !== roleAttempt) {
-          alert(`Acceso denegado. Este usuario es un ${user.role}, no un ${roleAttempt}.`);
-          return;
-        }
+        // Aquí se modifica la lógica para que el rol del usuario determine la página de inicio
         setCurrentUser(user);
         if (user.role === 'client') {
           const clientData = memoizedClients.find(c => c.email === user.email);
@@ -46,7 +43,7 @@ const App = () => {
             setCurrentPage('clientDashboard');
           } else {
             alert('No se encontraron datos de cliente para este usuario. Por favor, contacta a tu entrenador.');
-            setCurrentUser(null);
+            setCurrentUser(null); // Si no hay datos de cliente, no se loguea
           }
         } else if (user.role === 'admin') {
           setCurrentPage('adminClientDashboard');
@@ -55,7 +52,8 @@ const App = () => {
         alert('Credenciales incorrectas.');
       }
     } else if (method === 'google') {
-      const googleUser = memoizedUsers.find(u => u.email === 'trainer@example.com');
+      // Lógica para Google, asumiendo que siempre es admin para este ejemplo
+      const googleUser = memoizedUsers.find(u => u.email === 'trainer@example.com'); // Asumiendo un usuario admin para Google
       if (googleUser) {
         setCurrentUser(googleUser);
         setCurrentPage('adminClientDashboard');
@@ -325,7 +323,7 @@ const App = () => {
                   onAddRoutine={handleAddRoutine}
                   isEditable={true}
                   onDeleteRoutine={handleDeleteRoutine}
-                  onUpdateRoutine={handleUpdateRoutineFromList} /* Pasa la nueva función */
+                  onUpdateRoutine={handleUpdateRoutineFromList}
                 />
               )}
 
@@ -391,7 +389,7 @@ const App = () => {
                   onSelectRoutine={handleSelectRoutine}
                   onAddRoutine={() => {}}
                   isEditable={false}
-                  onUpdateRoutine={handleUpdateRoutineFromList} /* Pasa la nueva función */
+                  onUpdateRoutine={handleUpdateRoutineFromList}
                 />
               )}
 
