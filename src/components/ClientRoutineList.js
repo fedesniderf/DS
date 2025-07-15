@@ -17,13 +17,16 @@ const ClientRoutineList = ({
   const [showAddRoutineForm, setShowAddRoutineForm] = useState(false);
 
   const handleAddRoutine = () => {
+    if (!client) {
+      alert('Debes seleccionar un cliente para agregar una rutina.');
+      return;
+    }
     if (newRoutineName.trim() && newRoutineStartDate && newRoutineEndDate) {
       const newRoutine = {
         client_id: client.client_id,
         name: newRoutineName,
         startDate: newRoutineStartDate,
         endDate: newRoutineEndDate,
-        // NO envíes id ni exercises
       };
       onAddRoutine(newRoutine);
       setNewRoutineName('');
