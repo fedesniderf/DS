@@ -158,12 +158,14 @@ const App = () => {
   // CARGAR RUTINAS DEL CLIENTE SELECCIONADO DESDE SUPABASE
   useEffect(() => {
     async function fetchRoutines() {
-      if (selectedClient) {
+      if (selectedClient && selectedClient.id) { // <--- protección extra
         const { data, error } = await supabase
           .from('rutinas')
           .select('*')
           .eq('client_id', selectedClient.id);
         if (!error) setClientRoutines(data);
+      } else {
+        setClientRoutines([]); // Limpia si no hay cliente seleccionado
       }
     }
     fetchRoutines();
