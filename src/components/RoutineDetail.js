@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import DatePicker from './DatePicker';
+import { supabase } from '../supabaseClient'; // Asegúrate de importar supabase
 
 const RoutineDetail = ({
   routine,
@@ -169,6 +170,20 @@ const RoutineDetail = ({
 
   const numWeeks = routine.startDate && routine.endDate ? calculateWeeks(routine.startDate, routine.endDate) : 0;
   const weeksArray = Array.from({ length: numWeeks }, (_, i) => i + 1);
+
+  const handleUpdateRoutine = async (updatedRoutine) => {
+    // Actualiza la rutina en Supabase, incluyendo la columna description
+    const { id, ...fields } = updatedRoutine;
+    const { error } = await supabase
+      .from('rutinas')
+      .update(fields)
+      .eq('id', id);
+    if (error) {
+      alert('Error al actualizar la rutina');
+      return;
+    }
+    // Recarga las rutinas o actualiza el estado según tu lógica
+  };
 
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md">

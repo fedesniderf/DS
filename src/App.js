@@ -252,6 +252,39 @@ const App = () => {
     setUsers(data);
   };
 
+  // ACTUALIZAR RUTINA
+  const handleUpdateRoutine = async (updatedRoutine) => {
+    // Asegúrate de tener el id de la rutina
+    const { id, ...fields } = updatedRoutine;
+    const { error } = await supabase
+      .from('rutinas')
+      .update(fields)
+      .eq('id', id);
+    if (error) {
+      alert('Error al actualizar la rutina');
+      return;
+    }
+    // Recarga las rutinas después de actualizar
+    if (currentUser?.role === 'admin' && !selectedClient) {
+      const { data } = await supabase.from('rutinas').select('*');
+      setClientRoutines(data || []);
+    } else if (selectedClient && selectedClient.client_id) {
+      const { data } = await supabase
+        .from('rutinas')
+        .select('*')
+        .eq('client_id', selectedClient.client_id);
+      setClientRoutines(data || []);
+    } else if (currentUser?.role === 'client') {
+      const { data } = await supabase
+        .from('rutinas')
+        .select('*')
+        .eq('client_id', currentUser.client_id);
+      setClientRoutines(data || []);
+    }
+    // Opcional: actualiza la rutina seleccionada si la estás mostrando
+    setSelectedRoutine(updatedRoutine);
+  };
+
   // Efectos para sincronizar con localStorage
   useEffect(() => {
     if (currentUser) {
@@ -325,8 +358,9 @@ const App = () => {
               {currentPage === 'routineDetail' && selectedRoutine && (
                 <RoutineDetail
                   routine={selectedRoutine}
-                  isEditable={true}
-                  onAddExerciseClick={() => setCurrentPage('addExercise')}
+                  onUpdateRoutine={handleUpdateRoutine}
+                  isEditable={isEditable}
+                  onAddExerciseClick={handleAddExerciseClick}
                 />
               )}
 
