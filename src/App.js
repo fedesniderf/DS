@@ -264,6 +264,7 @@ const App = () => {
       client_id,
       exercises, // <-- importante
       dailyTracking, // si usas este campo
+      exerciseTracking, // NUEVO: seguimiento semanal de ejercicios
       name_ex, sets, reps, weight, media, notes, time, rest, day // si usas estos campos
     } = updatedRoutine;
 
@@ -272,18 +273,28 @@ const App = () => {
       return;
     }
 
+    // Construir el objeto de actualización dinámicamente
+    const updateObj = {
+      name,
+      startDate,
+      endDate,
+      description,
+      client_id,
+      exercises: exercises || [],
+      name_ex, sets, reps, weight, media, notes, time, rest, day
+    };
+    // Solo agregar dailyTracking si existe
+    if (typeof dailyTracking !== 'undefined') {
+      updateObj.dailyTracking = dailyTracking;
+    }
+    // Solo agregar exerciseTracking si existe
+    if (typeof exerciseTracking !== 'undefined') {
+      updateObj.exerciseTracking = exerciseTracking;
+    }
+
     const { error } = await supabase
       .from('rutinas')
-      .update({
-        name,
-        startDate,
-        endDate,
-        description,
-        client_id,
-        exercises: exercises || [],
-        dailyTracking: dailyTracking || null,
-        name_ex, sets, reps, weight, media, notes, time, rest, day
-      })
+      .update(updateObj)
       .eq('id', id);
 
     if (error) {
@@ -365,6 +376,7 @@ const App = () => {
 
   // RESTABLECER CONTRASEÑA
   const handleResetPassword = async (client_id, newPassword) => {
+    console.log('Reset password for:', client_id, newPassword);
     const { error } = await supabase
       .from('usuarios')
       .update({ password: newPassword })
