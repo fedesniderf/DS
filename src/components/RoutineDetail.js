@@ -88,16 +88,12 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
   };
 
   // Agrupar ejercicios por día y luego por sección
-  const groupedExercises = (routine.exercises || []).reduce((acc, exercise) => {
+  const exercises = routine.exercises || [];
+  const groupedExercises = exercises.reduce((acc, exercise) => {
     const day = exercise.day || 'Sin Día';
     const section = exercise.section || 'Sin Sección';
-
-    if (!acc[day]) {
-      acc[day] = {};
-    }
-    if (!acc[day][section]) {
-      acc[day][section] = [];
-    }
+    if (!acc[day]) acc[day] = {};
+    if (!acc[day][section]) acc[day][section] = [];
     acc[day][section].push(exercise);
     return acc;
   }, {});
@@ -260,7 +256,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
         </div>
       )}
 
-      {routine.exercises.length === 0 ? (
+      {exercises.length === 0 ? (
         <p className="text-gray-600 text-center py-4">No hay ejercicios en esta rutina aún.</p>
       ) : (
         sortedDays.map((day) => (
