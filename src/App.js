@@ -254,8 +254,13 @@ const App = () => {
 
   // ACTUALIZAR RUTINA
   const handleUpdateRoutine = async (updatedRoutine) => {
-    // Solo envía los campos que existen en la tabla
+    // Solo envía los campos que existen en la tabla y quieres actualizar
     const { id, name, startDate, endDate, description, client_id } = updatedRoutine;
+
+    if (!id) {
+      alert('No se encontró el ID de la rutina.');
+      return;
+    }
 
     const { error } = await supabase
       .from('rutinas')
