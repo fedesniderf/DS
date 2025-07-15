@@ -362,6 +362,20 @@ const App = () => {
     );
   }
 
+
+  // RESTABLECER CONTRASEÑA
+  const handleResetPassword = async (client_id, newPassword) => {
+    const { error } = await supabase
+      .from('usuarios')
+      .update({ password: newPassword })
+      .eq('client_id', client_id);
+    if (error) {
+      alert('Error al restablecer la contraseña: ' + error.message);
+      return;
+    }
+    alert('Contraseña restablecida correctamente.');
+  };
+
   // Define la función aquí, antes del return
   const handleAddExerciseClick = () => {
     setCurrentPage('addExercise');
@@ -414,10 +428,12 @@ const App = () => {
                 />
               )}
 
+
               {currentPage === 'userManagement' && (
                 <UserManagementScreen
                   users={users}
                   onRoleChange={handleRoleChange}
+                  onResetPassword={handleResetPassword}
                 />
               )}
 
