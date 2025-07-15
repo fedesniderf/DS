@@ -24,6 +24,7 @@ const RoutineDetail = ({
   const [editedStartDate, setEditedStartDate] = useState(routine.startDate);
   const [editedEndDate, setEditedEndDate] = useState(routine.endDate);
   const [editedDescription, setEditedDescription] = useState(routine.description || '');
+  const [editedExerciseName, setEditedExerciseName] = useState(routine.name_ex || '');
 
   // Estado para colapsar/expandir el seguimiento de cada ejercicio
   const [expandedExerciseTracking, setExpandedExerciseTracking] = useState({});
