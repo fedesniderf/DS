@@ -184,6 +184,32 @@ const App = () => {
     return 'DS Entrenamiento';
   }, [currentPage, currentUser, selectedClient, selectedRoutine]);
 
+  // AGREGAR RUTINA
+  const handleAddRoutine = async (routine) => {
+    // Crea la rutina en Supabase
+    const { error } = await supabase
+      .from('rutinas')
+      .insert([{
+        client_id: routine.clientId,
+        name: routine.name,
+        startDate: routine.startDate,
+        endDate: routine.endDate,
+        // agrega otros campos si es necesario
+      }]);
+    if (error) {
+      alert('Error al crear la rutina: ' + error.message);
+      return;
+    }
+    // Recarga las rutinas del cliente
+    if (selectedClient) {
+      const { data } = await supabase
+        .from('rutinas')
+        .select('*')
+        .eq('client_id', selectedClient.id);
+      setClientRoutines(data);
+    }
+  };
+
   // RENDER
   if (!currentUser) {
     if (currentPage === 'register') {
@@ -215,7 +241,7 @@ const App = () => {
             <>
               {currentPage === 'adminClientDashboard' && (
                 <ClientDashboardAdmin
-                  clients={users.filter(c => c.role && c.role.toLowerCase() === 'client')}
+                  clients={users.filter(u => u.role && u.role.toLowerCase() === 'client')}
                   onSelectClient={handleSelectClient}
                 />
               )}
@@ -226,6 +252,7 @@ const App = () => {
                   routines={clientRoutines}
                   onSelectRoutine={handleSelectRoutine}
                   isEditable={true}
+                  onAddRoutine={handleAddRoutine}
                 />
               )}
 
@@ -309,7 +336,7 @@ const App = () => {
       {showAssignRoutineModal && (
         <Suspense fallback={<div>Cargando modal...</div>}>
           <AssignRoutineModal
-            clients={users.filter(c => c.role && c.role.toLowerCase() === 'client')}
+            clients={users.filter(u => u.role && u.role.toLowerCase() === 'client')}
             onAssign={() => {}}
             onClose={() => setShowAssignRoutineModal(false)}
           />
