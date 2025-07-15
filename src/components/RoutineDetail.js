@@ -9,13 +9,14 @@ const RoutineDetail = ({
   onAddExerciseClick = () => {},
 }) => {
   const [editingExerciseId, setEditingExerciseId] = useState(null);
-  const [editedSets, setEditedSets] = useState('');
-  const [editedReps, setEditedReps] = useState('');
-  const [editedWeight, setEditedWeight] = useState('');
-  const [editedMedia, setEditedMedia] = useState('');
-  const [editedNotes, setEditedNotes] = useState('');
-  const [editedTime, setEditedTime] = useState('');
-  const [editedRest, setEditedRest] = useState('');
+  const [editedSets, setEditedSets] = useState(routine.sets || '');
+  const [editedReps, setEditedReps] = useState(routine.reps || '');
+  const [editedWeight, setEditedWeight] = useState(routine.weight || '');
+  const [editedMedia, setEditedMedia] = useState(routine.media || '');
+  const [editedNotes, setEditedNotes] = useState(routine.notes || '');
+  const [editedTime, setEditedTime] = useState(routine.time || '');
+  const [editedRest, setEditedRest] = useState(routine.rest || '');
+  const [editedDay, setEditedDay] = useState(routine.day || '');
 
   // Estados para la edición de la rutina
   const [editingRoutineDetails, setEditingRoutineDetails] = useState(false);
@@ -90,6 +91,15 @@ const RoutineDetail = ({
     setEditedStartDate(routine.startDate);
     setEditedEndDate(routine.endDate);
     setEditedDescription(routine.description || '');
+    setEditedExerciseName(routine.name_ex || '');
+    setEditedSets(routine.sets || '');
+    setEditedReps(routine.reps || '');
+    setEditedWeight(routine.weight || '');
+    setEditedMedia(routine.media || '');
+    setEditedNotes(routine.notes || '');
+    setEditedTime(routine.time || '');
+    setEditedRest(routine.rest || '');
+    setEditedDay(routine.day || '');
     setEditingRoutineDetails(false);
   };
 
@@ -204,7 +214,7 @@ const RoutineDetail = ({
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio:</label>
+              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio:</label>
               <DatePicker
                 selectedDate={editedStartDate}
                 onDateChange={setEditedStartDate}
@@ -212,7 +222,7 @@ const RoutineDetail = ({
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin:</label>
+              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin:</label>
               <DatePicker
                 selectedDate={editedEndDate}
                 onDateChange={setEditedEndDate}
@@ -221,8 +231,9 @@ const RoutineDetail = ({
             </div>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción (máx. 250 caracteres):</label>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Descripción (máx. 250 caracteres):</label>
             <textarea
+              id="description"
               value={editedDescription}
               onChange={(e) => setEditedDescription(e.target.value.slice(0, 250))}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition resize-y"
@@ -230,6 +241,70 @@ const RoutineDetail = ({
               placeholder="Agrega una descripción para la rutina"
             ></textarea>
             <p className="text-right text-xs text-gray-500">{editedDescription.length}/250</p>
+          </div>
+          {/* Campos para el ejercicio principal */}
+          <div className="mb-4">
+            <label htmlFor="exerciseName" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Ejercicio:</label>
+            <input
+              id="exerciseName"
+              type="text"
+              value={editedExerciseName}
+              onChange={(e) => setEditedExerciseName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+            />
+          </div>
+          <div className="mb-4 flex flex-wrap gap-4">
+            <div>
+              <label htmlFor="sets" className="block text-xs text-gray-700">Series</label>
+              <input id="sets" type="text" value={editedSets} onChange={e => setEditedSets(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
+            </div>
+            <div>
+              <label htmlFor="reps" className="block text-xs text-gray-700">Reps</label>
+              <input id="reps" type="text" value={editedReps} onChange={e => setEditedReps(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
+            </div>
+            <div>
+              <label htmlFor="weight" className="block text-xs text-gray-700">Peso</label>
+              <input id="weight" type="text" value={editedWeight} onChange={e => setEditedWeight(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
+            </div>
+            <div>
+              <label htmlFor="time" className="block text-xs text-gray-700">Tiempo</label>
+              <input id="time" type="text" value={editedTime} onChange={e => setEditedTime(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
+            </div>
+            <div>
+              <label htmlFor="rest" className="block text-xs text-gray-700">Descanso</label>
+              <input id="rest" type="text" value={editedRest} onChange={e => setEditedRest(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
+            </div>
+          </div>
+          <div className="mb-4">
+            <label htmlFor="media" className="block text-sm font-medium text-gray-700 mb-1">Media (URL):</label>
+            <input
+              id="media"
+              type="text"
+              value={editedMedia}
+              onChange={(e) => setEditedMedia(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">Notas:</label>
+            <textarea
+              id="notes"
+              value={editedNotes}
+              onChange={(e) => setEditedNotes(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+              rows="2"
+              placeholder="Notas del ejercicio"
+            ></textarea>
+          </div>
+          <div className="mb-4">
+            <label htmlFor="day" className="block text-sm font-medium text-gray-700 mb-1">Día:</label>
+            <input
+              id="day"
+              type="text"
+              value={editedDay}
+              onChange={(e) => setEditedDay(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+            />
           </div>
           <div className="flex justify-end space-x-4 mt-6">
             <button
@@ -245,12 +320,21 @@ const RoutineDetail = ({
               type="button"
               onClick={() => {
                 onUpdateRoutine({
-                  id: routine.id, // <-- importante, debe ser el id de la rutina
+                  id: routine.id,
                   name: editedRoutineName,
                   startDate: editedStartDate,
                   endDate: editedEndDate,
                   description: editedDescription,
-                  client_id: routine.client_id // si lo necesitas
+                  client_id: routine.client_id,
+                  name_ex: editedExerciseName,
+                  sets: editedSets,
+                  reps: editedReps,
+                  weight: editedWeight,
+                  notes: editedNotes,
+                  media: editedMedia,
+                  day: editedDay,
+                  time: editedTime,
+                  rest: editedRest,
                 });
                 setEditingRoutineDetails(false);
               }}
