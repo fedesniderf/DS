@@ -28,6 +28,19 @@ const RoutineDetail = ({
   const [editedExerciseName, setEditedExerciseName] = useState(routine.name_ex || '');
 
   // Estado para colapsar/expandir el seguimiento de cada ejercicio
+  // Estado para el formulario de nuevo ejercicio
+  const [newExercise, setNewExercise] = useState({
+    name: '',
+    sets: '',
+    reps: '',
+    weight: '',
+    time: '',
+    rest: '',
+    media: '',
+    notes: '',
+    day: '',
+    section: '',
+  });
   const [expandedExerciseTracking, setExpandedExerciseTracking] = useState({});
   // Estado para mostrar/ocultar el formulario de agregar ejercicio
   const [showAddExerciseForm, setShowAddExerciseForm] = useState(false);
@@ -317,37 +330,7 @@ const RoutineDetail = ({
               <input id="rest" type="text" value={editedRest} onChange={e => setEditedRest(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
             </div>
           </div>
-          <div className="mb-4">
-            <label htmlFor="media" className="block text-sm font-medium text-gray-700 mb-1">Media (URL):</label>
-            <input
-              id="media"
-              type="text"
-              value={editedMedia}
-              onChange={(e) => setEditedMedia(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">Notas:</label>
-            <textarea
-              id="notes"
-              value={editedNotes}
-              onChange={(e) => setEditedNotes(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-              rows="2"
-              placeholder="Notas del ejercicio"
-            ></textarea>
-          </div>
-          <div className="mb-4">
-            <label htmlFor="day" className="block text-sm font-medium text-gray-700 mb-1">Día:</label>
-            <input
-              id="day"
-              type="text"
-              value={editedDay}
-              onChange={(e) => setEditedDay(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-            />
-          </div>
+          {/* Campos de ejercicio eliminados de la edición de detalles de rutina */}
           <div className="flex justify-end space-x-4 mt-6">
             <button
               onClick={handleCancelEditRoutineDetails}
