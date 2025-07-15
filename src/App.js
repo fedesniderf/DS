@@ -215,7 +215,7 @@ const App = () => {
             <>
               {currentPage === 'adminClientDashboard' && (
                 <ClientDashboardAdmin
-                  clients={users.filter(u => u.role === 'client')}
+                  clients={users.filter(c => c.role && c.role.toLowerCase() === 'client')}
                   onSelectClient={handleSelectClient}
                 />
               )}
@@ -309,7 +309,7 @@ const App = () => {
       {showAssignRoutineModal && (
         <Suspense fallback={<div>Cargando modal...</div>}>
           <AssignRoutineModal
-            clients={users.filter(u => u.role && u.role.toLowerCase() === 'client')}
+            clients={users.filter(c => c.role && c.role.toLowerCase() === 'client')}
             onAssign={() => {}}
             onClose={() => setShowAssignRoutineModal(false)}
           />
