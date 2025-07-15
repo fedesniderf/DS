@@ -323,6 +323,10 @@ const App = () => {
     );
   }
 
+  const handleAddExerciseClick = () => {
+    setCurrentPage('addExercise');
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 font-sans antialiased">
       <LayoutHeader
