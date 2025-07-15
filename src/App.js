@@ -3,6 +3,7 @@ import LayoutHeader from './components/LayoutHeader';
 import { defaultClients, defaultRoutines } from './mock/clients';
 import { defaultUsers } from './mock/users';
 import { generateUniqueId } from './utils/helpers';
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 // Implementación de Lazy Loading para componentes grandes o que no se cargan al inicio
 const ClientRoutineList = lazy(() => import('./components/ClientRoutineList'));
@@ -418,6 +419,8 @@ const App = () => {
           />
         </Suspense>
       )}
+
+      <SpeedInsights />
     </div>
   );
 };
