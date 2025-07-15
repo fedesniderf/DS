@@ -1,12 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import LayoutHeader from './components/LayoutHeader';
-import { defaultUsers } from './mock/users';
-import { generateUniqueId } from './utils/helpers';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { supabase } from './supabaseClient';
-import AuthForm from './components/AuthForm';
 
-// Implementación de Lazy Loading para componentes grandes o que no se cargan al inicio
 const ClientRoutineList = lazy(() => import('./components/ClientRoutineList'));
 const RoutineDetail = lazy(() => import('./components/RoutineDetail'));
 const AuthScreen = lazy(() => import('./components/AuthScreen'));
@@ -15,8 +11,6 @@ const AddExerciseScreen = lazy(() => import('./components/AddExerciseScreen'));
 const AssignRoutineModal = lazy(() => import('./components/AssignRoutineModal'));
 const UserManagementScreen = lazy(() => import('./components/UserManagementScreen'));
 const ClientDashboardAdmin = lazy(() => import('./components/ClientDashboardAdmin'));
-
-export const defaultClients = [];
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('auth');
@@ -27,15 +21,9 @@ const App = () => {
   const [showAssignRoutineModal, setShowAssignRoutineModal] = useState(false);
   const [clientRoutines, setClientRoutines] = useState([]);
 
-  // Memoizar los datos de clientes y usuarios si no cambian con frecuencia
-  const memoizedClients = useMemo(() => clients, [clients]);
-  const memoizedUsers = useMemo(() => users, [users]);
-  const memoizedRoutines = useMemo(() => routines, [routines]);
-
-  // Usar useCallback para funciones que se pasan como props para evitar re-renders innecesarios
-  const handleLogin = useCallback(async (email, password, method, roleAttempt) => {
+  // LOGIN
+  const handleLogin = useCallback(async (email, password, method) => {
     if (method === 'email') {
-      // Consulta a Supabase
       const { data: users, error } = await supabase
         .from('usuarios')
         .select('*')
@@ -51,7 +39,7 @@ const App = () => {
         const user = users[0];
         setCurrentUser(user);
         if (user.role === 'client') {
-          setSelectedClient(user); // O adapta según tu lógica de clientes
+          setSelectedClient(user);
           setCurrentPage('clientDashboard');
         } else if (user.role === 'admin') {
           setCurrentPage('adminClientDashboard');
@@ -64,8 +52,8 @@ const App = () => {
     }
   }, []);
 
+  // REGISTRO
   const handleRegister = useCallback(async (userData) => {
-    // Verifica si el email ya existe en Supabase
     const { data: existingUsers, error: fetchError } = await supabase
       .from('usuarios')
       .select('email')
@@ -81,8 +69,7 @@ const App = () => {
       return;
     }
 
-    // Inserta el nuevo usuario en Supabase
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('usuarios')
       .insert([{
         email: userData.email,
@@ -105,6 +92,7 @@ const App = () => {
     setCurrentPage('auth');
   }, []);
 
+  // LOGOUT
   const handleLogout = useCallback(() => {
     setCurrentUser(null);
     setSelectedClient(null);
@@ -112,6 +100,7 @@ const App = () => {
     setCurrentPage('auth');
   }, []);
 
+  // SELECCIONAR CLIENTE Y RUTINA
   const handleSelectClient = useCallback((client) => {
     setSelectedClient(client);
     setCurrentPage('routines');
@@ -122,6 +111,7 @@ const App = () => {
     setCurrentPage('routineDetail');
   }, []);
 
+  // ATRÁS
   const handleBack = useCallback(() => {
     if (currentPage === 'routineDetail') {
       if (currentUser && currentUser.role === 'client') {
@@ -148,148 +138,7 @@ const App = () => {
     }
   }, [currentPage, currentUser, handleLogout]);
 
-  const handleAddRoutine = useCallback((newRoutine) => {
-    setRoutines((prevRoutines) => [...prevRoutines, newRoutine]);
-    if (selectedClient && selectedClient.lastRoutine === 'Sin rutinas') {
-      setClients((prevClients) =>
-        prevClients.map((c) =>
-          c.id === selectedClient.id ? { ...c, lastRoutine: newRoutine.name } : c
-        )
-      );
-    }
-  }, [selectedClient]);
-
-  const handleUpdateRoutine = useCallback((updatedRoutine) => {
-    setRoutines((prevRoutines) =>
-      prevRoutines.map((r) => (r.id === updatedRoutine.id ? updatedRoutine : r))
-    );
-    // Actualizar selectedRoutine si es la rutina que se está viendo
-    if (selectedRoutine && selectedRoutine.id === updatedRoutine.id) {
-      setSelectedRoutine(updatedRoutine);
-    }
-    if (selectedClient && selectedRoutine && selectedRoutine.id === updatedRoutine.id) {
-      setClients((prevClients) =>
-        prevClients.map((c) =>
-          c.id === selectedClient.id ? { ...c, lastRoutine: updatedRoutine.name } : c
-        )
-      );
-    }
-  }, [selectedClient, selectedRoutine]);
-
-  const handleAddExerciseToRoutine = useCallback((newExerciseData) => {
-    if (selectedRoutine) {
-      const updatedRoutine = {
-        ...selectedRoutine,
-        exercises: [...selectedRoutine.exercises, newExerciseData],
-      };
-      handleUpdateRoutine(updatedRoutine);
-      // setSelectedRoutine(updatedRoutine); // Esto ya lo hace handleUpdateRoutine si es la rutina seleccionada
-    }
-  }, [selectedRoutine, handleUpdateRoutine]);
-
-  const handleDeleteClient = useCallback((clientId) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar a este cliente y todas sus rutinas?')) {
-      setClients((prevClients) => prevClients.filter(client => client.id !== clientId));
-      setUsers((prevUsers) => prevUsers.filter(user => user.id !== clientId));
-      setRoutines((prevRoutines) => prevRoutines.filter(routine => routine.clientId !== clientId));
-      setSelectedClient(null);
-      setSelectedRoutine(null);
-      setCurrentPage('adminClientDashboard');
-      alert('Cliente eliminado exitosamente.');
-    }
-  }, []);
-
-  const handleDeleteRoutine = useCallback((routineId) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar esta rutina?')) {
-      setRoutines((prevRoutines) => prevRoutines.filter(routine => routine.id !== routineId));
-      if (selectedClient) {
-        const clientRoutines = routines.filter(r => r.clientId === selectedClient.id && r.id !== routineId);
-        const newLastRoutineName = clientRoutines.length > 0 ? clientRoutines[clientRoutines.length - 1].name : 'Sin rutinas';
-        setClients((prevClients) =>
-          prevClients.map((c) =>
-            c.id === selectedClient.id ? { ...c, lastRoutine: newLastRoutineName } : c
-          )
-        );
-      }
-      setSelectedRoutine(null);
-      setCurrentPage('routines');
-      alert('Rutina eliminada exitosamente.');
-    }
-  }, [selectedClient, routines]);
-
-  const handleDeleteUser = useCallback((userId) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar a este usuario? Esto también eliminará sus datos de cliente y rutinas asociadas.')) {
-      setUsers((prevUsers) => prevUsers.filter(user => user.id !== userId));
-      setClients((prevClients) => prevClients.filter(client => client.id !== userId));
-      setRoutines((prevRoutines) => prevRoutines.filter(routine => routine.clientId !== userId));
-      alert('Usuario eliminado exitosamente.');
-    }
-  }, []);
-
-  const handleResetUserPassword = useCallback((userId, newPassword) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId ? { ...user, password: newPassword } : user
-      )
-    );
-    alert('Contraseña restablecida exitosamente.');
-  }, []);
-
-  const handleAddClient = useCallback(() => {
-    const newClientName = prompt('Ingresa el nombre del nuevo cliente:');
-    if (newClientName) {
-      const newClientEmail = prompt('Ingresa el email del nuevo cliente:');
-      if (newClientEmail) {
-        const newClient = {
-          id: generateUniqueId(),
-          name: newClientName,
-          email: newClientEmail,
-          lastRoutine: 'Sin rutinas',
-          progress: 0,
-          age: null,
-          weight: null,
-          height: null,
-          goals: [],
-          phone: '',
-        };
-        setClients((prevClients) => [...prevClients, newClient]);
-        setUsers((prevUsers) => [...prevUsers, { id: newClient.id, email: newClient.email, password: 'password123', role: 'client' }]);
-      }
-    }
-  }, []);
-
-  const handleAssignRoutine = useCallback((clientId) => {
-    if (selectedRoutine) {
-      const updatedRoutine = { ...selectedRoutine, clientId: clientId };
-      handleUpdateRoutine(updatedRoutine);
-      alert(`Rutina "${selectedRoutine.name}" asignada a ${memoizedClients.find(c => c.id === clientId)?.name || 'un cliente'}.`);
-      setShowAssignRoutineModal(false);
-    }
-  }, [selectedRoutine, handleUpdateRoutine, memoizedClients]);
-
-  // Nueva función para actualizar una rutina desde ClientRoutineList
-  const handleUpdateRoutineFromList = useCallback((updatedRoutine) => {
-    setRoutines((prevRoutines) =>
-      prevRoutines.map((r) => (r.id === updatedRoutine.id ? updatedRoutine : r))
-    );
-  }, []);
-
-  const getHeaderTitle = useCallback(() => {
-    if (!currentUser) {
-      if (currentPage === 'auth') return 'Iniciar Sesión';
-      if (currentPage === 'register') return 'Registrarse';
-    }
-    if (currentUser && currentUser.role === 'admin' && currentPage === 'adminClientDashboard') return 'Administración de Clientes';
-    if (currentUser && currentUser.role === 'admin' && currentPage === 'routines' && selectedClient) return `Rutinas de ${selectedClient.name}`;
-    if (currentPage === 'routineDetail' && selectedRoutine) return selectedRoutine.name;
-    if (currentUser && currentUser.role === 'client' && currentPage === 'clientDashboard') return `Mis Rutinas`;
-    if (currentPage === 'addExercise') return 'Agregar Ejercicio';
-    if (currentUser && currentUser.role === 'admin' && currentPage === 'userManagement') return 'Gestión de Usuarios';
-    return 'DS Entrenamiento';
-  }, [currentPage, currentUser, selectedClient, selectedRoutine]);
-
-  const isRoutineEditable = currentUser && currentUser.role === 'admin';
-
+  // CARGAR USUARIOS DESDE SUPABASE
   useEffect(() => {
     async function fetchUsers() {
       const { data, error } = await supabase
@@ -306,6 +155,7 @@ const App = () => {
     }
   }, [currentUser, currentPage]);
 
+  // CARGAR RUTINAS DEL CLIENTE SELECCIONADO DESDE SUPABASE
   useEffect(() => {
     async function fetchRoutines() {
       if (selectedClient) {
@@ -319,6 +169,22 @@ const App = () => {
     fetchRoutines();
   }, [selectedClient]);
 
+  // HEADER
+  const getHeaderTitle = useCallback(() => {
+    if (!currentUser) {
+      if (currentPage === 'auth') return 'Iniciar Sesión';
+      if (currentPage === 'register') return 'Registrarse';
+    }
+    if (currentUser && currentUser.role === 'admin' && currentPage === 'adminClientDashboard') return 'Administración de Clientes';
+    if (currentUser && currentUser.role === 'admin' && currentPage === 'routines' && selectedClient) return `Rutinas de ${selectedClient.fullName || selectedClient.email}`;
+    if (currentPage === 'routineDetail' && selectedRoutine) return selectedRoutine.name;
+    if (currentUser && currentUser.role === 'client' && currentPage === 'clientDashboard') return `Mis Rutinas`;
+    if (currentPage === 'addExercise') return 'Agregar Ejercicio';
+    if (currentUser && currentUser.role === 'admin' && currentPage === 'userManagement') return 'Gestión de Usuarios';
+    return 'DS Entrenamiento';
+  }, [currentPage, currentUser, selectedClient, selectedRoutine]);
+
+  // RENDER
   if (!currentUser) {
     if (currentPage === 'register') {
       return (
@@ -359,17 +225,13 @@ const App = () => {
                   client={selectedClient}
                   routines={clientRoutines}
                   onSelectRoutine={handleSelectRoutine}
-                  onAddRoutine={handleAddRoutine}
                   isEditable={true}
-                  onDeleteRoutine={handleDeleteRoutine}
-                  onUpdateRoutine={handleUpdateRoutineFromList}
                 />
               )}
 
               {currentPage === 'routineDetail' && selectedRoutine && (
                 <RoutineDetail
                   routine={selectedRoutine}
-                  onUpdateRoutine={handleUpdateRoutine}
                   isEditable={true}
                   onAddExerciseClick={() => setCurrentPage('addExercise')}
                 />
@@ -377,7 +239,6 @@ const App = () => {
 
               {currentPage === 'addExercise' && (
                 <AddExerciseScreen
-                  onAddExercise={handleAddExerciseToRoutine}
                   onBack={() => setCurrentPage('routineDetail')}
                 />
               )}
@@ -385,16 +246,15 @@ const App = () => {
               {currentPage === 'userManagement' && (
                 <UserManagementScreen
                   users={users}
-                  onDeleteUser={handleDeleteUser}
-                  onResetPassword={handleResetUserPassword}
+                  // Puedes agregar handlers aquí si los necesitas
                 />
               )}
 
-              {/* Botones de acción para el admin, visibles solo en el dashboard principal del admin */}
+              {/* Botones de acción para el admin */}
               {currentPage === 'adminClientDashboard' && (
                 <>
                   <button
-                    onClick={handleAddClient}
+                    onClick={() => setCurrentPage('register')}
                     className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md mb-4"
                   >
                     Agregar Nuevo Cliente
@@ -426,14 +286,12 @@ const App = () => {
                   client={selectedClient}
                   routines={clientRoutines}
                   onSelectRoutine={handleSelectRoutine}
-                  onAddRoutine={() => {}}
                   isEditable={false}
-                  onUpdateRoutine={handleUpdateRoutineFromList}
                 />
               )}
 
               {currentPage === 'routineDetail' && selectedRoutine && (
-                <RoutineDetail routine={selectedRoutine} onUpdateRoutine={handleUpdateRoutine} isEditable={false} />
+                <RoutineDetail routine={selectedRoutine} isEditable={false} />
               )}
             </>
           )}
@@ -452,7 +310,7 @@ const App = () => {
         <Suspense fallback={<div>Cargando modal...</div>}>
           <AssignRoutineModal
             clients={users.filter(u => u.role === 'client')}
-            onAssign={handleAssignRoutine}
+            onAssign={() => {}}
             onClose={() => setShowAssignRoutineModal(false)}
           />
         </Suspense>
