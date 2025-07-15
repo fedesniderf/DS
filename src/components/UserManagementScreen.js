@@ -30,7 +30,7 @@ const UserManagementScreen = ({ users, onDeleteUser, onResetPassword, onRoleChan
             </thead>
             <tbody className="divide-y divide-gray-200">
               {users.map((user) => (
-                <tr key={user.id}>
+                <tr key={user.client_id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.fullName || user.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -55,7 +55,7 @@ const UserManagementScreen = ({ users, onDeleteUser, onResetPassword, onRoleChan
                         </svg>
                       </button>
                       <button
-                        onClick={() => onDeleteUser(user.id)}
+                        onClick={() => onDeleteUser(user.client_id)}
                         className="p-2 rounded-full bg-red-600 text-white hover:bg-red-700 transition-all duration-300 ease-in-out shadow-md flex items-center justify-center transform hover:scale-110"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
