@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { generateUniqueId } from '../utils/helpers';
 
-const AddExerciseScreen = ({ onAddExercise, onBack }) => {
+const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
   const [name, setName] = useState('');
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
