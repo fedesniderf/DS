@@ -16,15 +16,16 @@ const AssignRoutineModal = lazy(() => import('./components/AssignRoutineModal'))
 const UserManagementScreen = lazy(() => import('./components/UserManagementScreen'));
 const ClientDashboardAdmin = lazy(() => import('./components/ClientDashboardAdmin'));
 
+export const defaultClients = [];
+
 const App = () => {
   const [currentPage, setCurrentPage] = useState('auth');
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedRoutine, setSelectedRoutine] = useState(null);
-  const [clients, setClients] = useState(defaultClients);
-  const [routines, setRoutines] = useState(defaultRoutines);
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [showAssignRoutineModal, setShowAssignRoutineModal] = useState(false);
+  const [clientRoutines, setClientRoutines] = useState([]);
 
   // Memoizar los datos de clientes y usuarios si no cambian con frecuencia
   const memoizedClients = useMemo(() => clients, [clients]);
@@ -296,11 +297,27 @@ const App = () => {
         .select('*');
       if (!error) setUsers(data);
     }
-    // Puedes llamar a fetchUsers cuando el usuario es admin y entra a la sección de administración
-    if (currentUser && currentUser.role === 'admin' && currentPage === 'userManagement') {
+    if (
+      currentUser &&
+      currentUser.role === 'admin' &&
+      (currentPage === 'adminClientDashboard' || currentPage === 'userManagement')
+    ) {
       fetchUsers();
     }
   }, [currentUser, currentPage]);
+
+  useEffect(() => {
+    async function fetchRoutines() {
+      if (selectedClient) {
+        const { data, error } = await supabase
+          .from('rutinas')
+          .select('*')
+          .eq('client_id', selectedClient.id);
+        if (!error) setClientRoutines(data);
+      }
+    }
+    fetchRoutines();
+  }, [selectedClient]);
 
   if (!currentUser) {
     if (currentPage === 'register') {
@@ -332,7 +349,7 @@ const App = () => {
             <>
               {currentPage === 'adminClientDashboard' && (
                 <ClientDashboardAdmin
-                  clients={memoizedClients}
+                  clients={users.filter(u => u.role === 'client')}
                   onSelectClient={handleSelectClient}
                 />
               )}
@@ -340,7 +357,7 @@ const App = () => {
               {currentPage === 'routines' && selectedClient && (
                 <ClientRoutineList
                   client={selectedClient}
-                  routines={memoizedRoutines.filter(r => r.clientId === selectedClient.id)}
+                  routines={clientRoutines}
                   onSelectRoutine={handleSelectRoutine}
                   onAddRoutine={handleAddRoutine}
                   isEditable={true}
@@ -407,7 +424,7 @@ const App = () => {
               {currentPage === 'clientDashboard' && selectedClient && (
                 <ClientRoutineList
                   client={selectedClient}
-                  routines={memoizedRoutines.filter(r => r.clientId === selectedClient.id)}
+                  routines={clientRoutines}
                   onSelectRoutine={handleSelectRoutine}
                   onAddRoutine={() => {}}
                   isEditable={false}
@@ -434,7 +451,7 @@ const App = () => {
       {showAssignRoutineModal && (
         <Suspense fallback={<div>Cargando modal...</div>}>
           <AssignRoutineModal
-            clients={memoizedClients}
+            clients={users.filter(u => u.role === 'client')}
             onAssign={handleAssignRoutine}
             onClose={() => setShowAssignRoutineModal(false)}
           />
