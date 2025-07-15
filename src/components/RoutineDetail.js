@@ -396,12 +396,12 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                               )}
                             </td>
                             {isEditable && (
-                              <td data-label="Acciones" className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2 flex flex-wrap justify-end">
+                              <td data-label="Acciones" className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                 {editingExerciseId === exercise.id ? (
                                   <>
                                     <button
                                       onClick={() => handleSaveClick(exercise.id)}
-                                      className="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-xs font-semibold flex items-center justify-center mb-1 sm:mb-0"
+                                      className="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-xs font-semibold flex items-center justify-center"
                                       title="Guardar"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
@@ -410,7 +410,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                                     </button>
                                     <button
                                       onClick={handleCancelEditExercise}
-                                      className="px-3 py-1 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition-colors text-xs font-semibold flex items-center justify-center mb-1 sm:mb-0"
+                                      className="px-3 py-1 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition-colors text-xs font-semibold flex items-center justify-center"
                                       title="Cancelar"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
@@ -421,7 +421,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                                 ) : (
                                   <button
                                     onClick={() => handleEditClick(exercise)}
-                                    className="px-3 py-1 rounded-lg bg-yellow-600 text-white hover:bg-yellow-700 transition-colors text-xs font-semibold flex items-center justify-center mb-1 sm:mb-0"
+                                    className="px-3 py-1 rounded-lg bg-yellow-600 text-white hover:bg-yellow-700 transition-colors text-xs font-semibold flex items-center justify-center"
                                     title="Editar"
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
@@ -431,7 +431,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                                 )}
                                 <button
                                   onClick={() => handleDeleteExercise(exercise.id)}
-                                  className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold flex items-center justify-center mb-1 sm:mb-0"
+                                  className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold flex items-center justify-center"
                                   title="Eliminar"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
