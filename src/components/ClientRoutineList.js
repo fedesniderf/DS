@@ -3,7 +3,7 @@ import { generateUniqueId } from '../utils/helpers';
 
 const ClientRoutineList = ({
   client,
-  routines,
+  routines = [],
   onSelectRoutine = () => {},
   onAddRoutine = () => {},
   isEditable,
@@ -47,7 +47,7 @@ const ClientRoutineList = ({
     <div className="p-6 bg-white rounded-2xl shadow-md">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Rutinas de {client.name}</h2>
 
-      {routines.length === 0 ? (
+      {!Array.isArray(routines) || routines.length === 0 ? (
         <p className="text-gray-600 text-center py-4">No hay rutinas asignadas a este cliente aún.</p>
       ) : (
         <div className="space-y-4">
