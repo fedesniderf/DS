@@ -254,7 +254,6 @@ const App = () => {
 
   // ACTUALIZAR RUTINA
   const handleUpdateRoutine = async (updatedRoutine) => {
-    // Asegúrate de tener el id de la rutina
     const { id, ...fields } = updatedRoutine;
     const { error } = await supabase
       .from('rutinas')
@@ -264,6 +263,7 @@ const App = () => {
       alert('Error al actualizar la rutina');
       return;
     }
+
     // Recarga las rutinas después de actualizar
     if (currentUser?.role === 'admin' && !selectedClient) {
       const { data } = await supabase.from('rutinas').select('*');
@@ -281,8 +281,16 @@ const App = () => {
         .eq('client_id', currentUser.client_id);
       setClientRoutines(data || []);
     }
-    // Opcional: actualiza la rutina seleccionada si la estás mostrando
-    setSelectedRoutine(updatedRoutine);
+
+    // <-- NUEVO: refresca la rutina seleccionada desde la base de datos
+    const { data: refreshed, error: fetchError } = await supabase
+      .from('rutinas')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (!fetchError && refreshed) {
+      setSelectedRoutine(refreshed);
+    }
   };
 
   // Efectos para sincronizar con localStorage
