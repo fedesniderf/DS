@@ -425,12 +425,6 @@ const App = () => {
               {currentPage === 'adminClientDashboard' && (
                 <>
                   <button
-                    onClick={() => setCurrentPage('register')}
-                    className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md mb-4"
-                  >
-                    Agregar Nuevo Cliente
-                  </button>
-                  <button
                     onClick={() => setCurrentPage('userManagement')}
                     className="w-full bg-gray-700 text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md"
                   >
@@ -446,10 +440,10 @@ const App = () => {
                   Asignar Rutina a Cliente
                 </button>
               )}
-            </>
-          )}
+                    </>
+                    )}
 
-          {/* Sección para el Cliente */}
+                    {/* Sección para el Cliente */}
           {currentUser.role === 'client' && (
             <>
               {currentPage === 'clientDashboard' && selectedClient && (
