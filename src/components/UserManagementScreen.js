@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import ResetPasswordModal from './ResetPasswordModal';
 
-const UserManagementScreen = ({ users, onDeleteUser, onResetPassword }) => {
+const roles = ['admin', 'client', 'coach']; // Agrega los roles que necesites
+
+const UserManagementScreen = ({ users, onDeleteUser, onResetPassword, onRoleChange }) => {
   const [showResetModal, setShowResetModal] = useState(false);
   const [userToReset, setUserToReset] = useState(null);
 
@@ -20,6 +22,7 @@ const UserManagementScreen = ({ users, onDeleteUser, onResetPassword }) => {
           <table className="min-w-full bg-white rounded-lg shadow-sm">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-200">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
@@ -28,8 +31,19 @@ const UserManagementScreen = ({ users, onDeleteUser, onResetPassword }) => {
             <tbody className="divide-y divide-gray-200">
               {users.map((user) => (
                 <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.fullName || user.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <select
+                      value={user.role}
+                      onChange={e => onRoleChange(user, e.target.value)}
+                      className="border rounded px-2 py-1"
+                    >
+                      {roles.map(role => (
+                        <option key={role} value={role}>{role}</option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <div className="flex items-center justify-end space-x-2"> {/* Contenedor flex para los botones */}
                       <button

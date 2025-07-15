@@ -217,6 +217,21 @@ const App = () => {
     }
   };
 
+  // CAMBIO DE ROL
+  const handleRoleChange = async (user, newRole) => {
+    const { error } = await supabase
+      .from('usuarios')
+      .update({ role: newRole })
+      .eq('client_id', user.client_id);
+    if (error) {
+      alert('Error actualizando rol: ' + error.message);
+      return;
+    }
+    // Recarga usuarios
+    const { data } = await supabase.from('usuarios').select('*');
+    setUsers(data);
+  };
+
   // RENDER
   if (!currentUser) {
     if (currentPage === 'register') {
@@ -282,7 +297,7 @@ const App = () => {
               {currentPage === 'userManagement' && (
                 <UserManagementScreen
                   users={users}
-                  // Puedes agregar handlers aquí si los necesitas
+                  onRoleChange={handleRoleChange}
                 />
               )}
 
