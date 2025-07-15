@@ -3,5 +3,9 @@ export const generateUniqueId = () => {
 };
 
 export const sortClientsByName = (clients) => {
-  return [...clients].sort((a, b) => a.name.localeCompare(b.name));
+  return [...clients].sort((a, b) => {
+    const nameA = (a.name || '').toLowerCase();
+    const nameB = (b.name || '').toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
 };

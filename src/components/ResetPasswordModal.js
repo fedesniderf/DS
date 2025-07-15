@@ -4,8 +4,10 @@ const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (newPassword !== confirmPassword) {
       setError('Las contraseñas no coinciden.');
       return;
@@ -15,8 +17,21 @@ const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {
       return;
     }
     setError('');
-    onResetPassword(user.client_id, newPassword);
-    onClose();
+    setLoading(true);
+    try {
+      await onResetPassword(user.client_id, newPassword);
+      setSuccess(true);
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+      }, 1200);
+    } catch (e) {
+      setError('Error al restablecer la contraseña.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -25,6 +40,7 @@ const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Restablecer Contraseña para {user.email}</h2>
 
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {success && <p className="text-green-600 text-sm mb-4">Contraseña restablecida correctamente.</p>}
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Nueva Contraseña:</label>
@@ -34,6 +50,7 @@ const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {
             onChange={(e) => setNewPassword(e.target.value)}
             className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
             placeholder="Mínimo 6 caracteres"
+            disabled={loading || success}
           />
         </div>
         <div className="mb-4">
@@ -44,6 +61,7 @@ const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {
             onChange={(e) => setConfirmPassword(e.target.value)}
             className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
             placeholder="Repite la nueva contraseña"
+            disabled={loading || success}
           />
         </div>
 
@@ -51,14 +69,16 @@ const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {
           <button
             onClick={onClose}
             className="px-6 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
+            disabled={loading}
           >
             Cancelar
           </button>
           <button
             onClick={handleReset}
-            className="px-6 py-2 rounded-xl bg-black text-white hover:bg-gray-800 transition-colors font-semibold"
+            className={`px-6 py-2 rounded-xl bg-black text-white hover:bg-gray-800 transition-colors font-semibold ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+            disabled={loading || success}
           >
-            Restablecer
+            {loading ? 'Restableciendo...' : 'Restablecer'}
           </button>
         </div>
       </div>
