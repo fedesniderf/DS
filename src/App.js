@@ -309,7 +309,7 @@ const App = () => {
       {showAssignRoutineModal && (
         <Suspense fallback={<div>Cargando modal...</div>}>
           <AssignRoutineModal
-            clients={users.filter(u => u.role === 'client')}
+            clients={users.filter(u => u.role && u.role.toLowerCase() === 'client')}
             onAssign={() => {}}
             onClose={() => setShowAssignRoutineModal(false)}
           />
