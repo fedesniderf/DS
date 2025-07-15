@@ -18,12 +18,11 @@ const ClientRoutineList = ({
   const handleAddRoutine = () => {
     if (newRoutineName.trim() && newRoutineStartDate && newRoutineEndDate) {
       const newRoutine = {
-        id: generateUniqueId(),
-        clientId: client.id,
+        client_id: client.id, // <-- usa client_id
         name: newRoutineName,
         startDate: newRoutineStartDate,
         endDate: newRoutineEndDate,
-        exercises: [],
+        // NO envíes id ni exercises
       };
       onAddRoutine(newRoutine);
       setNewRoutineName('');

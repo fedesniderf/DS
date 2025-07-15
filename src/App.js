@@ -186,15 +186,13 @@ const App = () => {
 
   // AGREGAR RUTINA
   const handleAddRoutine = async (routine) => {
-    // Crea la rutina en Supabase
     const { error } = await supabase
       .from('rutinas')
       .insert([{
-        client_id: routine.clientId,
+        client_id: routine.client_id,
         name: routine.name,
         startDate: routine.startDate,
         endDate: routine.endDate,
-        // agrega otros campos si es necesario
       }]);
     if (error) {
       alert('Error al crear la rutina: ' + error.message);
@@ -206,7 +204,7 @@ const App = () => {
         .from('rutinas')
         .select('*')
         .eq('client_id', selectedClient.id);
-      setClientRoutines(data);
+      setClientRoutines(data || []);
     }
   };
 
