@@ -671,44 +671,7 @@ const RoutineDetail = ({
         />
       )}
                           </tr>
-                          {/* Sección de Seguimiento para cada ejercicio, se muestra/oculta al hacer clic en la fila */}
-                          {expandedExerciseTracking[exercise.id] && (
-                            <tr>
-                              <td colSpan={isEditable ? 10 : 9} className="p-4 bg-gray-50 border-t border-gray-200">
-                                <h5 className="text-lg font-semibold text-gray-700 mb-3 flex items-center">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                  </svg>
-                                  Seguimiento de {exercise.name}
-                                </h5>
-                                <div className="space-y-4">
-                                  {weeksArray.map(week => (
-                                    <div key={week} className="flex flex-col p-3 border border-gray-200 rounded-md bg-white">
-                                      <span className="text-sm font-medium text-gray-700 mb-2">Semana {week}:</span>
-                                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-2 sm:space-y-0">
-                                        <input
-                                          type="number"
-                                          className="w-full sm:w-24 px-2 py-1 border border-gray-300 rounded-md text-center text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
-                                          placeholder="Peso (kg)"
-                                          value={exercise.weeklyData?.[week]?.weight || ''}
-                                          onChange={(e) => handleTrackingDataChange(exercise.id, week, 'weight', e.target.value)}
-                                          disabled={!isEditable} // Editable por admin y cliente
-                                        />
-                                        <input
-                                          type="text"
-                                          className="w-full flex-grow px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
-                                          placeholder="Notas (ej. cómo me sentí)"
-                                          value={exercise.weeklyData?.[week]?.generalNotes || ''}
-                                          onChange={(e) => handleTrackingDataChange(exercise.id, week, 'generalNotes', e.target.value)}
-                                          disabled={!isEditable} // Editable por admin y cliente
-                                        />
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </td>
-                            </tr>
-                          )}
+                          {/* Eliminada la sección de seguimiento expandible inline. El seguimiento ahora solo se gestiona por modal. */}
                         </React.Fragment>
                       ))}
                     </tbody>

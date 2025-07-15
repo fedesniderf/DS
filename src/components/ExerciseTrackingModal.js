@@ -37,6 +37,14 @@ const ExerciseTrackingModal = ({
             <div key={week} className="flex flex-col sm:flex-row sm:items-center gap-2 border-b pb-2">
               <div className="font-semibold w-24">Semana {week}</div>
               <input
+                type="number"
+                placeholder="Kg"
+                className="w-24 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+                value={localTracking[week]?.kg || ''}
+                onChange={e => handleChange(week, 'kg', e.target.value)}
+                style={{ minWidth: 0 }}
+              />
+              <input
                 type="text"
                 placeholder="Notas"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
