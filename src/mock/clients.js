@@ -1,11 +1,8 @@
 import { supabase } from '../supabaseClient';
 
-// Solo si necesitas datos de ejemplo
-export const defaultClients = [];
-export const defaultRoutines = [];
-
 // Guardar una rutina y sus ejercicios
 export async function guardarRutinaYejercicios(clienteId, nombreRutina, ejercicios) {
+  
   // 1. Insertar rutina
   const { data: rutina, error: errorRutina } = await supabase
     .from('rutinas')
@@ -59,4 +56,18 @@ export async function obtenerRutinasYejercicios(clienteId) {
   }
 
   return rutinas;
+}
+
+export async function obtenerClientes() {
+  const { data: clientes, error } = await supabase
+    .from('usuarios')
+    .select('*')
+    .eq('role', 'client');
+
+  if (error) {
+    alert('Error consultando clientes: ' + error.message);
+    return [];
+  }
+
+  return clientes;
 }
