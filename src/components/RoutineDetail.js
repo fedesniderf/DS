@@ -34,6 +34,20 @@ const RoutineDetail = ({
   const [currentPE, setCurrentPE] = useState('');
   const [expandedDailyTracking, setExpandedDailyTracking] = useState(false); // Nuevo estado para expandir/colapsar seguimiento diario
 
+  const [showAddExerciseForm, setShowAddExerciseForm] = useState(false);
+  const [newExercise, setNewExercise] = useState({
+    name: '',
+    sets: '',
+    reps: '',
+    weight: '',
+    time: '',
+    rest: '',
+    media: '',
+    notes: '',
+    day: '',
+    section: '',
+  });
+
   const handleEditClick = (exercise) => {
     setEditingExerciseId(exercise.id);
     setEditedSets(exercise.sets);
@@ -193,6 +207,42 @@ const RoutineDetail = ({
       return;
     }
     // Recarga las rutinas o actualiza el estado según tu lógica
+  };
+
+  const handleAddExercise = async () => {
+    if (!newExercise.name) {
+      alert('El nombre del ejercicio es obligatorio');
+      return;
+    }
+    // Crea un id único para el ejercicio (puedes usar Date.now() o una librería uuid)
+    const exerciseWithId = { ...newExercise, id: Date.now() };
+    const updatedExercises = [...(routine.exercises || []), exerciseWithId];
+
+    // Actualiza en la base de datos y en la UI
+    const { error } = await supabase
+      .from('rutinas')
+      .update({ exercises: updatedExercises })
+      .eq('id', routine.id);
+
+    if (error) {
+      alert('Error al guardar el ejercicio');
+      return;
+    }
+
+    onUpdateRoutine({ ...routine, exercises: updatedExercises });
+    setShowAddExerciseForm(false);
+    setNewExercise({
+      name: '',
+      sets: '',
+      reps: '',
+      weight: '',
+      time: '',
+      rest: '',
+      media: '',
+      notes: '',
+      day: '',
+      section: '',
+    });
   };
 
   return (
@@ -683,7 +733,7 @@ const RoutineDetail = ({
 
       {isEditable && (
         <button
-          onClick={onAddExerciseClick}
+          onClick={() => setShowAddExerciseForm(true)}
           className="w-full mt-6 bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md flex items-center justify-center"
           title="Agregar Ejercicio"
         >
@@ -691,6 +741,97 @@ const RoutineDetail = ({
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
         </button>
+      )}
+
+      {showAddExerciseForm && (
+        <div className="mb-6 p-4 border border-gray-200 rounded-xl bg-gray-50">
+          <h3 className="text-lg font-bold text-gray-700 mb-4">Agregar Ejercicio</h3>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre:</label>
+            <input
+              type="text"
+              value={newExercise.name}
+              onChange={e => setNewExercise({ ...newExercise, name: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+            />
+          </div>
+          <div className="mb-4 flex flex-wrap gap-4">
+            <div>
+              <label className="block text-xs text-gray-700">Series</label>
+              <input type="text" value={newExercise.sets} onChange={e => setNewExercise({ ...newExercise, sets: e.target.value })} className="w-20 px-2 py-1 border rounded-md" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-700">Reps</label>
+              <input type="text" value={newExercise.reps} onChange={e => setNewExercise({ ...newExercise, reps: e.target.value })} className="w-20 px-2 py-1 border rounded-md" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-700">Peso</label>
+              <input type="text" value={newExercise.weight} onChange={e => setNewExercise({ ...newExercise, weight: e.target.value })} className="w-20 px-2 py-1 border rounded-md" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-700">Tiempo</label>
+              <input type="text" value={newExercise.time} onChange={e => setNewExercise({ ...newExercise, time: e.target.value })} className="w-20 px-2 py-1 border rounded-md" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-700">Descanso</label>
+              <input type="text" value={newExercise.rest} onChange={e => setNewExercise({ ...newExercise, rest: e.target.value })} className="w-20 px-2 py-1 border rounded-md" />
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Media (URL):</label>
+            <input
+              type="text"
+              value={newExercise.media}
+              onChange={e => setNewExercise({ ...newExercise, media: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notas:</label>
+            <textarea
+              value={newExercise.notes}
+              onChange={e => setNewExercise({ ...newExercise, notes: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+              rows="2"
+              placeholder="Notas del ejercicio"
+            ></textarea>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Día:</label>
+            <input
+              type="text"
+              value={newExercise.day}
+              onChange={e => setNewExercise({ ...newExercise, day: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sección:</label>
+            <input
+              type="text"
+              value={newExercise.section}
+              onChange={e => setNewExercise({ ...newExercise, section: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+            />
+          </div>
+          <div className="flex justify-end space-x-4 mt-6">
+            <button
+              onClick={() => setShowAddExerciseForm(false)}
+              className="px-6 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-semibold flex items-center justify-center"
+              title="Cancelar"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleAddExercise}
+              className="px-6 py-2 rounded-xl bg-black text-white hover:bg-gray-800 transition-colors font-semibold shadow-md flex items-center justify-center"
+              title="Guardar Ejercicio"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
