@@ -254,8 +254,18 @@ const App = () => {
 
   // ACTUALIZAR RUTINA
   const handleUpdateRoutine = async (updatedRoutine) => {
-    // Solo envía los campos que existen en la tabla y quieres actualizar
-    const { id, name, startDate, endDate, description, client_id } = updatedRoutine;
+    // Incluye todos los campos relevantes, especialmente exercises
+    const {
+      id,
+      name,
+      startDate,
+      endDate,
+      description,
+      client_id,
+      exercises, // <-- importante
+      dailyTracking, // si usas este campo
+      name_ex, sets, reps, weight, media, notes, time, rest, day // si usas estos campos
+    } = updatedRoutine;
 
     if (!id) {
       alert('No se encontró el ID de la rutina.');
@@ -264,7 +274,16 @@ const App = () => {
 
     const { error } = await supabase
       .from('rutinas')
-      .update({ name, startDate, endDate, description, client_id })
+      .update({
+        name,
+        startDate,
+        endDate,
+        description,
+        client_id,
+        exercises: exercises || [],
+        dailyTracking: dailyTracking || null,
+        name_ex, sets, reps, weight, media, notes, time, rest, day
+      })
       .eq('id', id);
 
     if (error) {
@@ -273,21 +292,25 @@ const App = () => {
     }
 
     // Recarga las rutinas después de actualizar
+    let data = [];
     if (currentUser?.role === 'admin' && !selectedClient) {
-      const { data } = await supabase.from('rutinas').select('*');
-      setClientRoutines(data || []);
+      const res = await supabase.from('rutinas').select('*');
+      data = res.data || [];
+      setClientRoutines(data);
     } else if (selectedClient && selectedClient.client_id) {
-      const { data } = await supabase
+      const res = await supabase
         .from('rutinas')
         .select('*')
         .eq('client_id', selectedClient.client_id);
-      setClientRoutines(data || []);
+      data = res.data || [];
+      setClientRoutines(data);
     } else if (currentUser?.role === 'client') {
-      const { data } = await supabase
+      const res = await supabase
         .from('rutinas')
         .select('*')
         .eq('client_id', currentUser.client_id);
-      setClientRoutines(data || []);
+      data = res.data || [];
+      setClientRoutines(data);
     }
 
     // Refresca la rutina seleccionada desde la base de datos
