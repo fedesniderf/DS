@@ -31,21 +31,26 @@ const App = () => {
   const memoizedRoutines = useMemo(() => routines, [routines]);
 
   // Usar useCallback para funciones que se pasan como props para evitar re-renders innecesarios
-  const handleLogin = useCallback((email, password, method, roleAttempt) => {
+  const handleLogin = useCallback(async (email, password, method, roleAttempt) => {
     if (method === 'email') {
-      const user = memoizedUsers.find(u => u.email === email && u.password === password);
-      if (user) {
-        // Aquí se modifica la lógica para que el rol del usuario determine la página de inicio
+      // Busca el usuario en Supabase
+      const { data: users, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password);
+
+      if (error) {
+        alert('Error consultando usuario en Supabase.');
+        return;
+      }
+
+      if (users && users.length > 0) {
+        const user = users[0];
         setCurrentUser(user);
         if (user.role === 'client') {
-          const clientData = memoizedClients.find(c => c.email === user.email);
-          if (clientData) {
-            setSelectedClient(clientData);
-            setCurrentPage('clientDashboard');
-          } else {
-            alert('No se encontraron datos de cliente para este usuario. Por favor, contacta a tu entrenador.');
-            setCurrentUser(null); // Si no hay datos de cliente, no se loguea
-          }
+          setSelectedClient(user); // Puedes adaptar esto según tu lógica de clientes
+          setCurrentPage('clientDashboard');
         } else if (user.role === 'admin') {
           setCurrentPage('adminClientDashboard');
         }
@@ -53,48 +58,51 @@ const App = () => {
         alert('Credenciales incorrectas.');
       }
     } else if (method === 'google') {
-      // Lógica para Google, asumiendo que siempre es admin para este ejemplo
-      const googleUser = memoizedUsers.find(u => u.email === 'trainer@example.com'); // Asumiendo un usuario admin para Google
-      if (googleUser) {
-        setCurrentUser(googleUser);
-        setCurrentPage('adminClientDashboard');
-      } else {
-        alert('Error al iniciar sesión con Google.');
-      }
+      // Lógica para Google (puedes adaptarla si usas autenticación externa)
+      alert('Login con Google no implementado con Supabase.');
     }
-  }, [memoizedUsers, memoizedClients]);
+  }, []);
 
-  const handleRegister = useCallback((userData) => {
-    if (memoizedUsers.some(u => u.email === userData.email)) {
+  const handleRegister = useCallback(async (userData) => {
+    // Verifica si el email ya existe en Supabase
+    const { data: existingUsers, error: fetchError } = await supabase
+      .from('usuarios')
+      .select('email')
+      .eq('email', userData.email);
+
+    if (fetchError) {
+      alert('Error consultando usuarios en Supabase.');
+      return;
+    }
+
+    if (existingUsers && existingUsers.length > 0) {
       alert('Este email ya está registrado.');
       return;
     }
 
-    const newUser = {
-      id: generateUniqueId(),
-      email: userData.email,
-      password: userData.password,
-      role: 'client',
-    };
-    setUsers((prevUsers) => [...prevUsers, newUser]);
+    // Inserta el nuevo usuario en Supabase
+    const { data, error } = await supabase
+      .from('usuarios')
+      .insert([{
+        email: userData.email,
+        password: userData.password,
+        fullName: userData.fullName,
+        age: userData.age,
+        weight: userData.weight,
+        height: userData.height,
+        goals: userData.goals,
+        phone: userData.phone,
+        role: 'client'
+      }]);
 
-    const newClient = {
-      id: newUser.id,
-      name: userData.fullName,
-      email: userData.email,
-      lastRoutine: 'Sin rutinas',
-      progress: 0,
-      age: userData.age,
-      weight: userData.weight,
-      height: userData.height,
-      goals: userData.goals.split(',').map(goal => goal.trim()),
-      phone: userData.phone,
-    };
-    setClients((prevClients) => [...prevClients, newClient]);
+    if (error) {
+      alert('Error guardando usuario en Supabase.');
+      return;
+    }
 
     alert('Registro exitoso. Por favor, inicia sesión.');
     setCurrentPage('auth');
-  }, [memoizedUsers]);
+  }, []);
 
   const handleLogout = useCallback(() => {
     setCurrentUser(null);
