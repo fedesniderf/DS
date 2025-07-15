@@ -323,6 +323,7 @@ const App = () => {
     );
   }
 
+  // Define la función aquí, antes del return
   const handleAddExerciseClick = () => {
     setCurrentPage('addExercise');
   };
