@@ -15,7 +15,7 @@ const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {
       return;
     }
     setError('');
-    onResetPassword(user.id, newPassword);
+    onResetPassword(user.client_id, newPassword);
     onClose();
   };
 
