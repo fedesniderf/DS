@@ -50,18 +50,15 @@ const ClientRoutineList = ({
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
         {client ? `Rutinas de ${client.fullName || client.email}` : 'Todas las Rutinas'}
       </h2>
-      {!Array.isArray(routines) || routines.length === 0 ? (
-        <p className="text-gray-600 text-center py-4">No hay rutinas registradas aún.</p>
-      ) : (
+      {Array.isArray(routines) && routines.length > 0 ? (
         <div className="space-y-4">
           {routines.map((routine) => {
-            // Si no hay cliente seleccionado, busca el cliente de la rutina
             const cliente = client
               ? client
               : users?.find(u => u.client_id === routine.client_id);
 
             return (
-              <div key={routine.id} className="bg-gray-50 p-4 rounded-xl shadow-sm border border-gray-200">
+              <div key={routine.id || routine.client_id + routine.name} className="bg-gray-50 p-4 rounded-xl shadow-sm border border-gray-200">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="text-xl font-semibold text-gray-700">{routine.name}</h3>
                   {/* Muestra el nombre/email del cliente si hay varios */}
@@ -101,6 +98,8 @@ const ClientRoutineList = ({
             );
           })}
         </div>
+      ) : (
+        <p className="text-gray-600 text-center py-4">No hay rutinas registradas aún.</p>
       )}
 
       {isEditable && (
