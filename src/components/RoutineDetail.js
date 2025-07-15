@@ -21,6 +21,11 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
   // Estado para colapsar/expandir el seguimiento de cada ejercicio
   const [expandedExerciseTracking, setExpandedExerciseTracking] = useState({});
 
+  // Estado para el seguimiento diario de PF y PE
+  const [selectedDateForDailyTracking, setSelectedDateForDailyTracking] = useState(null);
+  const [currentPF, setCurrentPF] = useState('');
+  const [currentPE, setCurrentPE] = useState('');
+
   const handleEditClick = (exercise) => {
     setEditingExerciseId(exercise.id);
     setEditedSets(exercise.sets);
@@ -103,7 +108,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
     return a.localeCompare(b);
   });
 
-  const sectionOrder = ['Warm Up', 'Fuerza', 'Cardio', 'Estiramiento', 'Cool Down', 'Otros'];
+  const sectionOrder = ['Warm Up', 'Trabajo DS', 'Out', 'Fuerza', 'Cardio', 'Estiramiento', 'Cool Down', 'Otros'];
 
   const calculateWeeks = (startDate, endDate) => {
     const start = new Date(startDate);
@@ -126,6 +131,31 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
       return ex;
     });
     onUpdateRoutine({ ...routine, exercises: updatedExercises });
+  };
+
+  const handleAddDailyTracking = () => {
+    if (selectedDateForDailyTracking && currentPF && currentPE) {
+      const updatedRoutine = { ...routine };
+      if (!updatedRoutine.dailyTracking) {
+        updatedRoutine.dailyTracking = {};
+      }
+      const dateObject = new Date(selectedDateForDailyTracking);
+      const formattedDate = dateObject.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+      
+      if (!updatedRoutine.dailyTracking[formattedDate]) {
+        updatedRoutine.dailyTracking[formattedDate] = [];
+      }
+      updatedRoutine.dailyTracking[formattedDate].push({
+        PF: currentPF,
+        PE: currentPE,
+      });
+      onUpdateRoutine(updatedRoutine);
+      setCurrentPF('');
+      setCurrentPE('');
+      setSelectedDateForDailyTracking(null); // Limpiar la fecha seleccionada
+    } else {
+      alert('Por favor, selecciona una fecha e ingresa los valores de PF y PE.');
+    }
   };
 
   const toggleExerciseTracking = (exerciseId) => {
@@ -152,21 +182,23 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
               className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
             />
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio:</label>
-            <DatePicker
-              selectedDate={editedStartDate}
-              onDateChange={setEditedStartDate}
-              placeholder="Fecha de Inicio"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin:</label>
-            <DatePicker
-              selectedDate={editedEndDate}
-              onDateChange={setEditedEndDate}
-              placeholder="Fecha de Fin"
-            />
+          <div className="mb-4 flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio:</label>
+              <DatePicker
+                selectedDate={editedStartDate}
+                onDateChange={setEditedStartDate}
+                placeholder="Fecha de Inicio"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin:</label>
+              <DatePicker
+                selectedDate={editedEndDate}
+                onDateChange={setEditedEndDate}
+                placeholder="Fecha de Fin"
+              />
+            </div>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Descripción (máx. 250 caracteres):</label>
@@ -232,8 +264,13 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
               if (indexB === -1) return -1;
               return indexA - indexB;
             }).map((section) => (
-              <div key={section} className="mb-6 p-4 bg-white rounded-xl shadow-sm">
-                <h4 className="text-lg font-semibold text-gray-700 mb-3">{section}</h4>
+              <div 
+                key={section} 
+                className={`mb-6 p-4 bg-white rounded-xl shadow-sm`}
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-lg font-semibold text-gray-700">{section}</h4>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full bg-white rounded-lg shadow-sm">
                     <thead>
@@ -425,6 +462,67 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                 </div>
               </div>
             ))}
+            {/* Sección de Seguimiento Diario de PF y PE */}
+            <div className="mt-6 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
+              <h4 className="text-lg font-semibold text-gray-700 mb-3">Seguimiento Diario de PF y PE</h4>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-4 sm:space-y-0 mb-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar Fecha:</label>
+                  <DatePicker
+                    selectedDate={selectedDateForDailyTracking}
+                    onDateChange={setSelectedDateForDailyTracking}
+                    placeholder="Selecciona una fecha"
+                    disabled={!isEditable}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">PF (Percepción de Fatiga):</label>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+                    placeholder="Ej. 1-10"
+                    value={currentPF}
+                    onChange={(e) => setCurrentPF(e.target.value)}
+                    disabled={!isEditable}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">PE (Percepción de Esfuerzo):</label>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+                    placeholder="Ej. 1-10"
+                    value={currentPE}
+                    onChange={(e) => setCurrentPE(e.target.value)}
+                    disabled={!isEditable}
+                  />
+                </div>
+                <button
+                  onClick={handleAddDailyTracking}
+                  className="mt-auto px-6 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-semibold shadow-md"
+                  disabled={!isEditable}
+                >
+                  Agregar
+                </button>
+              </div>
+              {/* Historial de PF y PE por día */}
+              {Object.keys(routine.dailyTracking || {}).length > 0 && (
+                <div className="mt-4">
+                  <h5 className="text-md font-semibold text-gray-700 mb-2">Historial de PF y PE:</h5>
+                  <div className="space-y-2">
+                    {Object.keys(routine.dailyTracking).sort().map(date => (
+                      routine.dailyTracking[date].map((entry, index) => (
+                        <div key={`${date}-${index}`} className="flex justify-between items-center p-2 bg-gray-50 rounded-md border border-gray-200">
+                          <span className="text-sm text-gray-700">Fecha: {date}</span>
+                          <span className="text-sm text-gray-700">PF: {entry.PF}</span>
+                          <span className="text-sm text-gray-700">PE: {entry.PE}</span>
+                        </div>
+                      ))
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ))
       )}
