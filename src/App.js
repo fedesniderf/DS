@@ -254,13 +254,16 @@ const App = () => {
 
   // ACTUALIZAR RUTINA
   const handleUpdateRoutine = async (updatedRoutine) => {
-    const { id, ...fields } = updatedRoutine;
+    // Solo envía los campos que existen en la tabla
+    const { id, name, startDate, endDate, description, client_id } = updatedRoutine;
+
     const { error } = await supabase
       .from('rutinas')
-      .update(fields)
+      .update({ name, startDate, endDate, description, client_id })
       .eq('id', id);
+
     if (error) {
-      alert('Error al actualizar la rutina');
+      alert('Error al actualizar la rutina: ' + error.message);
       return;
     }
 
@@ -282,7 +285,7 @@ const App = () => {
       setClientRoutines(data || []);
     }
 
-    // <-- NUEVO: refresca la rutina seleccionada desde la base de datos
+    // Refresca la rutina seleccionada desde la base de datos
     const { data: refreshed, error: fetchError } = await supabase
       .from('rutinas')
       .select('*')
