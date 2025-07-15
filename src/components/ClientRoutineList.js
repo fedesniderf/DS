@@ -4,6 +4,7 @@ import { generateUniqueId } from '../utils/helpers';
 const ClientRoutineList = ({
   client,
   routines = [],
+  users = [],
   onSelectRoutine = () => {},
   onAddRoutine = () => {},
   isEditable,
@@ -46,17 +47,22 @@ const ClientRoutineList = ({
 
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Rutinas de {client.name}</h2>
-
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        {client ? `Rutinas de ${client.name}` : 'Todas las Rutinas'}
+      </h2>
       {!Array.isArray(routines) || routines.length === 0 ? (
-        <p className="text-gray-600 text-center py-4">No hay rutinas asignadas a este cliente aún.</p>
+        <p className="text-gray-600 text-center py-4">No hay rutinas registradas aún.</p>
       ) : (
         <div className="space-y-4">
           {routines.map((routine) => {
+            const cliente = users.find(u => u.client_id === routine.client_id);
             return (
               <div key={routine.id} className="bg-gray-50 p-4 rounded-xl shadow-sm border border-gray-200">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="text-xl font-semibold text-gray-700">{routine.name}</h3>
+                  <span className="text-sm text-gray-500">
+                    {cliente ? cliente.fullName || cliente.email : routine.client_id}
+                  </span>
                   <div className="flex space-x-2">
                     <button
                       onClick={() => onSelectRoutine(routine)}
@@ -157,3 +163,14 @@ const ClientRoutineList = ({
 };
 
 export default ClientRoutineList;
+
+<ClientRoutineList
+  client={selectedClient}
+  routines={clientRoutines}
+  users={users}
+  onSelectRoutine={handleSelectRoutine}
+  onAddRoutine={handleAddRoutine}
+  isEditable={isEditable}
+  onDeleteRoutine={handleDeleteRoutine}
+  onUpdateRoutine={handleUpdateRoutine}
+/>

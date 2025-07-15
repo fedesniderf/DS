@@ -158,20 +158,25 @@ const App = () => {
   // CARGAR RUTINAS DEL CLIENTE SELECCIONADO DESDE SUPABASE
   useEffect(() => {
     async function fetchRoutines() {
-      if (selectedClient && selectedClient.client_id) {
-        console.log('Buscando rutinas para client_id:', selectedClient.client_id);
+      if (currentUser?.role === 'admin' && !selectedClient) {
+        // Admin: ver todas las rutinas
+        const { data, error } = await supabase
+          .from('rutinas')
+          .select('*');
+        if (!error) setClientRoutines(data);
+      } else if (selectedClient && selectedClient.client_id) {
+        // Rutinas del cliente seleccionado
         const { data, error } = await supabase
           .from('rutinas')
           .select('*')
           .eq('client_id', selectedClient.client_id);
-        console.log('Rutinas encontradas:', data);
         if (!error) setClientRoutines(data);
       } else {
         setClientRoutines([]);
       }
     }
     fetchRoutines();
-  }, [selectedClient]);
+  }, [currentUser, selectedClient]);
 
   // HEADER
   const getHeaderTitle = useCallback(() => {
@@ -252,6 +257,7 @@ const App = () => {
                 <ClientRoutineList
                   client={selectedClient}
                   routines={clientRoutines}
+                  users={users}
                   onSelectRoutine={handleSelectRoutine}
                   isEditable={true}
                   onAddRoutine={handleAddRoutine}
