@@ -358,8 +358,8 @@ const App = () => {
               {currentPage === 'routineDetail' && selectedRoutine && (
                 <RoutineDetail
                   routine={selectedRoutine}
-                  onUpdateRoutine={handleUpdateRoutine}
-                  isEditable={isEditable}
+                  onUpdateRoutine={handleUpdateRoutine} // <-- Esto ya está bien
+                  isEditable={true} // <-- Asegúrate de que sea true para el admin
                   onAddExerciseClick={handleAddExerciseClick}
                 />
               )}
