@@ -77,5 +77,21 @@ export async function obtenerClientes() {
   return clientes;
 }
 
-// Llamada a la función guardarRutinaYejercicios con los parámetros adecuados
-guardarRutinaYejercicios(cliente.id, nombreRutina, ejercicios);
+// Ejemplo de uso correcto:
+async function crearRutinaParaPrimerCliente() {
+  const clientes = await obtenerClientes();
+  const cliente = clientes[0]; // o selecciona el cliente adecuado
+  const nombreRutina = "Rutina de fuerza";
+  const ejercicios = [
+    // ...array de ejercicios...
+  ];
+
+  if (cliente && cliente.id) {
+    await guardarRutinaYejercicios(cliente.id, nombreRutina, ejercicios);
+  } else {
+    alert('No se encontró el cliente o el cliente no tiene id');
+  }
+}
+
+// Llama a la función de ejemplo
+crearRutinaParaPrimerCliente();
