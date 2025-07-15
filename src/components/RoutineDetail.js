@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import DatePicker from './DatePicker';
 
-const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClick }) => {
+const RoutineDetail = ({
+  routine,
+  onUpdateRoutine = () => {},
+  isEditable,
+  onAddExerciseClick = () => {},
+}) => {
   const [editingExerciseId, setEditingExerciseId] = useState(null);
   const [editedSets, setEditedSets] = useState('');
   const [editedReps, setEditedReps] = useState('');
