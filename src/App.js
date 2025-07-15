@@ -158,14 +158,14 @@ const App = () => {
   // CARGAR RUTINAS DEL CLIENTE SELECCIONADO DESDE SUPABASE
   useEffect(() => {
     async function fetchRoutines() {
-      if (selectedClient && selectedClient.id) { // <--- protección extra
+      if (selectedClient && selectedClient.client_id) { // <--- usa client_id
         const { data, error } = await supabase
           .from('rutinas')
           .select('*')
-          .eq('client_id', selectedClient.id);
+          .eq('client_id', selectedClient.client_id); // <--- usa client_id
         if (!error) setClientRoutines(data);
       } else {
-        setClientRoutines([]); // Limpia si no hay cliente seleccionado
+        setClientRoutines([]);
       }
     }
     fetchRoutines();
@@ -201,11 +201,11 @@ const App = () => {
       return;
     }
     // Recarga las rutinas del cliente
-    if (selectedClient) {
+    if (selectedClient && selectedClient.client_id) {
       const { data } = await supabase
         .from('rutinas')
         .select('*')
-        .eq('client_id', selectedClient.id);
+        .eq('client_id', selectedClient.client_id);
       setClientRoutines(data || []);
     }
   };
