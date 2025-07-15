@@ -29,8 +29,9 @@ const RoutineDetail = ({
 
   // Estado para colapsar/expandir el seguimiento de cada ejercicio
   const [expandedExerciseTracking, setExpandedExerciseTracking] = useState({});
+  // Estado para mostrar/ocultar el formulario de agregar ejercicio
+  const [showAddExerciseForm, setShowAddExerciseForm] = useState(false);
   // Estado para modal de tracking
-          {/* Campos de ejercicio eliminados por requerimiento */}
   const handleEditClick = (exercise) => {
     setEditingExerciseId(exercise.id);
     setEditedSets(exercise.sets);
