@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import LayoutHeader from './components/LayoutHeader';
-import { defaultClients, defaultRoutines } from './mock/clients';
 import { defaultUsers } from './mock/users';
 import { generateUniqueId } from './utils/helpers';
 import { SpeedInsights } from "@vercel/speed-insights/react";
