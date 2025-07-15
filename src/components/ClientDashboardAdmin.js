@@ -8,8 +8,8 @@ const ClientDashboardAdmin = ({ clients, onSelectClient }) => {
 
   useEffect(() => {
     const filtered = clients.filter(client =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase())
+      (client.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (client.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
     setSortedClients(sortClientsByName(filtered));
   }, [clients, searchTerm]);
