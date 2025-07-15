@@ -157,15 +157,21 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
 
         <button
           onClick={handleRegister}
-          className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-all duration-300 ease-in-out font-semibold shadow-md mb-4"
+          className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-all duration-300 ease-in-out font-semibold shadow-md mb-4 flex items-center justify-center"
+          title="Registrarse"
         >
-          Registrarse
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.5h.008v.008h-.008V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM4.5 19.5h15M4.5 15.75h15M4.5 12h15M4.5 8.25h15M4.5 4.5h15" />
+          </svg>
         </button>
 
         <p className="text-center text-gray-600 text-sm">
           ¿Ya tienes una cuenta?{' '}
-          <button onClick={onGoToLogin} className="text-black font-semibold hover:underline hover-text-effect">
-            Inicia sesión aquí
+          <button onClick={onGoToLogin} className="text-black font-semibold hover:underline hover-text-effect flex items-center justify-center mx-auto" title="Iniciar sesión aquí">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5 mr-1">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+            </svg>
+            Iniciar sesión
           </button>
         </p>
       </div>

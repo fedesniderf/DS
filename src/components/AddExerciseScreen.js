@@ -210,16 +210,22 @@ const AddExerciseScreen = ({ onAddExercise, onBack }) => {
 
       <button
         onClick={handleAddExercise}
-        className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md mb-4"
+        className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md mb-4 flex items-center justify-center"
+        title="Agregar Ejercicio"
       >
-        Agregar Ejercicio
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
       </button>
 
       <button
         onClick={onBack}
-        className="w-full bg-gray-300 text-gray-800 py-3 rounded-xl hover:bg-gray-400 transition-colors font-semibold shadow-md"
+        className="w-full bg-gray-300 text-gray-800 py-3 rounded-xl hover:bg-gray-400 transition-colors font-semibold shadow-md flex items-center justify-center"
+        title="Cancelar"
       >
-        Cancelar
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
     </div>
   );
