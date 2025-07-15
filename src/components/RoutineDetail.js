@@ -30,49 +30,7 @@ const RoutineDetail = ({
   // Estado para colapsar/expandir el seguimiento de cada ejercicio
   const [expandedExerciseTracking, setExpandedExerciseTracking] = useState({});
   // Estado para modal de tracking
-  const [showTrackingModal, setShowTrackingModal] = useState(false);
-  const [selectedExercise, setSelectedExercise] = useState(null);
-
-  // Obtener o inicializar el tracking semanal de ejercicios
-  const exerciseTracking = routine.exerciseTracking || {};
-
-  // Calcular semanas de la rutina
-  const getWeeksArray = () => {
-    if (!routine.startDate || !routine.endDate) return [];
-    const start = new Date(routine.startDate);
-    const end = new Date(routine.endDate);
-    const weeks = [];
-    let current = new Date(start);
-    let weekNum = 1;
-    while (current <= end) {
-      weeks.push(weekNum);
-      current.setDate(current.getDate() + 7);
-      weekNum++;
-    }
-    return weeks;
-  };
-  const weeksArray = getWeeksArray();
-
-  // Estado para el seguimiento diario de PF y PE
-  const [selectedDateForDailyTracking, setSelectedDateForDailyTracking] = useState(null);
-  const [currentPF, setCurrentPF] = useState('');
-  const [currentPE, setCurrentPE] = useState('');
-  const [expandedDailyTracking, setExpandedDailyTracking] = useState(false); // Nuevo estado para expandir/colapsar seguimiento diario
-
-  const [showAddExerciseForm, setShowAddExerciseForm] = useState(false);
-  const [newExercise, setNewExercise] = useState({
-    name: '',
-    sets: '',
-    reps: '',
-    weight: '',
-    time: '',
-    rest: '',
-    media: '',
-    notes: '',
-    day: '',
-    section: '',
-  });
-
+          {/* Campos de ejercicio eliminados por requerimiento */}
   const handleEditClick = (exercise) => {
     setEditingExerciseId(exercise.id);
     setEditedSets(exercise.sets);
