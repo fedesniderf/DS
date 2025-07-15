@@ -5,6 +5,7 @@ import { defaultUsers } from './mock/users';
 import { generateUniqueId } from './utils/helpers';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { supabase } from './supabaseClient';
+import AuthForm from './components/AuthForm';
 
 // Implementación de Lazy Loading para componentes grandes o que no se cargan al inicio
 const ClientRoutineList = lazy(() => import('./components/ClientRoutineList'));
