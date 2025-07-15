@@ -9,6 +9,9 @@ const RoutineDetail = ({
   isEditable,
   onAddExerciseClick = () => {},
 }) => {
+  // Estado para los valores de PF y PE en el seguimiento diario
+  const [currentPF, setCurrentPF] = useState('');
+  const [currentPE, setCurrentPE] = useState('');
   const [editingExerciseId, setEditingExerciseId] = useState(null);
   const [editedSets, setEditedSets] = useState(routine.sets || '');
   const [editedReps, setEditedReps] = useState(routine.reps || '');
