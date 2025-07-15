@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { generateUniqueId } from '../utils/helpers';
 
 const ClientRoutineList = ({
@@ -17,6 +17,7 @@ const ClientRoutineList = ({
   const [showAddRoutineForm, setShowAddRoutineForm] = useState(false);
 
   const handleAddRoutine = () => {
+    // Solo se puede agregar rutina si hay cliente seleccionado (admin o cliente)
     if (!client) {
       alert('Debes seleccionar un cliente para agregar una rutina.');
       return;
@@ -51,11 +52,13 @@ const ClientRoutineList = ({
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        {/* Si hay cliente seleccionado, muestra su nombre/email. Si no, muestra "Todas las Rutinas" */}
         {client ? `Rutinas de ${client.fullName || client.email}` : 'Todas las Rutinas'}
       </h2>
       {Array.isArray(routines) && routines.length > 0 ? (
         <div className="space-y-4">
           {routines.map((routine) => {
+            // Si client es null (admin), busca el cliente correspondiente a la rutina para mostrar su nombre/email.
             const cliente = client
               ? client
               : users?.find(u => u.client_id === routine.client_id);
@@ -64,7 +67,10 @@ const ClientRoutineList = ({
               <div key={routine.id || routine.client_id + routine.name} className="bg-gray-50 p-4 rounded-xl shadow-sm border border-gray-200">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="text-xl font-semibold text-gray-700">{routine.name}</h3>
-                  {/* Muestra el nombre/email del cliente si hay varios */}
+                  {/* 
+                    Si client es null (admin viendo todas las rutinas), muestra el nombre/email del cliente al que pertenece la rutina.
+                    Si client está definido, no muestra este dato porque ya está en el encabezado.
+                  */}
                   {!client && (
                     <span className="text-sm text-gray-500">
                       {cliente ? cliente.fullName || cliente.email : routine.client_id}
@@ -102,9 +108,11 @@ const ClientRoutineList = ({
           })}
         </div>
       ) : (
+        // Si no hay rutinas para mostrar, se muestra este mensaje.
         <p className="text-gray-600 text-center py-4">No hay rutinas registradas aún.</p>
       )}
 
+      {/* El formulario para agregar rutina solo aparece si isEditable es true */}
       {isEditable && (
         <div className="mt-6">
           <button
