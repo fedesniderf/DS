@@ -232,6 +232,28 @@ const App = () => {
     setUsers(data);
   };
 
+  // Efectos para sincronizar con localStorage
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('ds_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('ds_user');
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem('ds_page', currentPage);
+  }, [currentPage]);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('ds_user');
+    const savedPage = localStorage.getItem('ds_page');
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser));
+      if (savedPage) setCurrentPage(savedPage);
+    }
+  }, []);
+
   // RENDER
   if (!currentUser) {
     if (currentPage === 'register') {
