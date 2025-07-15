@@ -171,6 +171,13 @@ const App = () => {
           .select('*')
           .eq('client_id', selectedClient.client_id);
         if (!error) setClientRoutines(data);
+      } else if (currentUser?.role === 'client') {
+        // Cliente: ver solo sus rutinas
+        const { data, error } = await supabase
+          .from('rutinas')
+          .select('*')
+          .eq('client_id', currentUser.client_id);
+        if (!error) setClientRoutines(data);
       } else {
         setClientRoutines([]);
       }
@@ -207,12 +214,25 @@ const App = () => {
       alert('Error al crear la rutina: ' + error.message);
       return;
     }
-    // Recarga las rutinas del cliente
-    if (selectedClient && selectedClient.client_id) {
+
+    // Recarga las rutinas según el contexto
+    if (currentUser?.role === 'admin' && !selectedClient) {
+      // Admin viendo todas las rutinas
+      const { data } = await supabase.from('rutinas').select('*');
+      setClientRoutines(data || []);
+    } else if (selectedClient && selectedClient.client_id) {
+      // Admin o cliente viendo un cliente específico
       const { data } = await supabase
         .from('rutinas')
         .select('*')
         .eq('client_id', selectedClient.client_id);
+      setClientRoutines(data || []);
+    } else if (currentUser?.role === 'client') {
+      // Cliente viendo sus propias rutinas
+      const { data } = await supabase
+        .from('rutinas')
+        .select('*')
+        .eq('client_id', currentUser.client_id);
       setClientRoutines(data || []);
     }
   };
