@@ -48,7 +48,7 @@ const ClientRoutineList = ({
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        {client ? `Rutinas de ${client.name}` : 'Todas las Rutinas'}
+        {client ? `Rutinas de ${client.fullName || client.email}` : 'Todas las Rutinas'}
       </h2>
       {!Array.isArray(routines) || routines.length === 0 ? (
         <p className="text-gray-600 text-center py-4">No hay rutinas registradas aún.</p>
