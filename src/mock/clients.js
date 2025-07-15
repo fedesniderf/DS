@@ -1,17 +1,22 @@
 import { supabase } from '../supabaseClient';
 
 // Guardar una rutina y sus ejercicios
-export async function guardarRutinaYejercicios(clienteId, nombreRutina, ejercicios) {
+export async function guardarRutinaYejercicios(clienteId, nombreRutina, ejercicios, startDate, endDate) {
   if (!clienteId) {
     alert('Error: clienteId no está definido');
     return;
   }
-  console.log('clienteId:', clienteId);
+  console.log('clienteId:', clienteId, typeof clienteId);
 
-  // 1. Insertar rutina
   const { data: rutina, error: errorRutina } = await supabase
     .from('rutinas')
-    .insert([{ client_id: clienteId, name: nombreRutina }])
+    .insert([{
+      client_id: clienteId, // uuid del usuario
+      name: nombreRutina,
+      startDate,
+      endDate,
+      exercises: JSON.stringify(ejercicios), // guarda la lista como texto
+    }])
     .select()
     .single();
 
@@ -20,22 +25,7 @@ export async function guardarRutinaYejercicios(clienteId, nombreRutina, ejercici
     return;
   }
 
-  // 2. Insertar ejercicios asociados a la rutina
-  const ejerciciosConRutina = ejercicios.map(ej => ({
-    ...ej,
-    rutina_id: rutina.id,
-  }));
-
-  const { error: errorEjercicios } = await supabase
-    .from('ejercicios')
-    .insert(ejerciciosConRutina);
-
-  if (errorEjercicios) {
-    alert('Error guardando ejercicios: ' + errorEjercicios.message);
-    return;
-  }
-
-  alert('Rutina y ejercicios guardados correctamente');
+  alert('Rutina guardada correctamente');
 }
 
 // Obtener todas las rutinas y ejercicios de un cliente
@@ -90,8 +80,11 @@ async function crearRutinaParaPrimerCliente() {
     // ...array de ejercicios...
   ];
 
+  const startDate = "2024-07-15"; // o la fecha que corresponda
+  const endDate = "2024-08-15";   // o la fecha que corresponda
+
   if (cliente && cliente.client_id) {
-    await guardarRutinaYejercicios(cliente.client_id, nombreRutina, ejercicios);
+    await guardarRutinaYejercicios(cliente.client_id, nombreRutina, ejercicios, startDate, endDate);
   } else {
     alert('No se encontró el cliente o el cliente no tiene client_id');
   }
