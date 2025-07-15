@@ -80,16 +80,16 @@ export async function obtenerClientes() {
 // Ejemplo de uso correcto:
 async function crearRutinaParaPrimerCliente() {
   const clientes = await obtenerClientes();
-  const cliente = clientes[0]; // o selecciona el cliente adecuado
+  const cliente = clientes[0];
   const nombreRutina = "Rutina de fuerza";
   const ejercicios = [
     // ...array de ejercicios...
   ];
 
-  if (cliente && cliente.id) {
-    await guardarRutinaYejercicios(cliente.id, nombreRutina, ejercicios);
+  if (cliente && cliente.client_id) {
+    await guardarRutinaYejercicios(cliente.client_id, nombreRutina, ejercicios);
   } else {
-    alert('No se encontró el cliente o el cliente no tiene id');
+    alert('No se encontró el cliente o el cliente no tiene client_id');
   }
 }
 
