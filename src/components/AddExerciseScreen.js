@@ -15,20 +15,20 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
 
   const sectionOptions = [
     { value: '', label: 'Selecciona una sección' },
-    { value: 'Warm Up', label: '1 - Warm Up' },
-    { value: 'Trabajo DS', label: '2 - Trabajo DS' },
-    { value: 'Out', label: '3 - Out' },
+    { value: 'Warm Up', label: 'Warm Up' },
+    { value: 'Trabajo DS', label: 'Trabajo DS' },
+    { value: 'Out', label: 'Out' },
   ];
 
   const dayOptions = [
     { value: '', label: 'Selecciona un día' },
-    { value: 'Día 1', label: 'Día 1' },
-    { value: 'Día 2', label: 'Día 2' },
-    { value: 'Día 3', label: 'Día 3' },
-    { value: 'Día 4', label: 'Día 4' },
-    { value: 'Día 5', label: 'Día 5' },
-    { value: 'Día 6', label: 'Día 6' },
-    { value: 'Día 7', label: 'Día 7' },
+    { value: '1', label: '1' },
+    { value: '2', label: '2' },
+    { value: '3', label: '3' },
+    { value: '4', label: '4' },
+    { value: '5', label: '5' },
+    { value: '6', label: '6' },
+    { value: '7', label: '7' },
   ];
 
   const handleAddExercise = () => {
