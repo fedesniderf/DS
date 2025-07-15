@@ -18,7 +18,7 @@ const ClientRoutineList = ({
   const handleAddRoutine = () => {
     if (newRoutineName.trim() && newRoutineStartDate && newRoutineEndDate) {
       const newRoutine = {
-        client_id: client.id, // <-- usa client_id
+        client_id: client.client_id,
         name: newRoutineName,
         startDate: newRoutineStartDate,
         endDate: newRoutineEndDate,
@@ -41,6 +41,8 @@ const ClientRoutineList = ({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.ceil(diffDays / 7);
   };
+
+  console.log('client:', client);
 
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md">
