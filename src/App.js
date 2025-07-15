@@ -158,11 +158,13 @@ const App = () => {
   // CARGAR RUTINAS DEL CLIENTE SELECCIONADO DESDE SUPABASE
   useEffect(() => {
     async function fetchRoutines() {
-      if (selectedClient && selectedClient.client_id) { // <--- usa client_id
+      if (selectedClient && selectedClient.client_id) {
+        console.log('Buscando rutinas para client_id:', selectedClient.client_id);
         const { data, error } = await supabase
           .from('rutinas')
           .select('*')
-          .eq('client_id', selectedClient.client_id); // <--- usa client_id
+          .eq('client_id', selectedClient.client_id);
+        console.log('Rutinas encontradas:', data);
         if (!error) setClientRoutines(data);
       } else {
         setClientRoutines([]);
