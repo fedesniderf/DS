@@ -41,6 +41,10 @@ const RoutineDetail = ({
     day: '',
     section: '',
   });
+  // Estado para el ejercicio seleccionado para seguimiento
+  const [selectedExercise, setSelectedExercise] = useState(null);
+  // Estado para la fecha seleccionada en el seguimiento diario
+  const [selectedDateForDailyTracking, setSelectedDateForDailyTracking] = useState(null);
   const [expandedExerciseTracking, setExpandedExerciseTracking] = useState({});
   // Estado para mostrar/ocultar el formulario de agregar ejercicio
   const [showAddExerciseForm, setShowAddExerciseForm] = useState(false);
