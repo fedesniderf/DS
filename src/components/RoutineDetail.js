@@ -191,8 +191,11 @@ const RoutineDetail = ({
         <div className="mb-6 p-4 border border-gray-200 rounded-xl bg-gray-50">
           <h3 className="text-xl font-bold text-gray-700 mb-4">Editar Detalles de Rutina</h3>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Título de la Rutina:</label>
+            <label htmlFor="routineName" className="block text-sm font-medium text-gray-700 mb-1">
+              Título de la Rutina:
+            </label>
             <input
+              id="routineName"
               type="text"
               value={editedRoutineName}
               onChange={(e) => setEditedRoutineName(e.target.value)}
@@ -239,7 +242,18 @@ const RoutineDetail = ({
               </svg>
             </button>
             <button
-              onClick={handleSaveRoutineDetails}
+              type="button"
+              onClick={() => {
+                onUpdateRoutine({
+                  id: routine.id, // <-- importante, debe ser el id de la rutina
+                  name: editedRoutineName,
+                  startDate: editedStartDate,
+                  endDate: editedEndDate,
+                  description: editedDescription,
+                  client_id: routine.client_id // si lo necesitas
+                });
+                setEditingRoutineDetails(false);
+              }}
               className="px-6 py-2 rounded-xl bg-black text-white hover:bg-gray-800 transition-colors font-semibold shadow-md flex items-center justify-center"
               title="Guardar Cambios"
             >
