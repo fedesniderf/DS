@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { generateUniqueId } from '../utils/helpers';
 
-const ClientRoutineList = ({ client, routines, onSelectRoutine, onAddRoutine, isEditable, onDeleteRoutine, onUpdateRoutine }) => {
+const ClientRoutineList = ({
+  client,
+  routines,
+  onSelectRoutine = () => {},
+  onAddRoutine = () => {},
+  isEditable,
+  onDeleteRoutine = () => {},
+  onUpdateRoutine = () => {},
+}) => {
   const [newRoutineName, setNewRoutineName] = useState('');
   const [newRoutineStartDate, setNewRoutineStartDate] = useState('');
   const [newRoutineEndDate, setNewRoutineEndDate] = useState('');
