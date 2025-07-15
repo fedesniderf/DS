@@ -88,7 +88,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
   };
 
   // Agrupar ejercicios por día y luego por sección
-  const groupedExercises = routine.exercises.reduce((acc, exercise) => {
+  const groupedExercises = (routine.exercises || []).reduce((acc, exercise) => {
     const day = exercise.day || 'Sin Día';
     const section = exercise.section || 'Sin Sección';
 
@@ -446,7 +446,7 @@ const RoutineDetail = ({ routine, onUpdateRoutine, isEditable, onAddExerciseClic
                             <tr>
                               <td colSpan={isEditable ? 10 : 9} className="p-4 bg-gray-50 border-t border-gray-200">
                                 <h5 className="text-lg font-semibold text-gray-700 mb-3 flex items-center">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                   </svg>
                                   Seguimiento de {exercise.name}
