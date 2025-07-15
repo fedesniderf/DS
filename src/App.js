@@ -253,9 +253,10 @@ const App = () => {
                 />
               )}
 
-              {currentPage === 'routines' && selectedClient && (
+              {/* Mostrar rutinas: para admin, mostrar todas si no hay cliente seleccionado */}
+              {currentPage === 'routines' && (
                 <ClientRoutineList
-                  client={selectedClient}
+                  client={selectedClient} // será null si no hay cliente seleccionado
                   routines={clientRoutines}
                   users={users}
                   onSelectRoutine={handleSelectRoutine}

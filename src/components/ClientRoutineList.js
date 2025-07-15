@@ -55,14 +55,21 @@ const ClientRoutineList = ({
       ) : (
         <div className="space-y-4">
           {routines.map((routine) => {
-            const cliente = users.find(u => u.client_id === routine.client_id);
+            // Si no hay cliente seleccionado, busca el cliente de la rutina
+            const cliente = client
+              ? client
+              : users?.find(u => u.client_id === routine.client_id);
+
             return (
               <div key={routine.id} className="bg-gray-50 p-4 rounded-xl shadow-sm border border-gray-200">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="text-xl font-semibold text-gray-700">{routine.name}</h3>
-                  <span className="text-sm text-gray-500">
-                    {cliente ? cliente.fullName || cliente.email : routine.client_id}
-                  </span>
+                  {/* Muestra el nombre/email del cliente si hay varios */}
+                  {!client && (
+                    <span className="text-sm text-gray-500">
+                      {cliente ? cliente.fullName || cliente.email : routine.client_id}
+                    </span>
+                  )}
                   <div className="flex space-x-2">
                     <button
                       onClick={() => onSelectRoutine(routine)}
@@ -163,14 +170,3 @@ const ClientRoutineList = ({
 };
 
 export default ClientRoutineList;
-
-<ClientRoutineList
-  client={selectedClient}
-  routines={clientRoutines}
-  users={users}
-  onSelectRoutine={handleSelectRoutine}
-  onAddRoutine={handleAddRoutine}
-  isEditable={isEditable}
-  onDeleteRoutine={handleDeleteRoutine}
-  onUpdateRoutine={handleUpdateRoutine}
-/>
