@@ -90,7 +90,15 @@ const ClientDashboardAdmin = ({ clients, onSelectClient }) => {
                           </div>
                           <div>
                             <p><span className="font-semibold">Teléfono:</span> {client.phone || 'N/A'}</p>
-                            <p><span className="font-semibold">Objetivos:</span> {client.goals && client.goals.length > 0 ? client.goals.join(', ') : 'N/A'}</p>
+                            <p><span className="font-semibold">Objetivos:</span>{" "}
+                              {Array.isArray(client.goals)
+                                ? client.goals.length > 0
+                                  ? client.goals.join(', ')
+                                  : 'N/A'
+                                : typeof client.goals === 'string' && client.goals.trim() !== ''
+                                  ? client.goals
+                                  : 'N/A'}
+                            </p>
                           </div>
                         </div>
                       </td>
