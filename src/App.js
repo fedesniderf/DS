@@ -33,21 +33,26 @@ const App = () => {
   const memoizedRoutines = useMemo(() => routines, [routines]);
 
   // Usar useCallback para funciones que se pasan como props para evitar re-renders innecesarios
-  const handleLogin = useCallback((email, password, method, roleAttempt) => {
+  const handleLogin = useCallback(async (email, password, method, roleAttempt) => {
     if (method === 'email') {
-      const user = memoizedUsers.find(u => u.email === email && u.password === password);
-      if (user) {
-        // Aquí se modifica la lógica para que el rol del usuario determine la página de inicio
+      // Consulta a Supabase
+      const { data: users, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password);
+
+      if (error) {
+        alert('Error consultando usuario en Supabase.');
+        return;
+      }
+
+      if (users && users.length > 0) {
+        const user = users[0];
         setCurrentUser(user);
         if (user.role === 'client') {
-          const clientData = memoizedClients.find(c => c.email === user.email);
-          if (clientData) {
-            setSelectedClient(clientData);
-            setCurrentPage('clientDashboard');
-          } else {
-            alert('No se encontraron datos de cliente para este usuario. Por favor, contacta a tu entrenador.');
-            setCurrentUser(null); // Si no hay datos de cliente, no se loguea
-          }
+          setSelectedClient(user); // O adapta según tu lógica de clientes
+          setCurrentPage('clientDashboard');
         } else if (user.role === 'admin') {
           setCurrentPage('adminClientDashboard');
         }
@@ -55,16 +60,9 @@ const App = () => {
         alert('Credenciales incorrectas.');
       }
     } else if (method === 'google') {
-      // Lógica para Google, asumiendo que siempre es admin para este ejemplo
-      const googleUser = memoizedUsers.find(u => u.email === 'trainer@example.com'); // Asumiendo un usuario admin para Google
-      if (googleUser) {
-        setCurrentUser(googleUser);
-        setCurrentPage('adminClientDashboard');
-      } else {
-        alert('Error al iniciar sesión con Google.');
-      }
+      alert('Login con Google no implementado.');
     }
-  }, [memoizedUsers, memoizedClients]);
+  }, []);
 
   const handleRegister = useCallback(async (userData) => {
     // Verifica si el email ya existe en Supabase
