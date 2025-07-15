@@ -81,6 +81,10 @@ export async function obtenerClientes() {
 async function crearRutinaParaPrimerCliente() {
   const clientes = await obtenerClientes();
   const cliente = clientes[0];
+  console.log('Clientes:', clientes);
+  console.log('Primer cliente:', cliente);
+  console.log('client_id:', cliente?.client_id);
+
   const nombreRutina = "Rutina de fuerza";
   const ejercicios = [
     // ...array de ejercicios...
