@@ -2,7 +2,12 @@ import { supabase } from '../supabaseClient';
 
 // Guardar una rutina y sus ejercicios
 export async function guardarRutinaYejercicios(clienteId, nombreRutina, ejercicios) {
-  
+  if (!clienteId) {
+    alert('Error: clienteId no está definido');
+    return;
+  }
+  console.log('clienteId:', clienteId);
+
   // 1. Insertar rutina
   const { data: rutina, error: errorRutina } = await supabase
     .from('rutinas')
@@ -71,3 +76,6 @@ export async function obtenerClientes() {
 
   return clientes;
 }
+
+// Llamada a la función guardarRutinaYejercicios con los parámetros adecuados
+guardarRutinaYejercicios(cliente.id, nombreRutina, ejercicios);
