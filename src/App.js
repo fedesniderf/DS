@@ -23,7 +23,7 @@ const App = () => {
   const [clients, setClients] = useState(defaultClients);
   const [routines, setRoutines] = useState(defaultRoutines);
   const [currentUser, setCurrentUser] = useState(null);
-  const [users, setUsers] = useState(defaultUsers);
+  const [users, setUsers] = useState([]);
   const [showAssignRoutineModal, setShowAssignRoutineModal] = useState(false);
 
   // Memoizar los datos de clientes y usuarios si no cambian con frecuencia
@@ -289,6 +289,19 @@ const App = () => {
 
   const isRoutineEditable = currentUser && currentUser.role === 'admin';
 
+  useEffect(() => {
+    async function fetchUsers() {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('*');
+      if (!error) setUsers(data);
+    }
+    // Puedes llamar a fetchUsers cuando el usuario es admin y entra a la sección de administración
+    if (currentUser && currentUser.role === 'admin' && currentPage === 'userManagement') {
+      fetchUsers();
+    }
+  }, [currentUser, currentPage]);
+
   if (!currentUser) {
     if (currentPage === 'register') {
       return (
@@ -354,7 +367,7 @@ const App = () => {
 
               {currentPage === 'userManagement' && (
                 <UserManagementScreen
-                  users={memoizedUsers}
+                  users={users}
                   onDeleteUser={handleDeleteUser}
                   onResetPassword={handleResetUserPassword}
                 />
