@@ -196,7 +196,12 @@ const RoutineDetail = ({
     }));
   };
 
-  // Eliminado weeksArray duplicado, se usa el de getWeeksArray()
+
+  // Calcular el array de semanas para el seguimiento semanal
+  const weeksArray = (() => {
+    const numWeeks = calculateWeeks(routine.startDate, routine.endDate);
+    return Array.from({ length: numWeeks }, (_, i) => i + 1);
+  })();
 
   const handleUpdateRoutine = async (updatedRoutine) => {
     // Actualiza la rutina en Supabase, incluyendo la columna description
