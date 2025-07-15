@@ -242,7 +242,7 @@ const App = () => {
     const { error } = await supabase
       .from('usuarios')
       .update({ role: newRole })
-      .eq('client_id', user.client_id);
+      .eq('id', user.id);
     if (error) {
       alert('Error actualizando rol: ' + error.message);
       return;
