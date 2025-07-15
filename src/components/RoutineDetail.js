@@ -214,22 +214,29 @@ const RoutineDetail = ({
       alert('El nombre del ejercicio es obligatorio');
       return;
     }
-    // Crea un id único para el ejercicio (puedes usar Date.now() o una librería uuid)
     const exerciseWithId = { ...newExercise, id: Date.now() };
     const updatedExercises = [...(routine.exercises || []), exerciseWithId];
 
     // Actualiza en la base de datos y en la UI
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('rutinas')
       .update({ exercises: updatedExercises })
-      .eq('id', routine.id);
+      .eq('id', routine.id)
+      .select();
 
     if (error) {
       alert('Error al guardar el ejercicio');
       return;
     }
 
-    onUpdateRoutine({ ...routine, exercises: updatedExercises });
+    // Usa la rutina actualizada que devuelve Supabase
+    if (data && data[0]) {
+      onUpdateRoutine(data[0]);
+    } else {
+      // Fallback por si data no viene, usa el local
+      onUpdateRoutine({ ...routine, exercises: updatedExercises });
+    }
+
     setShowAddExerciseForm(false);
     setNewExercise({
       name: '',
