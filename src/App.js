@@ -97,7 +97,7 @@ const App = () => {
       }]);
 
     if (error) {
-      alert('Error guardando usuario en Supabase.');
+      alert('Error guardando usuario en Supabase: ' + error.message);
       return;
     }
 
