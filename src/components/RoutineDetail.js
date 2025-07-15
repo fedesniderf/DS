@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import DatePicker from './DatePicker';
-import { supabase } from '../supabaseClient'; // Asegúrate de importar supabase
+import { supabase } from '../supabaseClient';
 
 const RoutineDetail = ({
   routine,
@@ -118,8 +118,8 @@ const RoutineDetail = ({
     setEditingRoutineDetails(false);
   };
 
-  // Agrupar ejercicios por día y luego por sección
-  const exercises = routine.exercises || [];
+  // Agrupar ejercicios por día y sección
+  const exercises = Array.isArray(routine.exercises) ? routine.exercises : [];
   const groupedExercises = exercises.reduce((acc, exercise) => {
     const day = exercise.day || 'Sin Día';
     const section = exercise.section || 'Sin Sección';
@@ -216,7 +216,7 @@ const RoutineDetail = ({
       return;
     }
     const exerciseWithId = { ...newExercise, id: Date.now() };
-    const updatedExercises = [...(routine.exercises || []), exerciseWithId];
+    const updatedExercises = [...(Array.isArray(routine.exercises) ? routine.exercises : []), exerciseWithId];
 
     // Actualiza en la base de datos y en la UI
     const { data, error } = await supabase
@@ -230,11 +230,13 @@ const RoutineDetail = ({
       return;
     }
 
+    // Log para depuración
+    console.log('Respuesta de Supabase al agregar ejercicio:', data);
+
     // Usa la rutina actualizada que devuelve Supabase
     if (data && data[0]) {
       onUpdateRoutine(data[0]);
     } else {
-      // Fallback por si data no viene, usa el local
       onUpdateRoutine({ ...routine, exercises: updatedExercises });
     }
 
