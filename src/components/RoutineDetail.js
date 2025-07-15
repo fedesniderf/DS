@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ExerciseTrackingModal from './ExerciseTrackingModal';
 import DatePicker from './DatePicker';
 import { supabase } from '../supabaseClient';
 
@@ -28,6 +29,29 @@ const RoutineDetail = ({
 
   // Estado para colapsar/expandir el seguimiento de cada ejercicio
   const [expandedExerciseTracking, setExpandedExerciseTracking] = useState({});
+  // Estado para modal de tracking
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+
+  // Obtener o inicializar el tracking semanal de ejercicios
+  const exerciseTracking = routine.exerciseTracking || {};
+
+  // Calcular semanas de la rutina
+  const getWeeksArray = () => {
+    if (!routine.startDate || !routine.endDate) return [];
+    const start = new Date(routine.startDate);
+    const end = new Date(routine.endDate);
+    const weeks = [];
+    let current = new Date(start);
+    let weekNum = 1;
+    while (current <= end) {
+      weeks.push(weekNum);
+      current.setDate(current.getDate() + 7);
+      weekNum++;
+    }
+    return weeks;
+  };
+  const weeksArray = getWeeksArray();
 
   // Estado para el seguimiento diario de PF y PE
   const [selectedDateForDailyTracking, setSelectedDateForDailyTracking] = useState(null);
@@ -193,8 +217,7 @@ const RoutineDetail = ({
     }));
   };
 
-  const numWeeks = routine.startDate && routine.endDate ? calculateWeeks(routine.startDate, routine.endDate) : 0;
-  const weeksArray = Array.from({ length: numWeeks }, (_, i) => i + 1);
+  // Eliminado weeksArray duplicado, se usa el de getWeeksArray()
 
   const handleUpdateRoutine = async (updatedRoutine) => {
     // Actualiza la rutina en Supabase, incluyendo la columna description
@@ -470,6 +493,7 @@ const RoutineDetail = ({
                         {isEditable && (
                           <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         )}
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Seguimiento</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -614,6 +638,38 @@ const RoutineDetail = ({
                                 </button>
                               </td>
                             )}
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <button
+                                className="px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center"
+                                title="Seguimiento semanal"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setSelectedExercise(exercise);
+                                  setShowTrackingModal(true);
+                                }}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a4 4 0 014-4h4m0 0V7m0 4l-4-4m4 4l4-4" />
+                                </svg>
+                              </button>
+                            </td>
+      {/* Modal de seguimiento semanal por ejercicio */}
+      {showTrackingModal && selectedExercise && (
+        <ExerciseTrackingModal
+          exercise={selectedExercise}
+          weeks={weeksArray}
+          tracking={exerciseTracking[selectedExercise.id] || {}}
+          onSave={trackingData => {
+            // Actualizar el objeto exerciseTracking y guardar
+            const updatedTracking = { ...exerciseTracking, [selectedExercise.id]: trackingData };
+            onUpdateRoutine({ ...routine, exerciseTracking: updatedTracking });
+          }}
+          onClose={() => {
+            setShowTrackingModal(false);
+            setSelectedExercise(null);
+          }}
+        />
+      )}
                           </tr>
                           {/* Sección de Seguimiento para cada ejercicio, se muestra/oculta al hacer clic en la fila */}
                           {expandedExerciseTracking[exercise.id] && (
