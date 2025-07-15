@@ -46,6 +46,8 @@ const RoutineDetail = ({
   const [showAddExerciseForm, setShowAddExerciseForm] = useState(false);
   // Estado para modal de tracking
   const [showTrackingModal, setShowTrackingModal] = useState(false);
+  // Estado para expandir/colapsar el seguimiento diario
+  const [expandedDailyTracking, setExpandedDailyTracking] = useState(false);
   const handleEditClick = (exercise) => {
     setEditingExerciseId(exercise.id);
     setEditedSets(exercise.sets);
