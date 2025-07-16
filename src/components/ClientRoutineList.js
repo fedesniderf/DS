@@ -64,7 +64,7 @@ const ClientRoutineList = ({
               : users?.find(u => u.client_id === routine.client_id);
 
             return (
-              <div key={routine.id || routine.client_id + routine.name} className="bg-gray-50 p-4 rounded-xl shadow-sm border border-gray-200">
+              <div key={routine.id || `${routine.client_id}-${routine.name}-${routine.startDate}`} className="bg-gray-50 p-4 rounded-xl shadow-sm border border-gray-200">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="text-xl font-semibold text-gray-700">{routine.name}</h3>
                   {/* 
@@ -87,14 +87,19 @@ const ClientRoutineList = ({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </button>
+                    {/* Botón para eliminar rutina, solo para admin */}
                     {isEditable && (
                       <button
-                        onClick={() => onDeleteRoutine(routine.id)}
+                        onClick={() => {
+                          if (window.confirm('¿Estás seguro de que quieres eliminar esta rutina?')) {
+                            onDeleteRoutine(routine);
+                          }
+                        }}
                         className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors font-semibold shadow-md flex items-center justify-center"
-                        title="Eliminar"
+                        title="Eliminar Rutina"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.924a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m-1.022.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.924a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165M12 2.25h.007v.008H12V2.25z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.924a2.25 2.25 0 01-2.244-2.077L5.072 5.455m11.35.01L12 2.25 7.672 5.455m11.35.01C18.723 5.67 16.16 6.228 12 6.228s-6.723-.558-7.672-.772M9 12h6" />
                         </svg>
                       </button>
                     )}
