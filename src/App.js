@@ -315,7 +315,7 @@ const App = () => {
       }
       updateObj.exercises = exercises;
     } else if (action === 'addDailyTracking') {
-      // Agregar seguimiento diario
+      // Agregar seguimiento diario de ejercicios (datos antiguos)
       const dailyTracking = { ...selectedRoutine.dailyTracking };
       const { date, PF, PE } = data;
       if (!dailyTracking[date]) dailyTracking[date] = [];
@@ -333,6 +333,23 @@ const App = () => {
         exercises[exerciseIndex] = { ...exercise, weeklyData };
         updateObj.exercises = exercises;
       }
+    } else if (action === 'updateRoutineInfo') {
+      // Actualizar información básica de la rutina
+      updateObj = {
+        name: data.name,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        description: data.description
+      };
+    } else if (action === 'addDailyRoutineTracking') {
+      // Agregar seguimiento diario de rutina
+      const dailyTracking = { ...selectedRoutine.dailyTracking };
+      dailyTracking[data.date] = {
+        pf: data.pf,
+        pe: data.pe,
+        timestamp: data.timestamp
+      };
+      updateObj.dailyTracking = dailyTracking;
     } else {
       // Actualización general de rutina
       updateObj = { ...selectedRoutine, ...updatedRoutine };

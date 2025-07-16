@@ -7,6 +7,10 @@ const RoutineDetail = ({
   onAddExerciseClick = () => {},
   canAddDailyTracking = false,
 }) => {
+  // Debug: Verificar que routine tiene ID
+  console.log('RoutineDetail - routine recibida:', routine);
+  console.log('RoutineDetail - routine.id:', routine?.id);
+
   // ✅ CORRECTO - Todos los hooks DENTRO de la función del componente
   const [showExerciseModal, setShowExerciseModal] = React.useState(false);
   const [editExercise, setEditExercise] = React.useState(null);
@@ -18,6 +22,7 @@ const RoutineDetail = ({
   const [exerciseRest, setExerciseRest] = React.useState("");
   const [exerciseDay, setExerciseDay] = React.useState("");
   const [exerciseSection, setExerciseSection] = React.useState("");
+  const [exerciseMedia, setExerciseMedia] = React.useState(""); // Nuevo campo para media
 
   // Handler para editar ejercicio
   const handleEditExerciseClick = (ex) => {
@@ -30,6 +35,7 @@ const RoutineDetail = ({
     setExerciseRest(ex.rest || "");
     setExerciseDay(ex.day || "");
     setExerciseSection(ex.section || "");
+    setExerciseMedia(ex.media || ""); // Incluir el campo media
     setShowExerciseModal(true);
   };
 
@@ -45,6 +51,39 @@ const RoutineDetail = ({
   };
   // Definir exercises al inicio para evitar ReferenceError
   const exercises = Array.isArray(routine.exercises) ? routine.exercises : [];
+
+  // Estados para colapso/expansión - Inicializar con todos los días y secciones colapsadas
+  const [collapsedDays, setCollapsedDays] = React.useState(() => {
+    // Crear un Set con todos los días que tienen ejercicios
+    const allDays = new Set();
+    exercises.forEach(ex => {
+      const day = ex.day || 'Sin día';
+      allDays.add(day);
+    });
+    return allDays;
+  });
+
+  // Función para renderizar detalles del ejercicio
+  const renderExerciseDetails = (ex) => (
+    <div className="grid grid-cols-2 gap-2 mb-2 text-sm text-gray-700">
+      {ex.sets && <div><span className="font-semibold">Series:</span> {ex.sets}</div>}
+      {ex.reps && <div><span className="font-semibold">Reps:</span> {ex.reps}</div>}
+      {ex.time && <div><span className="font-semibold">Tiempo (seg):</span> {ex.time}</div>}
+      {ex.rest && <div><span className="font-semibold">Descanso (seg):</span> {ex.rest}</div>}
+      {ex.weight && <div><span className="font-semibold">Peso (Kg):</span> {ex.weight}</div>}
+    </div>
+  );
+
+  const [collapsedSections, setCollapsedSections] = React.useState(() => {
+    // Crear un Set con todas las combinaciones día-sección que tienen ejercicios
+    const allSections = new Set();
+    exercises.forEach(ex => {
+      const day = ex.day || 'Sin día';
+      const section = ex.section || 'Sin sección';
+      allSections.add(`${day}-${section}`);
+    });
+    return allSections;
+  });
 
   // Opciones para el desplegable de día
   const dayOptions = [
@@ -73,6 +112,9 @@ const RoutineDetail = ({
   const [weekNumber, setWeekNumber] = React.useState("");
   const [weekWeight, setWeekWeight] = React.useState("");
   const [weekNotes, setWeekNotes] = React.useState("");
+  
+  // Estado para colapsar seguimiento semanal por ejercicio
+  const [collapsedWeeklyTracking, setCollapsedWeeklyTracking] = React.useState(new Set());
 
   // Estado para seguimiento diario general de rutina
   const [showDailyModal, setShowDailyModal] = React.useState(false);
@@ -80,9 +122,12 @@ const RoutineDetail = ({
   const [dailyPF, setDailyPF] = React.useState("");
   const [dailyPE, setDailyPE] = React.useState("");
 
-  // Estados para colapso/expansión
-  const [collapsedDays, setCollapsedDays] = React.useState(new Set());
-  const [collapsedSections, setCollapsedSections] = React.useState(new Set());
+  // Estado para editar información de rutina
+  const [showRoutineModal, setShowRoutineModal] = React.useState(false);
+  const [routineName, setRoutineName] = React.useState("");
+  const [routineStartDate, setRoutineStartDate] = React.useState("");
+  const [routineEndDate, setRoutineEndDate] = React.useState("");
+  const [routineDescription, setRoutineDescription] = React.useState("");
 
   // Funciones para manejar colapso/expansión
   const toggleDay = (day) => {
@@ -103,6 +148,96 @@ const RoutineDetail = ({
       newCollapsedSections.add(daySection);
     }
     setCollapsedSections(newCollapsedSections);
+  };
+
+  const toggleWeeklyTracking = (exerciseId) => {
+    const newCollapsedWeeklyTracking = new Set(collapsedWeeklyTracking);
+    if (newCollapsedWeeklyTracking.has(exerciseId)) {
+      newCollapsedWeeklyTracking.delete(exerciseId);
+    } else {
+      newCollapsedWeeklyTracking.add(exerciseId);
+    }
+    setCollapsedWeeklyTracking(newCollapsedWeeklyTracking);
+  };
+
+  // Función para calcular el mayor peso levantado por ejercicio
+  const getMaxWeightForExercise = (exercise) => {
+    if (!exercise.weeklyData) return 0;
+    const weights = Object.values(exercise.weeklyData)
+      .map(data => parseFloat(data.weight) || 0)
+      .filter(weight => weight > 0);
+    return weights.length > 0 ? Math.max(...weights) : 0;
+  };
+
+  // Función para renderizar todas las semanas del seguimiento
+  const renderWeeklyTracking = (exercise) => {
+    if (!routine.startDate || !routine.endDate) return null;
+    
+    const weekOptions = getWeekOptions();
+    const isCollapsed = collapsedWeeklyTracking.has(exercise.id);
+    const maxWeight = getMaxWeightForExercise(exercise);
+    
+    return (
+      <div className="mb-4">
+        <div 
+          className="flex items-center justify-between cursor-pointer p-2 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+          onClick={() => toggleWeeklyTracking(exercise.id)}
+        >
+          <h6 className="text-sm font-semibold text-purple-700">
+            Seguimiento Semanal {maxWeight > 0 && `(Máximo: ${maxWeight} kg)`}
+          </h6>
+          <svg 
+            className={`w-4 h-4 text-purple-700 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        
+        {!isCollapsed && (
+          <div className="mt-2">
+            <table className="w-full text-sm border border-purple-300 rounded-lg overflow-hidden">
+              <thead className="bg-purple-100">
+                <tr>
+                  <th className="px-2 py-1">Semana</th>
+                  <th className="px-2 py-1">Peso (kg)</th>
+                  <th className="px-2 py-1">Notas</th>
+                  <th className="px-2 py-1">Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {weekOptions.map(week => {
+                  const weekData = exercise.weeklyData?.[week.value];
+                  return (
+                    <tr key={week.value} className="border-t">
+                      <td className="px-2 py-1 font-medium">{week.label}</td>
+                      <td className="px-2 py-1">
+                        {weekData?.weight ? `${weekData.weight} kg` : '-'}
+                      </td>
+                      <td className="px-2 py-1">
+                        {weekData?.generalNotes || '-'}
+                      </td>
+                      <td className="px-2 py-1 text-xs text-gray-500">
+                        {weekData?.date || '-'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {maxWeight > 0 && (
+              <div className="mt-2 p-2 bg-green-50 rounded text-sm">
+                <span className="font-semibold text-green-700">
+                  Mayor peso levantado: {maxWeight} kg
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const handleOpenWeeklyModal = (exercise) => {
@@ -139,6 +274,15 @@ const RoutineDetail = ({
   const handleSaveDaily = () => {
     if (!dailyDate || !dailyPF || !dailyPE) return;
     
+    // Intentar obtener el ID de diferentes formas
+    const routineId = routine?.id || routine?.routine_id || routine?.client_id;
+    
+    if (!routineId) {
+      console.error('Error: ID de rutina no encontrado para seguimiento diario', routine);
+      alert('Error: No se encontró el ID de la rutina. Por favor, recarga la página.');
+      return;
+    }
+    
     // Crear el objeto de datos diarios para la rutina
     const dailyData = {
       date: dailyDate,
@@ -149,7 +293,7 @@ const RoutineDetail = ({
 
     // Llamar a la función para actualizar la rutina
     onUpdateRoutine({
-      id: routine.id,
+      id: routineId,
       action: 'addDailyRoutineTracking',
       data: dailyData
     });
@@ -157,8 +301,75 @@ const RoutineDetail = ({
     handleCloseDailyModal();
   };
 
+  // Handlers para editar información de rutina
+  const handleOpenRoutineModal = () => {
+    setRoutineName(routine.name || "");
+    setRoutineStartDate(routine.startDate || "");
+    setRoutineEndDate(routine.endDate || "");
+    setRoutineDescription(routine.description || "");
+    setShowRoutineModal(true);
+  };
+
+  const handleCloseRoutineModal = () => {
+    setShowRoutineModal(false);
+    setRoutineName("");
+    setRoutineStartDate("");
+    setRoutineEndDate("");
+    setRoutineDescription("");
+  };
+
+  const handleSaveRoutine = () => {
+    // Debug adicional al momento de guardar
+    console.log('handleSaveRoutine - routine completa:', routine);
+    console.log('handleSaveRoutine - routine.id:', routine?.id);
+    console.log('handleSaveRoutine - typeof routine.id:', typeof routine?.id);
+    
+    // Intentar obtener el ID de diferentes formas
+    const routineId = routine?.id || routine?.routine_id || routine?.client_id;
+    console.log('handleSaveRoutine - routineId encontrado:', routineId);
+    
+    // Validar que exista el ID de la rutina
+    if (!routine || !routineId) {
+      console.error('Error: ID de rutina no encontrado', routine);
+      alert('Error: No se encontró el ID de la rutina. Por favor, recarga la página.');
+      return;
+    }
+
+    // Crear el objeto de datos de la rutina
+    const routineData = {
+      name: routineName,
+      startDate: routineStartDate,
+      endDate: routineEndDate,
+      description: routineDescription
+    };
+
+    console.log('Guardando rutina:', {
+      id: routineId,
+      action: 'updateRoutineInfo',
+      data: routineData
+    });
+
+    // Llamar a la función para actualizar la rutina
+    onUpdateRoutine({
+      id: routineId,
+      action: 'updateRoutineInfo',
+      data: routineData
+    });
+
+    handleCloseRoutineModal();
+  };
+
   const handleSaveWeekly = () => {
     if (!weekNumber || !weeklyExercise) return;
+    
+    // Intentar obtener el ID de diferentes formas
+    const routineId = routine?.id || routine?.routine_id || routine?.client_id;
+    
+    if (!routineId) {
+      console.error('Error: ID de rutina no encontrado para seguimiento semanal', routine);
+      alert('Error: No se encontró el ID de la rutina. Por favor, recarga la página.');
+      return;
+    }
     
     // Crear el objeto de datos semanales
     const weeklyData = {
@@ -170,7 +381,7 @@ const RoutineDetail = ({
 
     // Llamar a la función para actualizar la rutina
     onUpdateRoutine({
-      id: routine.id,
+      id: routineId,
       action: 'addWeeklyTracking',
       data: {
         exerciseId: weeklyExercise.id,
@@ -255,7 +466,21 @@ const RoutineDetail = ({
                       {groupedByDay[day][sectionName].map((ex) => (
                         <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow">
                           <div className="flex items-center justify-between mb-2">
-                            <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                            <div className="flex items-center gap-2">
+                              <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                              {ex.media && (
+                                <button
+                                  className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                                  title="Ver video del ejercicio"
+                                  onClick={() => window.open(ex.media, '_blank')}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
                             <div className="flex gap-2">
                               {/* Botón para seguimiento semanal */}
                               {canAddDailyTracking && (
@@ -283,40 +508,12 @@ const RoutineDetail = ({
                               )}
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-2 mb-2 text-sm text-gray-700">
-                            <div><span className="font-semibold">Series:</span> {ex.sets || '-'}</div>
-                            <div><span className="font-semibold">Repeticiones:</span> {ex.reps || '-'}</div>
-                            <div><span className="font-semibold">Peso (Kg):</span> {ex.weight || '-'}</div>
-                            <div><span className="font-semibold">Tiempo (seg):</span> {ex.time || '-'}</div>
-                            <div><span className="font-semibold">Descanso (seg):</span> {ex.rest || '-'}</div>
-                          </div>
+                          
+                          {/* Mostrar detalles del ejercicio */}
+                          {renderExerciseDetails(ex)}
 
                           {/* Mostrar seguimiento semanal */}
-                          {ex.weeklyData ? (
-                            <div className="mb-4">
-                              <h6 className="text-sm font-semibold text-gray-700 mb-2">Seguimiento Semanal:</h6>
-                              <table className="w-full text-sm border border-gray-300 rounded-lg overflow-hidden">
-                                <thead className="bg-purple-100">
-                                  <tr>
-                                    <th className="px-2 py-1">Semana</th>
-                                    <th className="px-2 py-1">Peso</th>
-                                    <th className="px-2 py-1">Notas</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {Object.entries(ex.weeklyData).map(([week, data]) => (
-                                    <tr key={week} className="border-t">
-                                      <td className="px-2 py-1">{week}</td>
-                                      <td className="px-2 py-1">{data.weight}</td>
-                                      <td className="px-2 py-1">{data.generalNotes}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : (
-                            <p className="text-gray-500 text-sm mb-2">Sin datos de seguimiento semanal.</p>
-                          )}
+                          {renderWeeklyTracking(ex)}
                         </div>
                       ))}
                     </div>
@@ -351,7 +548,21 @@ const RoutineDetail = ({
                       {groupedByDay[day][sectionName].map((ex) => (
                         <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow">
                           <div className="flex items-center justify-between mb-2">
-                            <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                            <div className="flex items-center gap-2">
+                              <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                              {ex.media && (
+                                <button
+                                  className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                                  title="Ver video del ejercicio"
+                                  onClick={() => window.open(ex.media, '_blank')}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
                             <div className="flex gap-2">
                               {/* Botón para seguimiento semanal */}
                               {canAddDailyTracking && (
@@ -379,40 +590,12 @@ const RoutineDetail = ({
                               )}
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-2 mb-2 text-sm text-gray-700">
-                            <div><span className="font-semibold">Series:</span> {ex.sets || '-'}</div>
-                            <div><span className="font-semibold">Repeticiones:</span> {ex.reps || '-'}</div>
-                            <div><span className="font-semibold">Peso (Kg):</span> {ex.weight || '-'}</div>
-                            <div><span className="font-semibold">Tiempo (seg):</span> {ex.time || '-'}</div>
-                            <div><span className="font-semibold">Descanso (seg):</span> {ex.rest || '-'}</div>
-                          </div>
+                          
+                          {/* Mostrar detalles del ejercicio */}
+                          {renderExerciseDetails(ex)}
 
                           {/* Mostrar seguimiento semanal */}
-                          {ex.weeklyData ? (
-                            <div className="mb-4">
-                              <h6 className="text-sm font-semibold text-gray-700 mb-2">Seguimiento Semanal:</h6>
-                              <table className="w-full text-sm border border-gray-300 rounded-lg overflow-hidden">
-                                <thead className="bg-purple-100">
-                                  <tr>
-                                    <th className="px-2 py-1">Semana</th>
-                                    <th className="px-2 py-1">Peso</th>
-                                    <th className="px-2 py-1">Notas</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {Object.entries(ex.weeklyData).map(([week, data]) => (
-                                    <tr key={week} className="border-t">
-                                      <td className="px-2 py-1">{week}</td>
-                                      <td className="px-2 py-1">{data.weight}</td>
-                                      <td className="px-2 py-1">{data.generalNotes}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : (
-                            <p className="text-gray-500 text-sm mb-2">Sin datos de seguimiento semanal.</p>
-                          )}
+                          {renderWeeklyTracking(ex)}
                         </div>
                       ))}
                     </div>
@@ -428,41 +611,79 @@ const RoutineDetail = ({
 
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md">
-      <div className="mb-8">
+      {/* Sección de información de la rutina */}
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-700">Ejercicios por Día</h3>
-          {/* Botón ícono para agregar ejercicio, solo para admin */}
-          {isEditable && (
+          <h2 className="text-lg font-bold text-gray-700">Información de la rutina</h2>
+          {/* Botón para editar información de rutina, solo para admin y si existe ID */}
+          {isEditable && (routine?.id || routine?.routine_id || routine?.client_id) && (
             <button
-              onClick={() => onAddExerciseClick()}
-              className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-md"
-              title="Agregar Ejercicio"
+              onClick={handleOpenRoutineModal}
+              className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-md"
+              title="Editar información de rutina"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
               </svg>
             </button>
           )}
         </div>
         
-        {/* Botón para seguimiento diario general de rutina */}
-        {canAddDailyTracking && (
-          <button
-            onClick={handleOpenDailyModal}
-            className="mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-md flex items-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5 mr-2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 21 9v7.5m-9-13.5h.008v.008H12V8.25Z" />
-            </svg>
-            Seguimiento Diario
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="font-semibold text-gray-700">Fecha de inicio:</span>
+            <p className="text-gray-600">{routine.startDate ? new Date(routine.startDate).toLocaleDateString() : "No definida"}</p>
+          </div>
+          <div>
+            <span className="font-semibold text-gray-700">Fecha de fin:</span>
+            <p className="text-gray-600">{routine.endDate ? new Date(routine.endDate).toLocaleDateString() : "No definida"}</p>
+          </div>
+        </div>
+        
+        {routine.description && routine.description.trim() !== "" && (
+          <div className="mt-4">
+            <span className="font-semibold text-gray-700">Descripción:</span>
+            <p className="text-gray-600 mt-1">{routine.description}</p>
+          </div>
         )}
+      </div>
+
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-700">Ejercicios</h3>
+          <div className="flex items-center gap-3">
+            {/* Botón para seguimiento diario general de rutina */}
+            {canAddDailyTracking && (
+              <button
+                onClick={handleOpenDailyModal}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-md flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5 mr-2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 21 9v7.5m-9-13.5h.008v.008H12V8.25Z" />
+                </svg>
+                PF y PE
+              </button>
+            )}
+            {/* Botón ícono para agregar ejercicio, solo para admin */}
+            {isEditable && (
+              <button
+                onClick={() => onAddExerciseClick()}
+                className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-md"
+                title="Agregar Ejercicio"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
         {ejerciciosPorDia}
         
         {/* Mostrar seguimiento diario general de la rutina */}
         {routine.dailyTracking && Object.keys(routine.dailyTracking).length > 0 && (
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h4 className="text-lg font-bold text-blue-700 mb-4">Seguimiento Diario de la Rutina</h4>
+            <h4 className="text-lg font-bold text-blue-700 mb-4">Percepciones</h4>
             <div className="max-h-40 overflow-y-auto">
               <table className="w-full text-sm border border-blue-300 rounded-lg overflow-hidden">
                 <thead className="bg-blue-100">
@@ -570,44 +791,148 @@ const RoutineDetail = ({
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Agregar seguimiento semanal</h3>
-            <select
-              className="w-full border rounded px-3 py-2 mb-4"
-              value={weekNumber}
-              onChange={e => setWeekNumber(e.target.value)}
-            >
-              <option value="">Selecciona la semana</option>
-              {getWeekOptions().map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <input
-              type="number"
-              className="w-full border rounded px-3 py-2 mb-4"
-              placeholder="Peso (Kg)"
-              value={weekWeight}
-              onChange={e => setWeekWeight(e.target.value)}
-            />
-            <textarea
-              className="w-full border rounded px-3 py-2 mb-4"
-              placeholder="Notas (máx 100 caracteres)"
-              maxLength={100}
-              value={weekNotes}
-              onChange={e => setWeekNotes(e.target.value)}
-            />
+            <p className="text-sm text-gray-600 mb-4">
+              Ejercicio: <span className="font-semibold">{weeklyExercise?.name}</span>
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Semana del entrenamiento
+              </label>
+              <select
+                className="w-full border rounded px-3 py-2"
+                value={weekNumber}
+                onChange={e => setWeekNumber(e.target.value)}
+              >
+                <option value="">Selecciona la semana</option>
+                {getWeekOptions().map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Peso levantado (kg)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                className="w-full border rounded px-3 py-2"
+                placeholder="Ej: 50.5"
+                value={weekWeight}
+                onChange={e => setWeekWeight(e.target.value)}
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notas adicionales ({weekNotes.length}/100)
+              </label>
+              <textarea
+                className="w-full border rounded px-3 py-2"
+                placeholder="Observaciones sobre el entrenamiento..."
+                maxLength={100}
+                rows={3}
+                value={weekNotes}
+                onChange={e => setWeekNotes(e.target.value)}
+              />
+            </div>
+            
             <div className="flex justify-end gap-2">
               <button
                 className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
                 onClick={handleCloseWeeklyModal}
-              >Cancelar</button>
+              >
+                Cancelar
+              </button>
               <button
                 className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
                 onClick={handleSaveWeekly}
-                disabled={!weekNumber}
-              >Guardar</button>
+                disabled={!weekNumber || !weekWeight}
+              >
+                Guardar
+              </button>
             </div>
           </div>
         </div>
       )}
+      
+      {/* Modal para editar información de rutina */}
+      {showRoutineModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Editar información de rutina</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre de la rutina
+              </label>
+              <input
+                type="text"
+                className="w-full border rounded px-3 py-2"
+                placeholder="Nombre de la rutina"
+                value={routineName}
+                onChange={e => setRoutineName(e.target.value)}
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha de inicio
+              </label>
+              <input
+                type="date"
+                className="w-full border rounded px-3 py-2"
+                value={routineStartDate}
+                onChange={e => setRoutineStartDate(e.target.value)}
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha de fin
+              </label>
+              <input
+                type="date"
+                className="w-full border rounded px-3 py-2"
+                value={routineEndDate}
+                onChange={e => setRoutineEndDate(e.target.value)}
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Descripción ({routineDescription.length}/250)
+              </label>
+              <textarea
+                className="w-full border rounded px-3 py-2"
+                placeholder="Descripción de la rutina (máx 250 caracteres)"
+                maxLength={250}
+                rows={4}
+                value={routineDescription}
+                onChange={e => setRoutineDescription(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={handleCloseRoutineModal}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                onClick={handleSaveRoutine}
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Modal para editar ejercicio */}
       {showExerciseModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -722,6 +1047,19 @@ const RoutineDetail = ({
               </div>
             </div>
             
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 w-24">Media:</label>
+                <input
+                  type="url"
+                  className="flex-1 border rounded px-3 py-2"
+                  placeholder="URL del video o imagen"
+                  value={exerciseMedia}
+                  onChange={e => setExerciseMedia(e.target.value)}
+                />
+              </div>
+            </div>
+            
             <div className="flex justify-end gap-2">
               <button
                 className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
@@ -733,28 +1071,70 @@ const RoutineDetail = ({
               <button
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 onClick={() => {
-                  // Guardar cambios (puedes personalizar la lógica)
-                  if (routine.id) {
-                    onUpdateRoutine({
-                      id: routine.id,
-                      action: 'editExercise',
-                      data: {
-                        ...editExercise,
-                        name: exerciseName,
-                        sets: exerciseSets,
-                        reps: exerciseReps,
-                        weight: exerciseWeight,
-                        time: exerciseTime,
-                        rest: exerciseRest,
-                        day: exerciseDay,
-                        section: exerciseSection,
-                      }
+                  // DEBUG: Información completa sobre el ejercicio a editar
+                  console.log('=== DEBUG EDITAR EJERCICIO ===');
+                  console.log('editExercise:', editExercise);
+                  console.log('routine completa:', routine);
+                  console.log('routine.id:', routine?.id);
+                  console.log('routine.routine_id:', routine?.routine_id);
+                  console.log('routine.client_id:', routine?.client_id);
+                  console.log('Todas las propiedades de routine:', Object.keys(routine || {}));
+                  
+                  // Intentar obtener el ID de diferentes formas
+                  const routineId = routine?.id || routine?.routine_id || routine?.client_id;
+                  console.log('routineId detectado:', routineId);
+                  
+                  // Validar que exista el ID de la rutina
+                  if (!routine || !routineId) {
+                    console.error('Error: ID de rutina no encontrado', {
+                      routine,
+                      routineId,
+                      availableKeys: Object.keys(routine || {}),
+                      routineType: typeof routine,
+                      routineConstructor: routine?.constructor?.name
                     });
-                    setShowExerciseModal(false);
-                    setEditExercise(null);
-                  } else {
-                    alert('No se encontró el ID de la rutina.');
+                    alert('Error: No se encontró el ID de la rutina. Por favor, recarga la página.');
+                    return;
                   }
+
+                  // Datos del ejercicio a guardar
+                  const exerciseData = {
+                    ...editExercise,
+                    name: exerciseName,
+                    sets: exerciseSets,
+                    reps: exerciseReps,
+                    weight: exerciseWeight,
+                    time: exerciseTime,
+                    rest: exerciseRest,
+                    day: exerciseDay,
+                    section: exerciseSection,
+                    media: exerciseMedia, // Incluir el campo media
+                  };
+                  
+                  console.log('Datos a guardar:', exerciseData);
+                  console.log('Llamando onUpdateRoutine con:', {
+                    id: routineId,
+                    action: 'editExercise',
+                    data: exerciseData
+                  });
+
+                  // Guardar cambios - CORRIGIENDO EL FORMATO
+                  onUpdateRoutine({
+                    id: routineId,
+                    action: 'editExercise',
+                    data: exerciseData
+                  });
+                  setShowExerciseModal(false);
+                  setEditExercise(null);
+                  setExerciseName("");
+                  setExerciseSets("");
+                  setExerciseReps("");
+                  setExerciseWeight("");
+                  setExerciseTime("");
+                  setExerciseRest("");
+                  setExerciseDay("");
+                  setExerciseSection("");
+                  setExerciseMedia(""); // Limpiar el campo media
                 }}
                 disabled={!exerciseName.trim()}
               >Guardar</button>
