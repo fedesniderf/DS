@@ -8,7 +8,6 @@ const RoutineDetail = lazy(() => import('./components/RoutineDetail'));
 const AuthScreen = lazy(() => import('./components/AuthScreen'));
 const RegisterScreen = lazy(() => import('./components/RegisterScreen'));
 const AddExerciseScreen = lazy(() => import('./components/AddExerciseScreen'));
-const AssignRoutineModal = lazy(() => import('./components/AssignRoutineModal'));
 const UserManagementScreen = lazy(() => import('./components/UserManagementScreen'));
 const ClientDashboardAdmin = lazy(() => import('./components/ClientDashboardAdmin'));
 
@@ -18,7 +17,6 @@ const App = () => {
   const [selectedRoutine, setSelectedRoutine] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
-  const [showAssignRoutineModal, setShowAssignRoutineModal] = useState(false);
   const [clientRoutines, setClientRoutines] = useState([]);
 
   // LOGIN
@@ -34,7 +32,6 @@ const App = () => {
         alert('Error consultando usuario en Supabase.');
         return;
       }
-
       if (users && users.length > 0) {
         const user = users[0];
         setCurrentUser(user);
@@ -237,6 +234,14 @@ const App = () => {
     }
   };
 
+  // ELIMINAR RUTINA
+  const handleDeleteRoutine = async (routine) => {
+    await handleUpdateRoutine({
+      id: routine.id,
+      action: 'deleteRoutine'
+    });
+  };
+
   // CAMBIO DE ROL
   const handleRoleChange = async (user, newRole) => {
     const { error } = await supabase
@@ -255,96 +260,126 @@ const App = () => {
   // ACTUALIZAR RUTINA
   const handleUpdateRoutine = async (updatedRoutine) => {
 
-    // Incluye todos los campos relevantes, especialmente exercises
-    const {
-      id,
-      name,
-      startDate,
-      endDate,
-      description,
-      client_id,
-      exercises, // <-- importante
-      dailyTracking, // si usas este campo
-      exerciseTracking, // NUEVO: seguimiento semanal de ejercicios
-      name_ex, sets, reps, weight, media, notes, time, rest, day // si usas estos campos
-    } = updatedRoutine;
-
+    // Manejador universal para acciones desde RoutineDetail
+    const { id, action, data } = updatedRoutine;
     if (!id) {
       alert('No se encontró el ID de la rutina.');
       return;
     }
 
-    // Sanitiza los campos numéricos
-    const sanitizeNumber = val => val === "" || val === undefined ? null : Number(val);
+    if (action === 'deleteRoutine') {
+      // Eliminar rutina
+      const { data: deletedData, error: deleteError } = await supabase
+        .from('rutinas')
+        .delete()
+        .eq('id', id);
+      if (deleteError) {
+        alert('Error al eliminar la rutina: ' + deleteError.message);
+        return;
+      }
+      // No verificar deletedData, Supabase no retorna datos eliminados por defecto
+      // Recargar rutinas y limpiar selección
+      let routinesData = [];
+      if (currentUser?.role === 'admin' && !selectedClient) {
+        const res = await supabase.from('rutinas').select('*');
+        routinesData = res.data || [];
+        setClientRoutines(routinesData);
+      } else if (selectedClient && selectedClient.client_id) {
+        const res = await supabase
+          .from('rutinas')
+          .select('*')
+          .eq('client_id', selectedClient.client_id);
+        routinesData = res.data || [];
+        setClientRoutines(routinesData);
+      } else if (currentUser?.role === 'client') {
+        const res = await supabase
+          .from('rutinas')
+          .select('*')
+          .eq('client_id', currentUser.client_id);
+        routinesData = res.data || [];
+        setClientRoutines(routinesData);
+      }
+      setSelectedRoutine(null);
+      setCurrentPage('routines');
+      return;
+    }
 
-    const updateObj = {
-      name,
-      startDate,
-      endDate,
-      description,
-      client_id,
-      exercises: exercises || [],
-      name_ex,
-      sets: sanitizeNumber(sets),
-      reps: sanitizeNumber(reps),
-      weight: sanitizeNumber(weight),
-      media,
-      notes,
-      time: sanitizeNumber(time),
-      rest: sanitizeNumber(rest),
-      day
-    };
-    // Solo agregar dailyTracking si existe
-    if (typeof dailyTracking !== 'undefined') {
+    let updateObj = {};
+    // Si viene una acción específica
+    if (action === 'editExercise') {
+      // Editar ejercicio en el array
+      const exercises = Array.isArray(selectedRoutine.exercises) ? [...selectedRoutine.exercises] : [];
+      const idx = exercises.findIndex(e => e.id === data.id);
+      if (idx !== -1) {
+        exercises[idx] = data;
+      }
+      updateObj.exercises = exercises;
+    } else if (action === 'addDailyTracking') {
+      // Agregar seguimiento diario
+      const dailyTracking = { ...selectedRoutine.dailyTracking };
+      const { date, PF, PE } = data;
+      if (!dailyTracking[date]) dailyTracking[date] = [];
+      dailyTracking[date].push({ PF, PE });
       updateObj.dailyTracking = dailyTracking;
-    }
-    // Solo agregar exerciseTracking si existe
-    if (typeof exerciseTracking !== 'undefined') {
-      updateObj.exerciseTracking = exerciseTracking;
+    } else if (action === 'addWeeklyTracking') {
+      // Agregar seguimiento semanal
+      const exercises = Array.isArray(selectedRoutine.exercises) ? [...selectedRoutine.exercises] : [];
+      const exerciseIndex = exercises.findIndex(ex => ex.id === data.exerciseId);
+      
+      if (exerciseIndex !== -1) {
+        const exercise = exercises[exerciseIndex];
+        const weeklyData = exercise.weeklyData || {};
+        weeklyData[data.weeklyData.week] = data.weeklyData;
+        exercises[exerciseIndex] = { ...exercise, weeklyData };
+        updateObj.exercises = exercises;
+      }
+    } else {
+      // Actualización general de rutina
+      updateObj = { ...selectedRoutine, ...updatedRoutine };
     }
 
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from('rutinas')
       .update(updateObj)
       .eq('id', id);
 
-    if (error) {
-      alert('Error al actualizar la rutina: ' + error.message);
+    if (updateError) {
+      alert('Error al actualizar la rutina: ' + updateError.message);
       return;
     }
 
     // Recarga las rutinas después de actualizar
-    let data = [];
+    let routinesData = [];
     if (currentUser?.role === 'admin' && !selectedClient) {
       const res = await supabase.from('rutinas').select('*');
-      data = res.data || [];
-      setClientRoutines(data);
+      routinesData = res.data || [];
+      setClientRoutines(routinesData);
     } else if (selectedClient && selectedClient.client_id) {
       const res = await supabase
         .from('rutinas')
         .select('*')
         .eq('client_id', selectedClient.client_id);
-      data = res.data || [];
-      setClientRoutines(data);
+      routinesData = res.data || [];
+      setClientRoutines(routinesData);
     } else if (currentUser?.role === 'client') {
       const res = await supabase
         .from('rutinas')
         .select('*')
         .eq('client_id', currentUser.client_id);
-      data = res.data || [];
-      setClientRoutines(data);
+      routinesData = res.data || [];
+      setClientRoutines(routinesData);
     }
 
     // Refresca la rutina seleccionada desde la base de datos
-    const { data: refreshed, error: fetchError } = await supabase
+    const { data: refreshedRoutine, error: fetchRoutineError } = await supabase
       .from('rutinas')
       .select('*')
       .eq('id', id)
       .single();
-    if (!fetchError && refreshed) {
-      setSelectedRoutine(refreshed);
+    if (!fetchRoutineError && refreshedRoutine) {
+      setSelectedRoutine(refreshedRoutine);
     }
-  };
+  }
 
   // Efectos para sincronizar con localStorage
   useEffect(() => {
@@ -367,6 +402,10 @@ const App = () => {
       if (savedPage) setCurrentPage(savedPage);
     }
   }, []);
+
+
+  // RESTABLECER CONTRASEÑA
+
 
   // RENDER
   if (!currentUser) {
@@ -400,8 +439,25 @@ const App = () => {
   };
 
   // Define la función aquí, antes del return
-  const handleAddExerciseClick = () => {
-    setCurrentPage('addExercise');
+  // Agregar ejercicio directamente desde el modal
+  const handleAddExerciseClick = (exerciseData) => {
+    if (!selectedRoutine) return;
+    
+    // Si se recibe exerciseData, agregarlo a la rutina
+    if (exerciseData) {
+      const exercises = Array.isArray(selectedRoutine.exercises) ? [...selectedRoutine.exercises] : [];
+      // Generar un id único si no existe
+      if (!exerciseData.id) {
+        exerciseData.id = '_' + Math.random().toString(36).substr(2, 9);
+      }
+      exercises.push(exerciseData);
+      handleUpdateRoutine({
+        id: selectedRoutine.id,
+        exercises,
+      });
+      // Regresar a la vista de rutina
+      setCurrentPage('routineDetail');
+    }
   };
 
   return (
@@ -433,20 +489,23 @@ const App = () => {
                   onSelectRoutine={handleSelectRoutine}
                   isEditable={true}
                   onAddRoutine={handleAddRoutine}
+                  onDeleteRoutine={handleDeleteRoutine}
                 />
               )}
 
               {currentPage === 'routineDetail' && selectedRoutine && (
                 <RoutineDetail
                   routine={selectedRoutine}
-                  onUpdateRoutine={handleUpdateRoutine} // <-- Esto ya está bien
-                  isEditable={true} // <-- Asegúrate de que sea true para el admin
-                  onAddExerciseClick={handleAddExerciseClick}
+                  onUpdateRoutine={handleUpdateRoutine}
+                  isEditable={true}
+                  onAddExerciseClick={() => setCurrentPage('addExercise')}
+                  canAddDailyTracking={true}
                 />
               )}
 
               {currentPage === 'addExercise' && (
                 <AddExerciseScreen
+                  onAddExercise={handleAddExerciseClick}
                   onBack={() => setCurrentPage('routineDetail')}
                 />
               )}
@@ -471,14 +530,6 @@ const App = () => {
                   </button>
                 </>
               )}
-              {currentPage === 'routineDetail' && selectedRoutine && (
-                <button
-                  onClick={() => setShowAssignRoutineModal(true)}
-                  className="w-full mt-4 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-md"
-                >
-                  Asignar Rutina a Cliente
-                </button>
-              )}
                     </>
                     )}
 
@@ -495,7 +546,12 @@ const App = () => {
               )}
 
               {currentPage === 'routineDetail' && selectedRoutine && (
-                <RoutineDetail routine={selectedRoutine} isEditable={false} />
+                <RoutineDetail 
+                  routine={selectedRoutine} 
+                  isEditable={false} 
+                  canAddDailyTracking={true}
+                  onUpdateRoutine={handleUpdateRoutine}
+                />
               )}
             </>
           )}
@@ -509,16 +565,6 @@ const App = () => {
           Cerrar Sesión
         </button>
       </main>
-
-      {showAssignRoutineModal && (
-        <Suspense fallback={<div>Cargando modal...</div>}>
-          <AssignRoutineModal
-            clients={users.filter(u => u.role && u.role.toLowerCase() === 'client')}
-            onAssign={() => {}}
-            onClose={() => setShowAssignRoutineModal(false)}
-          />
-        </Suspense>
-      )}
 
       <SpeedInsights />
     </div>

@@ -1,791 +1,764 @@
-import React, { useState } from 'react';
-import ExerciseTrackingModal from './ExerciseTrackingModal';
-import DatePicker from './DatePicker';
-import { supabase } from '../supabaseClient';
+import React from "react";
 
 const RoutineDetail = ({
   routine,
   onUpdateRoutine = () => {},
   isEditable,
   onAddExerciseClick = () => {},
+  canAddDailyTracking = false,
 }) => {
-  // Asegura que exerciseTracking siempre esté definido
-  const exerciseTracking = routine.exerciseTracking || {};
-  // Estado para los valores de PF y PE en el seguimiento diario
-  const [currentPF, setCurrentPF] = useState('');
-  const [currentPE, setCurrentPE] = useState('');
-  const [editingExerciseId, setEditingExerciseId] = useState(null);
-  const [editedSets, setEditedSets] = useState(routine.sets || '');
-  const [editedReps, setEditedReps] = useState(routine.reps || '');
-  const [editedWeight, setEditedWeight] = useState(routine.weight || '');
-  const [editedMedia, setEditedMedia] = useState(routine.media || '');
-  const [editedNotes, setEditedNotes] = useState(routine.notes || '');
-  const [editedTime, setEditedTime] = useState(routine.time || '');
-  const [editedRest, setEditedRest] = useState(routine.rest || '');
-  const [editedDay, setEditedDay] = useState(routine.day || '');
+  // ✅ CORRECTO - Todos los hooks DENTRO de la función del componente
+  const [showExerciseModal, setShowExerciseModal] = React.useState(false);
+  const [editExercise, setEditExercise] = React.useState(null);
+  const [exerciseName, setExerciseName] = React.useState("");
+  const [exerciseSets, setExerciseSets] = React.useState("");
+  const [exerciseReps, setExerciseReps] = React.useState("");
+  const [exerciseWeight, setExerciseWeight] = React.useState("");
+  const [exerciseTime, setExerciseTime] = React.useState("");
+  const [exerciseRest, setExerciseRest] = React.useState("");
+  const [exerciseDay, setExerciseDay] = React.useState("");
+  const [exerciseSection, setExerciseSection] = React.useState("");
 
-  // Estados para la edición de la rutina
-  const [editingRoutineDetails, setEditingRoutineDetails] = useState(false);
-  const [editedRoutineName, setEditedRoutineName] = useState(routine.name);
-  const [editedStartDate, setEditedStartDate] = useState(routine.startDate);
-  const [editedEndDate, setEditedEndDate] = useState(routine.endDate);
-  const [editedDescription, setEditedDescription] = useState(routine.description || '');
-  const [editedExerciseName, setEditedExerciseName] = useState(routine.name_ex || '');
-
-  // Estado para colapsar/expandir el seguimiento de cada ejercicio
-  // Estado para el formulario de nuevo ejercicio
-  const [newExercise, setNewExercise] = useState({
-    name: '',
-    sets: '',
-    reps: '',
-    weight: '',
-    time: '',
-    rest: '',
-    media: '',
-    notes: '',
-    day: '',
-    section: '',
-  });
-  // Estado para el ejercicio seleccionado para seguimiento
-  const [selectedExercise, setSelectedExercise] = useState(null);
-  // Estado para la fecha seleccionada en el seguimiento diario
-  const [selectedDateForDailyTracking, setSelectedDateForDailyTracking] = useState(null);
-  const [expandedExerciseTracking, setExpandedExerciseTracking] = useState({});
-  // Estado para mostrar/ocultar el formulario de agregar ejercicio
-  const [showAddExerciseForm, setShowAddExerciseForm] = useState(false);
-  // Estado para modal de tracking
-  const [showTrackingModal, setShowTrackingModal] = useState(false);
-  // Estado para expandir/colapsar el seguimiento diario
-  const [expandedDailyTracking, setExpandedDailyTracking] = useState(false);
-  const handleEditClick = (exercise) => {
-    setEditingExerciseId(exercise.id);
-    setEditedSets(exercise.sets);
-    setEditedReps(exercise.reps);
-    setEditedWeight(exercise.weight);
-    setEditedMedia(exercise.media || '');
-    setEditedNotes(exercise.notes || '');
-    setEditedTime(exercise.time || '');
-    setEditedRest(exercise.rest || '');
+  // Handler para editar ejercicio
+  const handleEditExerciseClick = (ex) => {
+    setEditExercise(ex);
+    setExerciseName(ex.name || "");
+    setExerciseSets(ex.sets || "");
+    setExerciseReps(ex.reps || "");
+    setExerciseWeight(ex.weight || "");
+    setExerciseTime(ex.time || "");
+    setExerciseRest(ex.rest || "");
+    setExerciseDay(ex.day || "");
+    setExerciseSection(ex.section || "");
+    setShowExerciseModal(true);
   };
 
-  const handleSaveClick = (exerciseId) => {
-    const updatedExercises = routine.exercises.map((ex) =>
-      ex.id === exerciseId
-        ? {
-            ...ex,
-            sets: editedSets,
-            reps: editedReps,
-            weight: editedWeight,
-            media: editedMedia,
-            notes: editedNotes,
-            time: editedTime,
-            rest: editedRest,
-          }
-        : ex
-    );
-    onUpdateRoutine({ ...routine, exercises: updatedExercises });
-    setEditingExerciseId(null);
-  };
-
-  const handleCancelEditExercise = () => {
-    setEditingExerciseId(null);
-  };
-
-  const handleDeleteExercise = (exerciseId) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este ejercicio?')) {
-      const updatedExercises = routine.exercises.filter((ex) => ex.id !== exerciseId);
-      onUpdateRoutine({ ...routine, exercises: updatedExercises });
-    }
-  };
-
-  const handleSaveRoutineDetails = () => {
-    onUpdateRoutine({
-      ...routine,
-      name: editedRoutineName,
-      startDate: editedStartDate,
-      endDate: editedEndDate,
-      description: editedDescription,
-    });
-    setEditingRoutineDetails(false);
-  };
-
-  const handleCancelEditRoutineDetails = () => {
-    setEditedRoutineName(routine.name);
-    setEditedStartDate(routine.startDate);
-    setEditedEndDate(routine.endDate);
-    setEditedDescription(routine.description || '');
-    setEditedExerciseName(routine.name_ex || '');
-    setEditedSets(routine.sets || '');
-    setEditedReps(routine.reps || '');
-    setEditedWeight(routine.weight || '');
-    setEditedMedia(routine.media || '');
-    setEditedNotes(routine.notes || '');
-    setEditedTime(routine.time || '');
-    setEditedRest(routine.rest || '');
-    setEditedDay(routine.day || '');
-    setEditingRoutineDetails(false);
-  };
-
-  // Agrupar ejercicios por día y sección
-  const exercises = Array.isArray(routine.exercises) ? routine.exercises : [];
-  const groupedExercises = exercises.reduce((acc, exercise) => {
-    const day = exercise.day || 'Sin Día';
-    const section = exercise.section || 'Sin Sección';
-    if (!acc[day]) acc[day] = {};
-    if (!acc[day][section]) acc[day][section] = [];
-    acc[day][section].push(exercise);
-    return acc;
-  }, {});
-
-  const sortedDays = Object.keys(groupedExercises).sort((a, b) => {
-    if (a.startsWith('Día') && b.startsWith('Día')) {
-      return parseInt(a.replace('Día ', '')) - parseInt(b.replace('Día ', ''));
-    }
-    return a.localeCompare(b);
-  });
-
-  const sectionOrder = ['Warm Up', 'Trabajo DS', 'Out', 'Fuerza', 'Cardio', 'Estiramiento', 'Cool Down', 'Otros'];
-
-  const calculateWeeks = (startDate, endDate) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+  // Calcular semanas de la rutina
+  const getWeekOptions = () => {
+    if (!routine.startDate || !routine.endDate) return [];
+    const start = new Date(routine.startDate);
+    const end = new Date(routine.endDate);
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.ceil(diffDays / 7);
+    const numWeeks = Math.max(1, Math.ceil(diffDays / 7));
+    return Array.from({ length: numWeeks }, (_, i) => ({ value: (i + 1).toString(), label: `Semana ${i + 1}` }));
+  };
+  // Definir exercises al inicio para evitar ReferenceError
+  const exercises = Array.isArray(routine.exercises) ? routine.exercises : [];
+
+  // Opciones para el desplegable de día
+  const dayOptions = [
+    { value: '', label: 'Selecciona un día' },
+    { value: '1', label: 'Día 1' },
+    { value: '2', label: 'Día 2' },
+    { value: '3', label: 'Día 3' },
+    { value: '4', label: 'Día 4' },
+    { value: '5', label: 'Día 5' },
+    { value: '6', label: 'Día 6' },
+    { value: '7', label: 'Día 7' },
+  ];
+
+  // Opciones para el desplegable de sección (igual que en AddExerciseScreen)
+  const sectionOptions = [
+    { value: '', label: 'Selecciona una sección' },
+    { value: 'Warm Up', label: 'Warm Up' },
+    { value: 'Trabajo DS', label: 'Trabajo DS' },
+    { value: 'Out', label: 'Out' },
+  ];
+
+  // Estado para modales y formularios
+  // Estado para seguimiento semanal
+  const [showWeeklyModal, setShowWeeklyModal] = React.useState(false);
+  const [weeklyExercise, setWeeklyExercise] = React.useState(null);
+  const [weekNumber, setWeekNumber] = React.useState("");
+  const [weekWeight, setWeekWeight] = React.useState("");
+  const [weekNotes, setWeekNotes] = React.useState("");
+
+  // Estado para seguimiento diario general de rutina
+  const [showDailyModal, setShowDailyModal] = React.useState(false);
+  const [dailyDate, setDailyDate] = React.useState("");
+  const [dailyPF, setDailyPF] = React.useState("");
+  const [dailyPE, setDailyPE] = React.useState("");
+
+  // Estados para colapso/expansión
+  const [collapsedDays, setCollapsedDays] = React.useState(new Set());
+  const [collapsedSections, setCollapsedSections] = React.useState(new Set());
+
+  // Funciones para manejar colapso/expansión
+  const toggleDay = (day) => {
+    const newCollapsedDays = new Set(collapsedDays);
+    if (newCollapsedDays.has(day)) {
+      newCollapsedDays.delete(day);
+    } else {
+      newCollapsedDays.add(day);
+    }
+    setCollapsedDays(newCollapsedDays);
   };
 
-  const handleTrackingDataChange = (exerciseId, weekIndex, field, value) => {
-    const updatedExercises = routine.exercises.map(ex => {
-      if (ex.id === exerciseId) {
-        const updatedWeeklyData = { ...ex.weeklyData || {} }; // Asegura que weeklyData exista
-        if (!updatedWeeklyData[weekIndex]) {
-          updatedWeeklyData[weekIndex] = { weight: '', generalNotes: '' };
-        }
-        updatedWeeklyData[weekIndex][field] = value;
-        return { ...ex, weeklyData: updatedWeeklyData };
-      }
-      return ex;
+  const toggleSection = (daySection) => {
+    const newCollapsedSections = new Set(collapsedSections);
+    if (newCollapsedSections.has(daySection)) {
+      newCollapsedSections.delete(daySection);
+    } else {
+      newCollapsedSections.add(daySection);
+    }
+    setCollapsedSections(newCollapsedSections);
+  };
+
+  const handleOpenWeeklyModal = (exercise) => {
+    setWeeklyExercise(exercise);
+    setWeekNumber("");
+    setWeekWeight("");
+    setWeekNotes("");
+    setShowWeeklyModal(true);
+  };
+
+  const handleCloseWeeklyModal = () => {
+    setShowWeeklyModal(false);
+    setWeeklyExercise(null);
+    setWeekNumber("");
+    setWeekWeight("");
+    setWeekNotes("");
+  };
+
+  // Handlers para seguimiento diario general
+  const handleOpenDailyModal = () => {
+    setDailyDate(new Date().toISOString().split('T')[0]); // Fecha actual por defecto
+    setDailyPF("");
+    setDailyPE("");
+    setShowDailyModal(true);
+  };
+
+  const handleCloseDailyModal = () => {
+    setShowDailyModal(false);
+    setDailyDate("");
+    setDailyPF("");
+    setDailyPE("");
+  };
+
+  const handleSaveDaily = () => {
+    if (!dailyDate || !dailyPF || !dailyPE) return;
+    
+    // Crear el objeto de datos diarios para la rutina
+    const dailyData = {
+      date: dailyDate,
+      pf: parseInt(dailyPF),
+      pe: parseInt(dailyPE),
+      timestamp: new Date().toISOString()
+    };
+
+    // Llamar a la función para actualizar la rutina
+    onUpdateRoutine({
+      id: routine.id,
+      action: 'addDailyRoutineTracking',
+      data: dailyData
     });
-    onUpdateRoutine({ ...routine, exercises: updatedExercises });
+
+    handleCloseDailyModal();
   };
 
-  const handleAddDailyTracking = () => {
-    if (selectedDateForDailyTracking && currentPF && currentPE) {
-      const updatedRoutine = { ...routine };
-      if (!updatedRoutine.dailyTracking) {
-        updatedRoutine.dailyTracking = {};
+  const handleSaveWeekly = () => {
+    if (!weekNumber || !weeklyExercise) return;
+    
+    // Crear el objeto de datos semanales
+    const weeklyData = {
+      week: weekNumber,
+      weight: weekWeight,
+      generalNotes: weekNotes,
+      date: new Date().toISOString().split('T')[0] // Fecha actual
+    };
+
+    // Llamar a la función para actualizar la rutina
+    onUpdateRoutine({
+      id: routine.id,
+      action: 'addWeeklyTracking',
+      data: {
+        exerciseId: weeklyExercise.id,
+        weeklyData: weeklyData
       }
-      const dateObject = new Date(selectedDateForDailyTracking);
-      const formattedDate = dateObject.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    });
+
+    handleCloseWeeklyModal();
+  };
+
+  // Agrupar y renderizar ejercicios por día y sección
+  let ejerciciosPorDia = null;
+  if (exercises.length === 0) {
+    ejerciciosPorDia = <p className="text-gray-600 text-center py-4">No hay ejercicios para seguimiento.</p>;
+  } else {
+    // Agrupar por día y luego por sección
+    const groupedByDay = exercises.reduce((acc, ex) => {
+      const day = ex.day || 'Sin día';
+      if (!acc[day]) acc[day] = {};
       
-      if (!updatedRoutine.dailyTracking[formattedDate]) {
-        updatedRoutine.dailyTracking[formattedDate] = [];
-      }
-      updatedRoutine.dailyTracking[formattedDate].push({
-        PF: currentPF,
-        PE: currentPE,
-      });
-      onUpdateRoutine(updatedRoutine);
-      setCurrentPF('');
-      setCurrentPE('');
-      setSelectedDateForDailyTracking(null); // Limpiar la fecha seleccionada
-    } else {
-      alert('Por favor, selecciona una fecha e ingresa los valores de PF y PE.');
-    }
-  };
+      const section = ex.section || 'Sin sección';
+      if (!acc[day][section]) acc[day][section] = [];
+      acc[day][section].push(ex);
+      
+      return acc;
+    }, {});
 
-  const toggleExerciseTracking = (exerciseId) => {
-    setExpandedExerciseTracking(prevState => ({
-      ...prevState,
-      [exerciseId]: !prevState[exerciseId]
-    }));
-  };
+    // Orden específico de las secciones
+    const sectionOrder = ['Warm Up', 'Trabajo DS', 'Out'];
+    
+    // Ordenar días
+    const orderedDays = [
+      '1','2','3','4','5','6','7'
+    ].filter(d => groupedByDay[d]).concat(Object.keys(groupedByDay).filter(d => !['1','2','3','4','5','6','7'].includes(d)));
 
+    ejerciciosPorDia = orderedDays.map(day => (
+      <div key={day} className="mb-6">
+        <div 
+          className="flex items-center justify-between cursor-pointer p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+          onClick={() => toggleDay(day)}
+        >
+          <h4 className="text-lg font-bold text-blue-700">
+            {['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : 'Sin día asignado'}
+          </h4>
+          <svg 
+            className={`w-5 h-5 text-blue-700 transform transition-transform ${collapsedDays.has(day) ? 'rotate-180' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        
+        {!collapsedDays.has(day) && (
+          <div className="mt-4">
+            {/* Renderizar secciones en orden específico */}
+            {sectionOrder.map(sectionName => {
+              if (!groupedByDay[day][sectionName]) return null;
+              
+              const sectionKey = `${day}-${sectionName}`;
+              
+              return (
+                <div key={sectionName} className="mb-4">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer p-2 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                    onClick={() => toggleSection(sectionKey)}
+                  >
+                    <h5 className="text-md font-semibold text-purple-700">{sectionName}</h5>
+                    <svg 
+                      className={`w-4 h-4 text-purple-700 transform transition-transform ${collapsedSections.has(sectionKey) ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  
+                  {!collapsedSections.has(sectionKey) && (
+                    <div className="grid gap-4 mt-3">
+                      {groupedByDay[day][sectionName].map((ex) => (
+                        <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow">
+                          <div className="flex items-center justify-between mb-2">
+                            <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                            <div className="flex gap-2">
+                              {/* Botón para seguimiento semanal */}
+                              {canAddDailyTracking && (
+                                <button
+                                  className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700"
+                                  title="Agregar seguimiento semanal"
+                                  onClick={() => handleOpenWeeklyModal(ex)}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                  </svg>
+                                </button>
+                              )}
+                              {/* Botón para editar ejercicio si esEditable */}
+                              {isEditable && (
+                                <button
+                                  className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
+                                  title="Editar ejercicio"
+                                  onClick={() => handleEditExerciseClick(ex)}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mb-2 text-sm text-gray-700">
+                            <div><span className="font-semibold">Series:</span> {ex.sets || '-'}</div>
+                            <div><span className="font-semibold">Repeticiones:</span> {ex.reps || '-'}</div>
+                            <div><span className="font-semibold">Peso (Kg):</span> {ex.weight || '-'}</div>
+                            <div><span className="font-semibold">Tiempo (seg):</span> {ex.time || '-'}</div>
+                            <div><span className="font-semibold">Descanso (seg):</span> {ex.rest || '-'}</div>
+                          </div>
 
-  // Calcular el array de semanas para el seguimiento semanal
-  const weeksArray = (() => {
-    const numWeeks = calculateWeeks(routine.startDate, routine.endDate);
-    return Array.from({ length: numWeeks }, (_, i) => i + 1);
-  })();
+                          {/* Mostrar seguimiento semanal */}
+                          {ex.weeklyData ? (
+                            <div className="mb-4">
+                              <h6 className="text-sm font-semibold text-gray-700 mb-2">Seguimiento Semanal:</h6>
+                              <table className="w-full text-sm border border-gray-300 rounded-lg overflow-hidden">
+                                <thead className="bg-purple-100">
+                                  <tr>
+                                    <th className="px-2 py-1">Semana</th>
+                                    <th className="px-2 py-1">Peso</th>
+                                    <th className="px-2 py-1">Notas</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {Object.entries(ex.weeklyData).map(([week, data]) => (
+                                    <tr key={week} className="border-t">
+                                      <td className="px-2 py-1">{week}</td>
+                                      <td className="px-2 py-1">{data.weight}</td>
+                                      <td className="px-2 py-1">{data.generalNotes}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 text-sm mb-2">Sin datos de seguimiento semanal.</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            
+            {/* Mostrar ejercicios de secciones no estándar */}
+            {Object.keys(groupedByDay[day]).filter(section => !sectionOrder.includes(section)).map(sectionName => {
+              const sectionKey = `${day}-${sectionName}`;
+              
+              return (
+                <div key={sectionName} className="mb-4">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    onClick={() => toggleSection(sectionKey)}
+                  >
+                    <h5 className="text-md font-semibold text-gray-700">{sectionName}</h5>
+                    <svg 
+                      className={`w-4 h-4 text-gray-700 transform transition-transform ${collapsedSections.has(sectionKey) ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  
+                  {!collapsedSections.has(sectionKey) && (
+                    <div className="grid gap-4 mt-3">
+                      {groupedByDay[day][sectionName].map((ex) => (
+                        <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow">
+                          <div className="flex items-center justify-between mb-2">
+                            <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                            <div className="flex gap-2">
+                              {/* Botón para seguimiento semanal */}
+                              {canAddDailyTracking && (
+                                <button
+                                  className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700"
+                                  title="Agregar seguimiento semanal"
+                                  onClick={() => handleOpenWeeklyModal(ex)}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                  </svg>
+                                </button>
+                              )}
+                              {/* Botón para editar ejercicio si esEditable */}
+                              {isEditable && (
+                                <button
+                                  className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
+                                  title="Editar ejercicio"
+                                  onClick={() => handleEditExerciseClick(ex)}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mb-2 text-sm text-gray-700">
+                            <div><span className="font-semibold">Series:</span> {ex.sets || '-'}</div>
+                            <div><span className="font-semibold">Repeticiones:</span> {ex.reps || '-'}</div>
+                            <div><span className="font-semibold">Peso (Kg):</span> {ex.weight || '-'}</div>
+                            <div><span className="font-semibold">Tiempo (seg):</span> {ex.time || '-'}</div>
+                            <div><span className="font-semibold">Descanso (seg):</span> {ex.rest || '-'}</div>
+                          </div>
 
-  const handleUpdateRoutine = async (updatedRoutine) => {
-    // Actualiza la rutina en Supabase, incluyendo la columna description
-    const { id, ...fields } = updatedRoutine;
-    const { error } = await supabase
-      .from('rutinas')
-      .update(fields)
-      .eq('id', id);
-    if (error) {
-      alert('Error al actualizar la rutina');
-      return;
-    }
-    // Recarga las rutinas o actualiza el estado según tu lógica
-  };
-
-  const handleAddExercise = async () => {
-    if (!newExercise.name) {
-      alert('El nombre del ejercicio es obligatorio');
-      return;
-    }
-    const exerciseWithId = { ...newExercise, id: Date.now() };
-    const updatedExercises = [...(Array.isArray(routine.exercises) ? routine.exercises : []), exerciseWithId];
-
-    // Actualiza en la base de datos y en la UI
-    const { data, error } = await supabase
-      .from('rutinas')
-      .update({ exercises: updatedExercises })
-      .eq('id', routine.id)
-      .select();
-
-    if (error) {
-      alert('Error al guardar el ejercicio');
-      return;
-    }
-
-    // Log para depuración
-    console.log('Respuesta de Supabase al agregar ejercicio:', data);
-
-    // Usa la rutina actualizada que devuelve Supabase
-    if (data && data[0]) {
-      onUpdateRoutine(data[0]);
-    } else {
-      onUpdateRoutine({ ...routine, exercises: updatedExercises });
-    }
-
-    setShowAddExerciseForm(false);
-    setNewExercise({
-      name: '',
-      sets: '',
-      reps: '',
-      weight: '',
-      time: '',
-      rest: '',
-      media: '',
-      notes: '',
-      day: '',
-      section: '',
-    });
-  };
+                          {/* Mostrar seguimiento semanal */}
+                          {ex.weeklyData ? (
+                            <div className="mb-4">
+                              <h6 className="text-sm font-semibold text-gray-700 mb-2">Seguimiento Semanal:</h6>
+                              <table className="w-full text-sm border border-gray-300 rounded-lg overflow-hidden">
+                                <thead className="bg-purple-100">
+                                  <tr>
+                                    <th className="px-2 py-1">Semana</th>
+                                    <th className="px-2 py-1">Peso</th>
+                                    <th className="px-2 py-1">Notas</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {Object.entries(ex.weeklyData).map(([week, data]) => (
+                                    <tr key={week} className="border-t">
+                                      <td className="px-2 py-1">{week}</td>
+                                      <td className="px-2 py-1">{data.weight}</td>
+                                      <td className="px-2 py-1">{data.generalNotes}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 text-sm mb-2">Sin datos de seguimiento semanal.</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    ));
+  }
 
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md">
-      {editingRoutineDetails ? (
-        <div className="mb-6 p-4 border border-gray-200 rounded-xl bg-gray-50">
-          <h3 className="text-xl font-bold text-gray-700 mb-4">Editar Detalles de Rutina</h3>
-          <div className="mb-4">
-            <label htmlFor="routineName" className="block text-sm font-medium text-gray-700 mb-1">
-              Título de la Rutina:
-            </label>
-            <input
-              id="routineName"
-              type="text"
-              value={editedRoutineName}
-              onChange={(e) => setEditedRoutineName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
-            />
-          </div>
-          <div className="mb-4 flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-            <div className="flex-1">
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio:</label>
-              <DatePicker
-                selectedDate={editedStartDate}
-                onDateChange={setEditedStartDate}
-                placeholder="Fecha de Inicio"
-              />
-            </div>
-            <div className="flex-1">
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin:</label>
-              <DatePicker
-                selectedDate={editedEndDate}
-                onDateChange={setEditedEndDate}
-                placeholder="Fecha de Fin"
-              />
-            </div>
-          </div>
-          <div className="mb-4">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Descripción (máx. 250 caracteres):</label>
-            <textarea
-              id="description"
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value.slice(0, 250))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition resize-y"
-              rows="3"
-              placeholder="Agrega una descripción para la rutina"
-            ></textarea>
-            <p className="text-right text-xs text-gray-500">{editedDescription.length}/250</p>
-          </div>
-          {/* Campos de ejercicio eliminados de la edición de detalles de rutina */}
-          {/* Campos de ejercicio eliminados de la edición de detalles de rutina */}
-          <div className="flex justify-end space-x-4 mt-6">
-            <button
-              onClick={handleCancelEditRoutineDetails}
-              className="px-6 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-semibold flex items-center justify-center"
-              title="Cancelar"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onUpdateRoutine({
-                  id: routine.id,
-                  name: editedRoutineName,
-                  startDate: editedStartDate,
-                  endDate: editedEndDate,
-                  description: editedDescription,
-                  client_id: routine.client_id,
-                  name_ex: editedExerciseName,
-                  sets: editedSets,
-                  reps: editedReps,
-                  weight: editedWeight,
-                  notes: editedNotes,
-                  media: editedMedia,
-                  day: editedDay,
-                  time: editedTime,
-                  rest: editedRest,
-                });
-                setEditingRoutineDetails(false);
-              }}
-              className="px-6 py-2 rounded-xl bg-black text-white hover:bg-gray-800 transition-colors font-semibold shadow-md flex items-center justify-center"
-              title="Guardar Cambios"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">{routine.name}</h2>
-            {routine.startDate && routine.endDate && (
-              <p className="text-md text-gray-600">
-                Periodo: {routine.startDate} - {routine.endDate}
-              </p>
-            )}
-            {routine.description && (
-              <p className="text-sm text-gray-700 mt-2">{routine.description}</p>
-            )}
-          </div>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-700">Ejercicios por Día</h3>
+          {/* Botón ícono para agregar ejercicio, solo para admin */}
           {isEditable && (
             <button
-              onClick={() => setEditingRoutineDetails(true)}
-              className="px-4 py-2 rounded-xl bg-yellow-600 text-white hover:bg-yellow-700 transition-colors font-semibold shadow-md flex items-center justify-center"
-              title="Editar Rutina"
+              onClick={() => onAddExerciseClick()}
+              className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors shadow-md"
+              title="Agregar Ejercicio"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
             </button>
           )}
         </div>
-      )}
-
-      {exercises.length === 0 ? (
-        <p className="text-gray-600 text-center py-4">No hay ejercicios en esta rutina aún.</p>
-      ) : (
-        sortedDays.map((day) => (
-          <div key={day} className="mb-8 p-4 bg-gray-100 rounded-xl shadow-sm">
-            <h3 className="text-xl font-bold text-gray-700 mb-4 border-b pb-2">{day}</h3>
-            {Object.keys(groupedExercises[day]).sort((a, b) => {
-              const indexA = sectionOrder.indexOf(a);
-              const indexB = sectionOrder.indexOf(b);
-              if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-              if (indexA === -1) return 1;
-              if (indexB === -1) return -1;
-              return indexA - indexB;
-            }).map((section) => (
-              <div 
-                key={section} 
-                className={`mb-6 p-4 bg-white rounded-xl shadow-sm`}
-              >
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-lg font-semibold text-gray-700">{section}</h4>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white rounded-lg shadow-sm">
-                    <thead>
-                      <tr className="bg-gray-100 border-b border-gray-200">
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ejercicio</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Series</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Repeticiones</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peso (kg)</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tiempo</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descanso</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Media</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
-                        {isEditable && (
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                        )}
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Seguimiento</th>
+        
+        {/* Botón para seguimiento diario general de rutina */}
+        {canAddDailyTracking && (
+          <button
+            onClick={handleOpenDailyModal}
+            className="mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-md flex items-center"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5 mr-2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 21 9v7.5m-9-13.5h.008v.008H12V8.25Z" />
+            </svg>
+            Seguimiento Diario
+          </button>
+        )}
+        {ejerciciosPorDia}
+        
+        {/* Mostrar seguimiento diario general de la rutina */}
+        {routine.dailyTracking && Object.keys(routine.dailyTracking).length > 0 && (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h4 className="text-lg font-bold text-blue-700 mb-4">Seguimiento Diario de la Rutina</h4>
+            <div className="max-h-40 overflow-y-auto">
+              <table className="w-full text-sm border border-blue-300 rounded-lg overflow-hidden">
+                <thead className="bg-blue-100">
+                  <tr>
+                    <th className="px-3 py-2">Fecha</th>
+                    <th className="px-3 py-2">PF (0-5)</th>
+                    <th className="px-3 py-2">PE (0-5)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(routine.dailyTracking)
+                    .sort(([a], [b]) => new Date(b) - new Date(a))
+                    .map(([date, data]) => (
+                      <tr key={date} className="border-t">
+                        <td className="px-3 py-2">{date}</td>
+                        <td className="px-3 py-2">{data.pf}</td>
+                        <td className="px-3 py-2">{data.pe}</td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {groupedExercises[day][section].map((exercise) => (
-                        <React.Fragment key={exercise.id}>
-                          <tr onClick={() => toggleExerciseTracking(exercise.id)} className="cursor-pointer hover:bg-gray-50 transition-colors">
-                            <td data-label="Ejercicio" className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{exercise.name}</td>
-                            <td data-label="Series" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {editingExerciseId === exercise.id ? (
-                                <input
-                                  type="text"
-                                  value={editedSets}
-                                  onChange={(e) => setEditedSets(e.target.value)}
-                                  className="w-20 px-2 py-1 border rounded-md"
-                                />
-                              ) : (
-                                exercise.sets
-                              )}
-                            </td>
-                            <td data-label="Repeticiones" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {editingExerciseId === exercise.id ? (
-                                <input
-                                  type="text"
-                                  value={editedReps}
-                                  onChange={(e) => setEditedReps(e.target.value)}
-                                  className="w-20 px-2 py-1 border rounded-md"
-                                />
-                              ) : (
-                                exercise.reps
-                              )}
-                            </td>
-                            <td data-label="Peso (kg)" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {editingExerciseId === exercise.id ? (
-                                <input
-                                  type="text"
-                                  value={editedWeight}
-                                  onChange={(e) => setEditedWeight(e.target.value)}
-                                  className="w-20 px-2 py-1 border rounded-md"
-                                />
-                              ) : (
-                                exercise.weight
-                              )}
-                            </td>
-                            <td data-label="Tiempo" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {editingExerciseId === exercise.id ? (
-                                <input
-                                  type="text"
-                                  value={editedTime}
-                                  onChange={(e) => setEditedTime(e.target.value)}
-                                  className="w-20 px-2 py-1 border rounded-md"
-                                />
-                              ) : (
-                                exercise.time || 'N/A'
-                              )}
-                            </td>
-                            <td data-label="Descanso" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {editingExerciseId === exercise.id ? (
-                                <input
-                                  type="text"
-                                  value={editedRest}
-                                  onChange={(e) => setEditedRest(e.target.value)}
-                                  className="w-20 px-2 py-1 border rounded-md"
-                                />
-                              ) : (
-                                exercise.rest || 'N/A'
-                              )}
-                            </td>
-                            <td data-label="Media" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {editingExerciseId === exercise.id ? (
-                                <input
-                                  type="text"
-                                  value={editedMedia}
-                                  onChange={(e) => setEditedMedia(e.target.value)}
-                                  className="w-32 px-2 py-1 border rounded-md"
-                                  placeholder="URL de media"
-                                />
-                              ) : (
-                                exercise.media ? (
-                                  <a href={exercise.media} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5 inline-block">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                                    </svg>
-                                  </a>
-                                ) : 'N/A'
-                              )}
-                            </td>
-                            <td data-label="Notas" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {editingExerciseId === exercise.id ? (
-                                <textarea
-                                  value={editedNotes}
-                                  onChange={(e) => setEditedNotes(e.target.value)}
-                                  className="w-40 px-2 py-1 border rounded-md resize-y"
-                                  rows="2"
-                                  placeholder="Notas del ejercicio"
-                                ></textarea>
-                              ) : (
-                                exercise.notes || 'N/A'
-                              )}
-                            </td>
-                            {isEditable && (
-                              <td data-label="Acciones" className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2 flex flex-wrap justify-end">
-                                {editingExerciseId === exercise.id ? (
-                                  <>
-                                    <button
-                                      onClick={() => handleSaveClick(exercise.id)}
-                                      className="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-xs font-semibold flex items-center justify-center mb-1 sm:mb-0"
-                                      title="Guardar"
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                      </svg>
-                                    </button>
-                                    <button
-                                      onClick={handleCancelEditExercise}
-                                      className="px-3 py-1 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition-colors text-xs font-semibold flex items-center justify-center mb-1 sm:mb-0"
-                                      title="Cancelar"
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    onClick={() => handleEditClick(exercise)}
-                                    className="px-3 py-1 rounded-lg bg-yellow-600 text-white hover:bg-yellow-700 transition-colors text-xs font-semibold flex items-center justify-center mb-1 sm:mb-0"
-                                    title="Editar"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                                    </svg>
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => handleDeleteExercise(exercise.id)}
-                                  className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold flex items-center justify-center mb-1 sm:mb-0"
-                                  title="Eliminar"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.924a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165M12 2.25h.007v.008H12V2.25z" />
-                                  </svg>
-                                </button>
-                              </td>
-                            )}
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <button
-                                className="px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center"
-                                title="Seguimiento semanal"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  setSelectedExercise(exercise);
-                                  setShowTrackingModal(true);
-                                }}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a4 4 0 014-4h4m0 0V7m0 4l-4-4m4 4l4-4" />
-                                </svg>
-                              </button>
-                            </td>
-      {/* Modal de seguimiento semanal por ejercicio */}
-      {showTrackingModal && selectedExercise && (
-        <ExerciseTrackingModal
-          exercise={selectedExercise}
-          weeks={weeksArray}
-          tracking={exerciseTracking[selectedExercise.id] || {}}
-          onSave={trackingData => {
-            // Actualizar el objeto exerciseTracking y guardar
-            const updatedTracking = { ...exerciseTracking, [selectedExercise.id]: trackingData };
-            onUpdateRoutine({ ...routine, exerciseTracking: updatedTracking });
-          }}
-          onClose={() => {
-            setShowTrackingModal(false);
-            setSelectedExercise(null);
-          }}
-        />
-      )}
-                          </tr>
-                          {/* Eliminada la sección de seguimiento expandible inline. El seguimiento ahora solo se gestiona por modal. */}
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))}
-            {/* Sección de Seguimiento Diario de PF y PE */}
-            <div className="mt-6 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="flex justify-between items-center mb-3 cursor-pointer" onClick={() => setExpandedDailyTracking(!expandedDailyTracking)}>
-                <h4 className="text-lg font-semibold text-gray-700">Seguimiento Diario</h4>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`h-5 w-5 transform ${expandedDailyTracking ? 'rotate-180' : 'rotate-0'} transition-transform`}
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                </svg>
-              </div>
-              {expandedDailyTracking && (
-                <>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-4 sm:space-y-0 mb-4">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar Fecha:</label>
-                      <DatePicker
-                        selectedDate={selectedDateForDailyTracking}
-                        onDateChange={setSelectedDateForDailyTracking}
-                        placeholder="Selecciona una fecha"
-                        disabled={!isEditable}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">PF (Percepción de Fatiga):</label>
-                      <input
-                        type="number"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
-                        placeholder="Ej. 1-10"
-                        value={currentPF}
-                        onChange={(e) => setCurrentPF(e.target.value)}
-                        disabled={!isEditable}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">PE (Percepción de Esfuerzo):</label>
-                      <input
-                        type="number"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
-                        placeholder="Ej. 1-10"
-                        value={currentPE}
-                        onChange={(e) => setCurrentPE(e.target.value)}
-                        disabled={!isEditable}
-                      />
-                    </div>
-                    <button
-                      onClick={handleAddDailyTracking}
-                      className="mt-auto px-6 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-semibold shadow-md flex items-center justify-center"
-                      title="Agregar"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                    </button>
-                  </div>
-                  {/* Historial de PF y PE por día */}
-                  {Object.keys(routine.dailyTracking || {}).length > 0 && (
-                    <div className="mt-4">
-                      <h5 className="text-md font-semibold text-gray-700 mb-2">Historial de PF y PE:</h5>
-                      <div className="space-y-2">
-                        {Object.keys(routine.dailyTracking).sort().map(date => (
-                          routine.dailyTracking[date].map((entry, index) => (
-                            <div key={`${date}-${index}`} className="flex justify-between items-center p-2 bg-gray-50 rounded-md border border-gray-200">
-                              <span className="text-sm text-gray-700">Fecha: {date}</span>
-                              <span className="text-sm text-gray-700">PF: {entry.PF}</span>
-                              <span className="text-sm text-gray-700">PE: {entry.PE}</span>
-                            </div>
-                          ))
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+                    ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        ))
+        )}
+      </div>
+      
+      {/* Modal para seguimiento diario general */}
+      {showDailyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Seguimiento Diario de la Rutina</h3>
+            <p className="text-sm text-gray-600 mb-4">Registra tu percepción de fatiga y esfuerzo</p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha del entrenamiento
+              </label>
+              <input
+                type="date"
+                className="w-full border rounded px-3 py-2"
+                value={dailyDate}
+                onChange={e => setDailyDate(e.target.value)}
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Percepción de Fatiga (PF): {dailyPF}/5
+              </label>
+              <select
+                className="w-full border rounded px-3 py-2"
+                value={dailyPF}
+                onChange={e => setDailyPF(e.target.value)}
+              >
+                <option value="">Selecciona PF (0-5)</option>
+                <option value="0">0 - Sin fatiga</option>
+                <option value="1">1 - Muy poca fatiga</option>
+                <option value="2">2 - Poca fatiga</option>
+                <option value="3">3 - Fatiga moderada</option>
+                <option value="4">4 - Mucha fatiga</option>
+                <option value="5">5 - Fatiga extrema</option>
+              </select>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Percepción de Esfuerzo (PE): {dailyPE}/5
+              </label>
+              <select
+                className="w-full border rounded px-3 py-2"
+                value={dailyPE}
+                onChange={e => setDailyPE(e.target.value)}
+              >
+                <option value="">Selecciona PE (0-5)</option>
+                <option value="0">0 - Sin esfuerzo</option>
+                <option value="1">1 - Muy poco esfuerzo</option>
+                <option value="2">2 - Poco esfuerzo</option>
+                <option value="3">3 - Esfuerzo moderado</option>
+                <option value="4">4 - Mucho esfuerzo</option>
+                <option value="5">5 - Esfuerzo extremo</option>
+              </select>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={handleCloseDailyModal}
+              >
+                Cancelar
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                onClick={handleSaveDaily}
+                disabled={!dailyDate || !dailyPF || !dailyPE}
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-
-      {isEditable && (
-        <button
-          onClick={() => setShowAddExerciseForm(true)}
-          className="w-full mt-6 bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md flex items-center justify-center"
-          title="Agregar Ejercicio"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-        </button>
-      )}
-
-      {showAddExerciseForm && (
-        <div className="mb-6 p-4 border border-gray-200 rounded-xl bg-gray-50">
-          <h3 className="text-lg font-bold text-gray-700 mb-4">Agregar Ejercicio</h3>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre:</label>
+      
+      {/* Modal para agregar seguimiento semanal */}
+      {showWeeklyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Agregar seguimiento semanal</h3>
+            <select
+              className="w-full border rounded px-3 py-2 mb-4"
+              value={weekNumber}
+              onChange={e => setWeekNumber(e.target.value)}
+            >
+              <option value="">Selecciona la semana</option>
+              {getWeekOptions().map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
             <input
-              type="text"
-              value={newExercise.name}
-              onChange={e => setNewExercise({ ...newExercise, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+              type="number"
+              className="w-full border rounded px-3 py-2 mb-4"
+              placeholder="Peso (Kg)"
+              value={weekWeight}
+              onChange={e => setWeekWeight(e.target.value)}
             />
-          </div>
-          <div className="mb-4 flex flex-wrap gap-4">
-            <div>
-              <label className="block text-xs text-gray-700">Series</label>
-              <input type="text" value={newExercise.sets} onChange={e => setNewExercise({ ...newExercise, sets: e.target.value })} className="w-20 px-2 py-1 border rounded-md" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-700">Reps</label>
-              <input type="text" value={newExercise.reps} onChange={e => setNewExercise({ ...newExercise, reps: e.target.value })} className="w-20 px-2 py-1 border rounded-md" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-700">Peso</label>
-              <input type="text" value={newExercise.weight} onChange={e => setNewExercise({ ...newExercise, weight: e.target.value })} className="w-20 px-2 py-1 border rounded-md" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-700">Tiempo</label>
-              <input type="text" value={newExercise.time} onChange={e => setNewExercise({ ...newExercise, time: e.target.value })} className="w-20 px-2 py-1 border rounded-md" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-700">Descanso</label>
-              <input type="text" value={newExercise.rest} onChange={e => setNewExercise({ ...newExercise, rest: e.target.value })} className="w-20 px-2 py-1 border rounded-md" />
-            </div>
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Media (URL):</label>
-            <input
-              type="text"
-              value={newExercise.media}
-              onChange={e => setNewExercise({ ...newExercise, media: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notas:</label>
             <textarea
-              value={newExercise.notes}
-              onChange={e => setNewExercise({ ...newExercise, notes: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-              rows="2"
-              placeholder="Notas del ejercicio"
-            ></textarea>
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Día:</label>
-            <input
-              type="text"
-              value={newExercise.day}
-              onChange={e => setNewExercise({ ...newExercise, day: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+              className="w-full border rounded px-3 py-2 mb-4"
+              placeholder="Notas (máx 100 caracteres)"
+              maxLength={100}
+              value={weekNotes}
+              onChange={e => setWeekNotes(e.target.value)}
             />
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={handleCloseWeeklyModal}
+              >Cancelar</button>
+              <button
+                className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                onClick={handleSaveWeekly}
+                disabled={!weekNumber}
+              >Guardar</button>
+            </div>
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sección:</label>
-            <input
-              type="text"
-              value={newExercise.section}
-              onChange={e => setNewExercise({ ...newExercise, section: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-            />
-          </div>
-          <div className="flex justify-end space-x-4 mt-6">
-            <button
-              onClick={() => setShowAddExerciseForm(false)}
-              className="px-6 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-semibold flex items-center justify-center"
-              title="Cancelar"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleAddExercise}
-              className="px-6 py-2 rounded-xl bg-black text-white hover:bg-gray-800 transition-colors font-semibold shadow-md flex items-center justify-center"
-              title="Guardar Ejercicio"
-            >
-              Guardar
-            </button>
+        </div>
+      )}
+      {/* Modal para editar ejercicio */}
+      {showExerciseModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">Editar ejercicio</h3>
+            
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 w-24">Nombre:</label>
+                <input
+                  type="text"
+                  className="flex-1 border rounded px-3 py-2"
+                  placeholder="Nombre del ejercicio"
+                  value={exerciseName}
+                  onChange={e => setExerciseName(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 w-24">Sección:</label>
+                <select
+                  className="flex-1 border rounded px-3 py-2"
+                  value={exerciseSection}
+                  onChange={e => setExerciseSection(e.target.value)}
+                >
+                  {sectionOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 w-24">Día:</label>
+                <select
+                  className="flex-1 border rounded px-3 py-2"
+                  value={exerciseDay}
+                  onChange={e => setExerciseDay(e.target.value)}
+                >
+                  {dayOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 w-24">Series:</label>
+                <input
+                  type="number"
+                  className="flex-1 border rounded px-3 py-2"
+                  placeholder="Series"
+                  value={exerciseSets}
+                  onChange={e => setExerciseSets(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 w-24">Repeticiones:</label>
+                <input
+                  type="number"
+                  className="flex-1 border rounded px-3 py-2"
+                  placeholder="Repeticiones"
+                  value={exerciseReps}
+                  onChange={e => setExerciseReps(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 w-24">Peso (Kg):</label>
+                <input
+                  type="number"
+                  className="flex-1 border rounded px-3 py-2"
+                  placeholder="Peso (Kg)"
+                  value={exerciseWeight}
+                  onChange={e => setExerciseWeight(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 w-24">Tiempo (seg):</label>
+                <input
+                  type="number"
+                  className="flex-1 border rounded px-3 py-2"
+                  placeholder="Tiempo (segundos)"
+                  value={exerciseTime}
+                  onChange={e => setExerciseTime(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 w-24">Descanso (seg):</label>
+                <input
+                  type="number"
+                  className="flex-1 border rounded px-3 py-2"
+                  placeholder="Descanso (segundos)"
+                  value={exerciseRest}
+                  onChange={e => setExerciseRest(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => {
+                  setShowExerciseModal(false);
+                  setEditExercise(null);
+                }}
+              >Cancelar</button>
+              <button
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                onClick={() => {
+                  // Guardar cambios (puedes personalizar la lógica)
+                  if (routine.id) {
+                    onUpdateRoutine({
+                      id: routine.id,
+                      action: 'editExercise',
+                      data: {
+                        ...editExercise,
+                        name: exerciseName,
+                        sets: exerciseSets,
+                        reps: exerciseReps,
+                        weight: exerciseWeight,
+                        time: exerciseTime,
+                        rest: exerciseRest,
+                        day: exerciseDay,
+                        section: exerciseSection,
+                      }
+                    });
+                    setShowExerciseModal(false);
+                    setEditExercise(null);
+                  } else {
+                    alert('No se encontró el ID de la rutina.');
+                  }
+                }}
+                disabled={!exerciseName.trim()}
+              >Guardar</button>
+            </div>
           </div>
         </div>
       )}
