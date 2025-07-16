@@ -78,7 +78,11 @@ const ClientRoutineList = ({
                   )}
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => onSelectRoutine(routine)}
+                      onClick={() => {
+                        console.log('ClientRoutineList - routine seleccionada:', routine);
+                        console.log('ClientRoutineList - routine.id:', routine.id);
+                        onSelectRoutine(routine);
+                      }}
                       className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors font-semibold shadow-md flex items-center justify-center"
                       title="Ver Detalles"
                     >

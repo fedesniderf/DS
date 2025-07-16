@@ -47,65 +47,71 @@ const ClientDashboardAdmin = ({ clients, onSelectClient }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {sortedClients.map((client) => (
-                <React.Fragment key={client.id}>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      <button
-                        onClick={() => handleToggleExpand(client.id)}
-                        className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        {expandedClient === client.id ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 mr-1">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                          </svg>
-                        ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 mr-1">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                          </svg>
-                        )}
-                        {client.name}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.lastRoutine}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.progress}%</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => onSelectClient(client)}
-                        className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all duration-300 ease-in-out text-xs font-semibold shadow-sm"
-                      >
-                        Ver Rutinas
-                      </button>
-                    </td>
-                  </tr>
-                  {expandedClient === client.id && (
+              {sortedClients.map((client, index) => {
+                // Debug: verificar que cada cliente tenga un ID único
+                const clientKey = client.id || client.client_id || client.email || index;
+                console.log('ClientDashboardAdmin - client:', client, 'key:', clientKey);
+                
+                return (
+                  <React.Fragment key={clientKey}>
                     <tr>
-                      <td colSpan="5" className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-                          <div>
-                            <p><span className="font-semibold">Edad:</span> {client.age || 'N/A'}</p>
-                            <p><span className="font-semibold">Peso:</span> {client.weight || 'N/A'} kg</p>
-                            <p><span className="font-semibold">Altura:</span> {client.height || 'N/A'} cm</p>
-                          </div>
-                          <div>
-                            <p><span className="font-semibold">Teléfono:</span> {client.phone || 'N/A'}</p>
-                            <p><span className="font-semibold">Objetivos:</span>{" "}
-                              {Array.isArray(client.goals)
-                                ? client.goals.length > 0
-                                  ? client.goals.join(', ')
-                                  : 'N/A'
-                                : typeof client.goals === 'string' && client.goals.trim() !== ''
-                                  ? client.goals
-                                  : 'N/A'}
-                            </p>
-                          </div>
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <button
+                          onClick={() => handleToggleExpand(clientKey)}
+                          className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          {expandedClient === clientKey ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 mr-1">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 mr-1">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
+                          )}
+                          {client.name || client.fullName || client.email}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.lastRoutine || 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.progress || 0}%</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button
+                          onClick={() => onSelectClient(client)}
+                          className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all duration-300 ease-in-out text-xs font-semibold shadow-sm"
+                        >
+                          Ver Rutinas
+                        </button>
                       </td>
                     </tr>
-                  )}
-                </React.Fragment>
-              ))}
+                    {expandedClient === clientKey && (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                            <div>
+                              <p><span className="font-semibold">Edad:</span> {client.age || 'N/A'}</p>
+                              <p><span className="font-semibold">Peso:</span> {client.weight || 'N/A'} kg</p>
+                              <p><span className="font-semibold">Altura:</span> {client.height || 'N/A'} cm</p>
+                            </div>
+                            <div>
+                              <p><span className="font-semibold">Teléfono:</span> {client.phone || 'N/A'}</p>
+                              <p><span className="font-semibold">Objetivos:</span>{" "}
+                                {Array.isArray(client.goals)
+                                  ? client.goals.length > 0
+                                    ? client.goals.join(', ')
+                                    : 'N/A'
+                                  : typeof client.goals === 'string' && client.goals.trim() !== ''
+                                    ? client.goals
+                                    : 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
