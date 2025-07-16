@@ -9,6 +9,8 @@ const RoutineDetail = ({
   isEditable,
   onAddExerciseClick = () => {},
 }) => {
+  // Asegura que exerciseTracking siempre esté definido
+  const exerciseTracking = routine.exerciseTracking || {};
   // Estado para los valores de PF y PE en el seguimiento diario
   const [currentPF, setCurrentPF] = useState('');
   const [currentPE, setCurrentPE] = useState('');
