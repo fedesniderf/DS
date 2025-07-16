@@ -314,39 +314,7 @@ const RoutineDetail = ({
             ></textarea>
             <p className="text-right text-xs text-gray-500">{editedDescription.length}/250</p>
           </div>
-          {/* Campos para el ejercicio principal */}
-          <div className="mb-4">
-            <label htmlFor="exerciseName" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Ejercicio:</label>
-            <input
-              id="exerciseName"
-              type="text"
-              value={editedExerciseName}
-              onChange={(e) => setEditedExerciseName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-            />
-          </div>
-          <div className="mb-4 flex flex-wrap gap-4">
-            <div>
-              <label htmlFor="sets" className="block text-xs text-gray-700">Series</label>
-              <input id="sets" type="text" value={editedSets} onChange={e => setEditedSets(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
-            </div>
-            <div>
-              <label htmlFor="reps" className="block text-xs text-gray-700">Reps</label>
-              <input id="reps" type="text" value={editedReps} onChange={e => setEditedReps(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
-            </div>
-            <div>
-              <label htmlFor="weight" className="block text-xs text-gray-700">Peso</label>
-              <input id="weight" type="text" value={editedWeight} onChange={e => setEditedWeight(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
-            </div>
-            <div>
-              <label htmlFor="time" className="block text-xs text-gray-700">Tiempo</label>
-              <input id="time" type="text" value={editedTime} onChange={e => setEditedTime(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
-            </div>
-            <div>
-              <label htmlFor="rest" className="block text-xs text-gray-700">Descanso</label>
-              <input id="rest" type="text" value={editedRest} onChange={e => setEditedRest(e.target.value)} className="w-20 px-2 py-1 border rounded-md" />
-            </div>
-          </div>
+          {/* Campos de ejercicio eliminados de la edición de detalles de rutina */}
           {/* Campos de ejercicio eliminados de la edición de detalles de rutina */}
           <div className="flex justify-end space-x-4 mt-6">
             <button
