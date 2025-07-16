@@ -254,6 +254,7 @@ const App = () => {
 
   // ACTUALIZAR RUTINA
   const handleUpdateRoutine = async (updatedRoutine) => {
+
     // Incluye todos los campos relevantes, especialmente exercises
     const {
       id,
@@ -273,7 +274,9 @@ const App = () => {
       return;
     }
 
-    // Construir el objeto de actualización dinámicamente
+    // Sanitiza los campos numéricos
+    const sanitizeNumber = val => val === "" || val === undefined ? null : Number(val);
+
     const updateObj = {
       name,
       startDate,
@@ -281,7 +284,15 @@ const App = () => {
       description,
       client_id,
       exercises: exercises || [],
-      name_ex, sets, reps, weight, media, notes, time, rest, day
+      name_ex,
+      sets: sanitizeNumber(sets),
+      reps: sanitizeNumber(reps),
+      weight: sanitizeNumber(weight),
+      media,
+      notes,
+      time: sanitizeNumber(time),
+      rest: sanitizeNumber(rest),
+      day
     };
     // Solo agregar dailyTracking si existe
     if (typeof dailyTracking !== 'undefined') {
