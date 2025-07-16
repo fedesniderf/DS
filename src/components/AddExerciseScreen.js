@@ -12,46 +12,50 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
   const [rest, setRest] = useState('');
   const [day, setDay] = useState(''); // Cambiado a string para el valor seleccionado
   const [section, setSection] = useState(''); // Cambiado a string para el valor seleccionado
+  const [rir, setRir] = useState(''); // Nuevo campo para RIR
+  const [cadencia, setCadencia] = useState(''); // Nuevo campo para Cadencia
+  const [round, setRound] = useState(''); // Nuevo campo para Round
 
   const sectionOptions = [
     { value: '', label: 'Selecciona una sección' },
     { value: 'Warm Up', label: 'Warm Up' },
+    { value: 'Activación', label: 'Activación' },
+    { value: 'Core', label: 'Core' },
     { value: 'Trabajo DS', label: 'Trabajo DS' },
     { value: 'Out', label: 'Out' },
   ];
 
   const dayOptions = [
     { value: '', label: 'Selecciona un día' },
-    { value: '1', label: '1' },
-    { value: '2', label: '2' },
-    { value: '3', label: '3' },
-    { value: '4', label: '4' },
-    { value: '5', label: '5' },
-    { value: '6', label: '6' },
-    { value: '7', label: '7' },
+    { value: '1', label: 'Día 1' },
+    { value: '2', label: 'Día 2' },
+    { value: '3', label: 'Día 3' },
+    { value: '4', label: 'Día 4' },
+    { value: '5', label: 'Día 5' },
+    { value: '6', label: 'Día 6' },
+    { value: '7', label: 'Día 7' },
   ];
 
   const handleAddExercise = () => {
-    if (name && sets && reps && weight && day && section) {
-      const newExercise = {
-        id: generateUniqueId(),
-        name,
-        sets,
-        reps,
-        weight,
-        media,
-        notes,
-        time,
-        rest,
-        day,
-        section,
-        weeklyData: {}, // Inicializar weeklyData para el seguimiento
-      };
-      onAddExercise(newExercise);
-      onBack(); // Regresar a la vista de detalles de la rutina
-    } else {
-      alert('Por favor, completa todos los campos obligatorios (Nombre, Series, Repeticiones, Peso, Día, Sección).');
-    }
+    const newExercise = {
+      id: generateUniqueId(),
+      name: name || '',
+      sets: sets || '',
+      reps: reps || '',
+      weight: weight || '',
+      media: media || '',
+      notes: notes || '',
+      time: time || '',
+      rest: rest || '',
+      day: day || '',
+      section: section || '',
+      rir: rir || '', // Incluir RIR
+      cadencia: cadencia || '', // Incluir Cadencia
+      round: round || '', // Incluir Round
+      weeklyData: {}, // Inicializar weeklyData para el seguimiento
+    };
+    onAddExercise(newExercise);
+    onBack(); // Regresar a la vista de detalles de la rutina
   };
 
   return (
@@ -72,7 +76,7 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="sets">
             Series:
@@ -117,13 +121,13 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="time">
-            Tiempo (segundos/minutos):
+            Tiempo (seg):
           </label>
           <input
             type="text"
             id="time"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
-            placeholder="Ej. 30s o 5min"
+            placeholder="Ej. 30"
             value={time}
             onChange={(e) => setTime(e.target.value)}
           />
@@ -131,15 +135,43 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="rest">
-            Descanso (segundos/minutos):
+            Descanso (seg):
           </label>
           <input
             type="text"
             id="rest"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
-            placeholder="Ej. 60s o 2min"
+            placeholder="Ej. 90"
             value={rest}
             onChange={(e) => setRest(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="rir">
+            RIR (Reps in Reserve):
+          </label>
+          <input
+            type="text"
+            id="rir"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+            placeholder="Ej. 2"
+            value={rir}
+            onChange={(e) => setRir(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="cadencia">
+            Cadencia:
+          </label>
+          <input
+            type="text"
+            id="cadencia"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+            placeholder="Ej. 3-1-2-1"
+            value={cadencia}
+            onChange={(e) => setCadencia(e.target.value)}
           />
         </div>
 
@@ -148,7 +180,7 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
             URL de Media (video/imagen):
           </label>
           <input
-            type="text"
+            type="url"
             id="media"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
             placeholder="Ej. https://youtube.com/ejercicio"
@@ -192,6 +224,20 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
             ))}
           </select>
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="round">
+            Round:
+          </label>
+          <input
+            type="text"
+            id="round"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+            placeholder="Ej. 1"
+            value={round}
+            onChange={(e) => setRound(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="mb-6">
@@ -208,25 +254,29 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
         ></textarea>
       </div>
 
-      <button
-        onClick={handleAddExercise}
-        className="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md mb-4 flex items-center justify-center"
-        title="Agregar Ejercicio"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-      </button>
+      <div className="flex gap-4 mt-6">
+        <button
+          onClick={handleAddExercise}
+          className="flex-1 bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-md flex items-center justify-center gap-2"
+          title="Agregar Ejercicio"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Agregar Ejercicio
+        </button>
 
-      <button
-        onClick={onBack}
-        className="w-full bg-gray-300 text-gray-800 py-3 rounded-xl hover:bg-gray-400 transition-colors font-semibold shadow-md flex items-center justify-center"
-        title="Cancelar"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+        <button
+          onClick={onBack}
+          className="flex-1 bg-gray-500 text-white py-3 rounded-xl hover:bg-gray-600 transition-colors font-semibold shadow-md flex items-center justify-center gap-2"
+          title="Cancelar"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Cancelar
+        </button>
+      </div>
     </div>
   );
 };

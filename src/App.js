@@ -333,6 +333,30 @@ const App = () => {
         exercises[exerciseIndex] = { ...exercise, weeklyData };
         updateObj.exercises = exercises;
       }
+    } else if (action === 'updateWeeklyTracking') {
+      // Actualizar seguimiento semanal existente
+      const exercises = Array.isArray(selectedRoutine.exercises) ? [...selectedRoutine.exercises] : [];
+      const exerciseIndex = exercises.findIndex(ex => ex.id === data.exerciseId);
+      
+      if (exerciseIndex !== -1) {
+        const exercise = exercises[exerciseIndex];
+        const weeklyData = exercise.weeklyData || {};
+        weeklyData[data.weeklyData.week] = data.weeklyData;
+        exercises[exerciseIndex] = { ...exercise, weeklyData };
+        updateObj.exercises = exercises;
+      }
+    } else if (action === 'deleteWeeklyTracking') {
+      // Eliminar seguimiento semanal
+      const exercises = Array.isArray(selectedRoutine.exercises) ? [...selectedRoutine.exercises] : [];
+      const exerciseIndex = exercises.findIndex(ex => ex.id === data.exerciseId);
+      
+      if (exerciseIndex !== -1) {
+        const exercise = exercises[exerciseIndex];
+        const weeklyData = exercise.weeklyData || {};
+        delete weeklyData[data.week];
+        exercises[exerciseIndex] = { ...exercise, weeklyData };
+        updateObj.exercises = exercises;
+      }
     } else if (action === 'updateRoutineInfo') {
       // Actualizar información básica de la rutina
       updateObj = {
@@ -350,6 +374,39 @@ const App = () => {
         timestamp: data.timestamp
       };
       updateObj.dailyTracking = dailyTracking;
+    } else if (action === 'updateDailyRoutineTracking') {
+      // Actualizar seguimiento diario de rutina
+      const dailyTracking = { ...selectedRoutine.dailyTracking };
+      if (data.originalDate && data.originalDate !== data.date) {
+        // Si la fecha cambió, eliminar el registro anterior
+        delete dailyTracking[data.originalDate];
+      }
+      dailyTracking[data.date] = {
+        pf: data.pf,
+        pe: data.pe,
+        timestamp: data.timestamp
+      };
+      updateObj.dailyTracking = dailyTracking;
+    } else if (action === 'deleteDailyRoutineTracking') {
+      // Eliminar seguimiento diario de rutina
+      const dailyTracking = { ...selectedRoutine.dailyTracking };
+      delete dailyTracking[data.date];
+      updateObj.dailyTracking = dailyTracking;
+    } else if (action === 'deleteExercise') {
+      // Eliminar ejercicio individual
+      const exercises = Array.isArray(selectedRoutine.exercises) ? [...selectedRoutine.exercises] : [];
+      const filteredExercises = exercises.filter(ex => ex.id !== data.exerciseId);
+      updateObj.exercises = filteredExercises;
+    } else if (action === 'deleteDay') {
+      // Eliminar todos los ejercicios de un día específico
+      const exercises = Array.isArray(selectedRoutine.exercises) ? [...selectedRoutine.exercises] : [];
+      const filteredExercises = exercises.filter(ex => ex.day !== data.day);
+      updateObj.exercises = filteredExercises;
+    } else if (action === 'deleteSection') {
+      // Eliminar todos los ejercicios de una sección específica de un día
+      const exercises = Array.isArray(selectedRoutine.exercises) ? [...selectedRoutine.exercises] : [];
+      const filteredExercises = exercises.filter(ex => !(ex.day === data.day && ex.section === data.section));
+      updateObj.exercises = filteredExercises;
     } else {
       // Actualización general de rutina
       updateObj = { ...selectedRoutine, ...updatedRoutine };
