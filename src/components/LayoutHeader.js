@@ -14,7 +14,7 @@ const LayoutHeader = ({ title, onBackClick, showBackButton }) => {
       )}
       <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
       {/* Nuevo logo agregado */}
-      <img src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc03OCANFku0HlIPwSxAEOXk6nTjd9beaNftrh5" alt="Nuevo Logo" className="h-10 w-auto" />
+      <img src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc03OCANFku0HlIPwSxAEOXk6nTjd9beaNftrh5" alt="Nuevo Logo" className="h-14 w-auto" />
     </header>
   );
 };

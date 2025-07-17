@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 
+const roles = ['admin', 'client', 'coach'];
 const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState(user.role || 'client');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -19,7 +21,8 @@ const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {
     setError('');
     setLoading(true);
     try {
-      await onResetPassword(user.client_id, newPassword);
+      // Llama a la función de reset y pasa también el nuevo rol
+      await onResetPassword(user.client_id, newPassword, role);
       setSuccess(true);
       setNewPassword('');
       setConfirmPassword('');
@@ -42,6 +45,19 @@ const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         {success && <p className="text-green-600 text-sm mb-4">Contraseña restablecida correctamente.</p>}
 
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">Rol:</label>
+          <select
+            value={role}
+            onChange={e => setRole(e.target.value)}
+            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            disabled={loading || success}
+          >
+            {roles.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </div>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Nueva Contraseña:</label>
           <input

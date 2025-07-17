@@ -16,6 +16,16 @@ const ClientRoutineList = ({
   const [newRoutineEndDate, setNewRoutineEndDate] = useState('');
   const [showAddRoutineForm, setShowAddRoutineForm] = useState(false);
 
+  // Estado para edición de usuario (debe estar antes del return)
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [editFullName, setEditFullName] = useState(client?.fullName || client?.name || '');
+  const [editEmail, setEditEmail] = useState(client?.email || '');
+  const [editPhone, setEditPhone] = useState(client?.phone || '');
+  const [editAge, setEditAge] = useState(client?.age || '');
+  const [editGender, setEditGender] = useState(client?.gender || '');
+  const [editWeight, setEditWeight] = useState(client?.weight || '');
+  const [editHeight, setEditHeight] = useState(client?.height || '');
+
   const handleAddRoutine = () => {
     // Solo se puede agregar rutina si hay cliente seleccionado (admin o cliente)
     if (!client) {
@@ -51,10 +61,97 @@ const ClientRoutineList = ({
 
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        {/* Si hay cliente seleccionado, muestra su nombre/email. Si no, muestra "Todas las Rutinas" */}
-        {client ? `Rutinas de ${client.fullName || client.email}` : 'Todas las Rutinas'}
-      </h2>
+      {/* Sección principal con datos del usuario y botón editar */}
+      {client && (
+        <div className="mb-8 p-4 rounded-xl bg-gray-100 border border-gray-200 relative">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold text-gray-800">{client.fullName || client.name || client.email}</h2>
+            <button
+              className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-md"
+              title="Editar usuario"
+              onClick={() => setShowEditUser(true)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.293-6.293a1 1 0 011.414 0l1.586 1.586a1 1 0 010 1.414L12 17H9v-3z" />
+              </svg>
+            </button>
+          </div>
+          <div className="text-gray-700 text-sm mb-1"><span className="font-semibold">Email:</span> {client.email}</div>
+          {client.phone && <div className="text-gray-700 text-sm mb-1"><span className="font-semibold">Teléfono:</span> {client.phone}</div>}
+          {client.age && <div className="text-gray-700 text-sm mb-1"><span className="font-semibold">Edad:</span> {client.age}</div>}
+          {client.gender && <div className="text-gray-700 text-sm mb-1"><span className="font-semibold">Género:</span> {client.gender}</div>}
+          {client.weight && <div className="text-gray-700 text-sm mb-1"><span className="font-semibold">Peso:</span> {client.weight} kg</div>}
+          {client.height && <div className="text-gray-700 text-sm mb-1"><span className="font-semibold">Altura:</span> {client.height} cm</div>}
+
+          {/* Formulario de edición modal */}
+          {showEditUser && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+              <form
+                className="w-full max-w-md p-6 bg-white rounded-xl shadow-lg border"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  // Actualizar datos en Supabase
+                  try {
+                    const { error } = await import('../supabaseClient').then(({ supabase }) =>
+                      supabase
+                        .from('usuarios')
+                        .update({
+                          fullName: editFullName,
+                          email: editEmail,
+                          phone: editPhone,
+                          age: editAge,
+                          weight: editWeight,
+                          height: editHeight,
+                        })
+                        .eq('client_id', client.client_id)
+                    );
+                    if (error) {
+                      alert('Error actualizando usuario: ' + error.message);
+                    } else {
+                      alert('Datos actualizados correctamente.');
+                      setShowEditUser(false);
+                      // Opcional: recargar datos del usuario
+                    }
+                  } catch (err) {
+                    alert('Error inesperado: ' + err.message);
+                  }
+                }}
+              >
+                <h3 className="text-lg font-bold mb-4">Editar usuario</h3>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                  <input type="text" className="w-full px-3 py-2 border rounded" value={editFullName} onChange={e => setEditFullName(e.target.value)} />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input type="email" className="w-full px-3 py-2 border rounded" value={editEmail} onChange={e => setEditEmail(e.target.value)} />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                  <input type="text" className="w-full px-3 py-2 border rounded" value={editPhone} onChange={e => setEditPhone(e.target.value)} />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Edad</label>
+                  <input type="number" className="w-full px-3 py-2 border rounded" value={editAge} onChange={e => setEditAge(e.target.value)} />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
+                  <input type="number" className="w-full px-3 py-2 border rounded" value={editWeight} onChange={e => setEditWeight(e.target.value)} />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Altura (cm)</label>
+                  <input type="number" className="w-full px-3 py-2 border rounded" value={editHeight} onChange={e => setEditHeight(e.target.value)} />
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <button type="button" className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400" onClick={() => setShowEditUser(false)}>Cancelar</button>
+                  <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold">Guardar</button>
+                </div>
+              </form>
+            </div>
+          )}
+        </div>
+      )}
+      {/* Eliminado el título de rutinas, solo se muestra el nombre en la sección principal */}
       {Array.isArray(routines) && routines.length > 0 ? (
         <div className="space-y-4">
           {routines.map((routine) => {
