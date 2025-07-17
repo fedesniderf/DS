@@ -59,6 +59,8 @@ async function exportSupabaseData() {
   } catch (error) {
     console.error('❌ Error:', error);
   }
+  // Recargar la página automáticamente después de la exportación
+  setTimeout(() => window.location.reload(), 1000);
 }
 
 // Ejecutar la función

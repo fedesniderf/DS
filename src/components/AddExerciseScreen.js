@@ -15,6 +15,7 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
   const [rir, setRir] = useState(''); // Nuevo campo para RIR
   const [cadencia, setCadencia] = useState(''); // Nuevo campo para Cadencia
   const [round, setRound] = useState(''); // Nuevo campo para Round
+  const [cantidadRounds, setCantidadRounds] = useState(''); // Nuevo campo para cantidad de rounds
 
   const sectionOptions = [
     { value: '', label: 'Selecciona una sección' },
@@ -52,6 +53,7 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
       rir: rir || '', // Incluir RIR
       cadencia: cadencia || '', // Incluir Cadencia
       round: round || '', // Incluir Round
+      cantidadRounds: cantidadRounds || '', // Nueva cantidad de rounds
       weeklyData: {}, // Inicializar weeklyData para el seguimiento
     };
     onAddExercise(newExercise);
@@ -236,6 +238,20 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
             placeholder="Ej. 1"
             value={round}
             onChange={(e) => setRound(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="cantidadRounds">
+            Cantidad de Rounds:
+          </label>
+          <input
+            type="number"
+            id="cantidadRounds"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+            placeholder="Ej. 3"
+            value={cantidadRounds}
+            onChange={(e) => setCantidadRounds(e.target.value)}
+            min="1"
           />
         </div>
       </div>

@@ -96,6 +96,17 @@ const EditExerciseModal = ({ exercise, onSave, onClose }) => {
               placeholder="Ej: 75"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Cantidad de Rounds:</label>
+            <input
+              type="number"
+              value={editedExercise.cantidadRounds || ''}
+              onChange={(e) => handleChange('cantidadRounds', e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+              placeholder="Ej: 3"
+              min="1"
+            />
+          </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700">Notas:</label>
             <textarea

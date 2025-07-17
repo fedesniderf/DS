@@ -12,15 +12,32 @@ const UserManagementScreen = lazy(() => import('./components/UserManagementScree
 const ClientDashboardAdmin = lazy(() => import('./components/ClientDashboardAdmin'));
 
 const App = () => {
+  // Eliminar usuario
+  const handleDeleteUser = useCallback(async (clientId) => {
+    // Eliminar de Supabase
+    const { error } = await supabase
+      .from('usuarios')
+      .delete()
+      .eq('client_id', clientId);
+    if (error) {
+      alert('Error al eliminar el usuario: ' + error.message);
+      return;
+    }
+    // Eliminar del estado local
+    setUsers(prevUsers => prevUsers.filter(u => u.client_id !== clientId));
+  }, []);
   const [currentPage, setCurrentPage] = useState('auth');
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedRoutine, setSelectedRoutine] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [clientRoutines, setClientRoutines] = useState([]);
+  const [showUserLoading, setShowUserLoading] = useState(false);
+  const [showLoginLoading, setShowLoginLoading] = useState(false);
 
   // LOGIN
   const handleLogin = useCallback(async (email, password, method) => {
+    setShowLoginLoading(true);
     if (method === 'email') {
       const { data: users, error } = await supabase
         .from('usuarios')
@@ -28,6 +45,7 @@ const App = () => {
         .eq('email', email)
         .eq('password', password);
 
+      setShowLoginLoading(false);
       if (error) {
         alert('Error consultando usuario en Supabase.');
         return;
@@ -39,12 +57,13 @@ const App = () => {
           setSelectedClient(user);
           setCurrentPage('clientDashboard');
         } else if (user.role === 'admin') {
-          setCurrentPage('adminClientDashboard');
+          setCurrentPage('userManagement');
         }
       } else {
         alert('Credenciales incorrectas.');
       }
     } else if (method === 'google') {
+      setShowLoginLoading(false);
       alert('Login con Google no implementado.');
     }
   }, []);
@@ -113,6 +132,8 @@ const App = () => {
     if (currentPage === 'routineDetail') {
       if (currentUser && currentUser.role === 'client') {
         setCurrentPage('clientDashboard');
+      } else if (currentUser && currentUser.role === 'admin' && selectedClient) {
+        setCurrentPage('adminViewClientRoutines');
       } else {
         setCurrentPage('routines');
       }
@@ -121,9 +142,12 @@ const App = () => {
       if (currentUser && currentUser.role === 'client') {
         setCurrentPage('clientDashboard');
       } else {
-        setCurrentPage('adminClientDashboard');
+        setCurrentPage('userManagement');
         setSelectedClient(null);
       }
+    } else if (currentPage === 'adminViewClientRoutines') {
+      setCurrentPage('userManagement');
+      setSelectedClient(null);
     } else if (currentPage === 'clientDashboard') {
       handleLogout();
     } else if (currentPage === 'addExercise') {
@@ -133,7 +157,7 @@ const App = () => {
     } else if (currentPage === 'adminClientDashboard') {
       handleLogout();
     }
-  }, [currentPage, currentUser, handleLogout]);
+  }, [currentPage, currentUser, handleLogout, selectedClient]);
 
   // CARGAR USUARIOS DESDE SUPABASE
   useEffect(() => {
@@ -155,11 +179,14 @@ const App = () => {
   // CARGAR RUTINAS DEL CLIENTE SELECCIONADO DESDE SUPABASE
   useEffect(() => {
     async function fetchRoutines() {
+      console.log('fetchRoutines - currentUser:', currentUser);
+      console.log('fetchRoutines - selectedClient:', selectedClient);
       if (currentUser?.role === 'admin' && !selectedClient) {
         // Admin: ver todas las rutinas
         const { data, error } = await supabase
           .from('rutinas')
           .select('*');
+        console.log('fetchRoutines - rutinas (admin, todas):', data);
         if (!error) setClientRoutines(data);
       } else if (selectedClient && selectedClient.client_id) {
         // Rutinas del cliente seleccionado
@@ -167,6 +194,7 @@ const App = () => {
           .from('rutinas')
           .select('*')
           .eq('client_id', selectedClient.client_id);
+        console.log('fetchRoutines - rutinas (cliente seleccionado):', data, 'error:', error);
         if (!error) setClientRoutines(data);
       } else if (currentUser?.role === 'client') {
         // Cliente: ver solo sus rutinas
@@ -174,6 +202,7 @@ const App = () => {
           .from('rutinas')
           .select('*')
           .eq('client_id', currentUser.client_id);
+        console.log('fetchRoutines - rutinas (cliente):', data);
         if (!error) setClientRoutines(data);
       } else {
         setClientRoutines([]);
@@ -184,16 +213,6 @@ const App = () => {
 
   // HEADER
   const getHeaderTitle = useCallback(() => {
-    if (!currentUser) {
-      if (currentPage === 'auth') return 'Iniciar Sesión';
-      if (currentPage === 'register') return 'Registrarse';
-    }
-    if (currentUser && currentUser.role === 'admin' && currentPage === 'adminClientDashboard') return 'Administración de Clientes';
-    if (currentUser && currentUser.role === 'admin' && currentPage === 'routines' && selectedClient) return `Rutinas de ${selectedClient.fullName || selectedClient.email}`;
-    if (currentPage === 'routineDetail' && selectedRoutine) return selectedRoutine.name;
-    if (currentUser && currentUser.role === 'client' && currentPage === 'clientDashboard') return `Mis Rutinas`;
-    if (currentPage === 'addExercise') return 'Agregar Ejercicio';
-    if (currentUser && currentUser.role === 'admin' && currentPage === 'userManagement') return 'Gestión de Usuarios';
     return 'DS Entrenamiento';
   }, [currentPage, currentUser, selectedClient, selectedRoutine]);
 
@@ -401,12 +420,12 @@ const App = () => {
       // Eliminar todos los ejercicios de un día específico
       const exercises = Array.isArray(selectedRoutine.exercises) ? [...selectedRoutine.exercises] : [];
       const filteredExercises = exercises.filter(ex => ex.day !== data.day);
-      updateObj.exercises = filteredExercises;
+      updateObj = { exercises: filteredExercises };
     } else if (action === 'deleteSection') {
       // Eliminar todos los ejercicios de una sección específica de un día
       const exercises = Array.isArray(selectedRoutine.exercises) ? [...selectedRoutine.exercises] : [];
       const filteredExercises = exercises.filter(ex => !(ex.day === data.day && ex.section === data.section));
-      updateObj.exercises = filteredExercises;
+      updateObj = { exercises: filteredExercises };
     } else {
       // Actualización general de rutina
       updateObj = { ...selectedRoutine, ...updatedRoutine };
@@ -483,6 +502,17 @@ const App = () => {
 
   // RENDER
   if (!currentUser) {
+    if (showLoginLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <svg className="animate-spin h-10 w-10 text-green-700 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+          <span className="text-gray-700 text-lg font-medium">Iniciando sesión...</span>
+        </div>
+      );
+    }
     if (currentPage === 'register') {
       return (
         <Suspense fallback={<div>Cargando...</div>}>
@@ -499,17 +529,24 @@ const App = () => {
 
 
   // RESTABLECER CONTRASEÑA
-  const handleResetPassword = async (client_id, newPassword) => {
-    console.log('Reset password for:', client_id, newPassword);
+  const handleResetPassword = async (client_id, newPassword, newRole) => {
+    console.log('Reset password for:', client_id, newPassword, newRole);
+    const updateObj = { password: newPassword };
+    if (newRole) updateObj.role = newRole;
     const { error } = await supabase
       .from('usuarios')
-      .update({ password: newPassword })
+      .update(updateObj)
       .eq('client_id', client_id);
     if (error) {
       alert('Error al restablecer la contraseña: ' + error.message);
       return;
     }
-    alert('Contraseña restablecida correctamente.');
+    alert('Contraseña y rol actualizados correctamente.');
+    // Refrescar usuarios si es admin
+    if (currentUser?.role === 'admin') {
+      const { data } = await supabase.from('usuarios').select('*');
+      setUsers(data);
+    }
   };
 
   // Define la función aquí, antes del return
@@ -539,7 +576,7 @@ const App = () => {
       <LayoutHeader
         title={getHeaderTitle()}
         onBackClick={handleBack}
-        showBackButton={currentPage !== 'adminClientDashboard' && currentPage !== 'clientDashboard' && currentPage !== 'auth' && currentPage !== 'register'}
+        showBackButton={currentPage !== 'adminClientDashboard' && currentPage !== 'clientDashboard' && currentPage !== 'auth' && currentPage !== 'register' && currentPage !== 'userManagement' && currentPage !== undefined}
       />
 
       <main className="p-6 max-w-4xl mx-auto">
@@ -547,26 +584,43 @@ const App = () => {
           {/* Sección para el Coach (Administrador) */}
           {currentUser.role === 'admin' && (
             <>
-              {currentPage === 'adminClientDashboard' && (
-                <ClientDashboardAdmin
-                  clients={users.filter(u => u.role && u.role.toLowerCase() === 'client')}
-                  onSelectClient={handleSelectClient}
+              {currentPage === 'userManagement' && (
+                <UserManagementScreen
+                  users={users}
+                  onRoleChange={handleRoleChange}
+                  onResetPassword={handleResetPassword}
+                  onViewProfile={user => {
+                    setShowUserLoading(true);
+                    setTimeout(() => {
+                      setSelectedClient(user);
+                      setCurrentPage('adminViewClientRoutines');
+                      setShowUserLoading(false);
+                    }, 1000); // 1000ms delay
+                  }}
+                  onDeleteUser={handleDeleteUser}
                 />
               )}
-
-              {/* Mostrar rutinas: para admin, mostrar todas si no hay cliente seleccionado */}
-              {currentPage === 'routines' && (
+              {showUserLoading && (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <svg className="animate-spin h-8 w-8 text-green-700 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                  </svg>
+                  <span className="text-gray-700 text-lg font-medium">Cargando rutinas del usuario...</span>
+                </div>
+              )}
+              {!showUserLoading && currentPage === 'adminViewClientRoutines' && selectedClient && (
                 <ClientRoutineList
-                  client={selectedClient} // será null si no hay cliente seleccionado
+                  client={selectedClient}
                   routines={clientRoutines}
-                  users={users}
                   onSelectRoutine={handleSelectRoutine}
                   isEditable={true}
-                  onAddRoutine={handleAddRoutine}
-                  onDeleteRoutine={handleDeleteRoutine}
+                  onBack={() => {
+                    setCurrentPage('userManagement');
+                    setSelectedClient(null);
+                  }}
                 />
               )}
-
               {currentPage === 'routineDetail' && selectedRoutine && (
                 <RoutineDetail
                   routine={selectedRoutine}
@@ -576,36 +630,14 @@ const App = () => {
                   canAddDailyTracking={true}
                 />
               )}
-
               {currentPage === 'addExercise' && (
                 <AddExerciseScreen
                   onAddExercise={handleAddExerciseClick}
                   onBack={() => setCurrentPage('routineDetail')}
                 />
               )}
-
-
-              {currentPage === 'userManagement' && (
-                <UserManagementScreen
-                  users={users}
-                  onRoleChange={handleRoleChange}
-                  onResetPassword={handleResetPassword}
-                />
-              )}
-
-              {/* Botones de acción para el admin */}
-              {currentPage === 'adminClientDashboard' && (
-                <>
-                  <button
-                    onClick={() => setCurrentPage('userManagement')}
-                    className="w-full bg-gray-700 text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md"
-                  >
-                    Administrar Usuarios
-                  </button>
-                </>
-              )}
-                    </>
-                    )}
+            </>
+          )}
 
                     {/* Sección para el Cliente */}
           {currentUser.role === 'client' && (
