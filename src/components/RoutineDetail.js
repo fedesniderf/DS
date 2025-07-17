@@ -41,6 +41,7 @@ const RoutineDetail = ({
   const [exerciseCadencia, setExerciseCadencia] = React.useState(""); // Nuevo campo para Cadencia
   const [exerciseRound, setExerciseRound] = React.useState(""); // Nuevo campo para Round
   const [exerciseCantidadRounds, setExerciseCantidadRounds] = React.useState(""); // Nuevo campo para cantidad de rounds
+  const [exerciseNotes, setExerciseNotes] = React.useState(""); // Nuevo campo para notas adicionales
 
   // Handler para editar ejercicio
   const handleEditExerciseClick = (ex) => {
@@ -58,6 +59,7 @@ const RoutineDetail = ({
     setExerciseCadencia(ex.cadencia || ""); // Incluir el campo Cadencia
     setExerciseRound(ex.round || ""); // Incluir el campo Round
     setExerciseCantidadRounds(ex.cantidadRounds || ""); // Incluir el campo cantidadRounds
+    setExerciseNotes(ex.notes || ""); // Incluir el campo notas adicionales
     setShowExerciseModal(true);
   };
 
@@ -1032,20 +1034,22 @@ const RoutineDetail = ({
                       {Array.isArray(groupedByDay[day][sectionName]) && groupedByDay[day][sectionName].map((ex) => (
                         <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow">
                           <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
-                              {ex.media && (
-                                <button
-                                  className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-                                  title="Ver video del ejercicio"
-                                  onClick={() => window.open(ex.media, '_blank')}
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                                  </svg>
-                                </button>
-                              )}
+                            <div className="flex items-center gap-2 w-full">
+                              <div className="bg-gray-100 rounded-lg px-4 py-1 w-full mx-[-16px] flex items-center" style={{marginLeft: '-16px', marginRight: '-16px'}}>
+                                <h6 className="text-md font-semibold text-gray-800 flex-1">{ex.name}</h6>
+                                {ex.media && (
+                                  <button
+                                    className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors ml-2"
+                                    title="Ver video del ejercicio"
+                                    onClick={() => window.open(ex.media, '_blank')}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             <div className="flex gap-2">
                               {/* Botón para seguimiento semanal */}
@@ -1291,6 +1295,18 @@ const RoutineDetail = ({
               />
             </div>
             
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notas adicionales
+              </label>
+              <textarea
+                value={exerciseNotes}
+                onChange={(e) => setExerciseNotes(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Cualquier nota relevante sobre el ejercicio"
+                rows={3}
+              />
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={handleSaveDaily}
@@ -1461,192 +1477,80 @@ const RoutineDetail = ({
       {/* Modal para editar ejercicio */}
       {showExerciseModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold mb-4">
+          <div className="bg-white p-4 rounded-xl shadow-lg w-full max-w-md max-h-[80vh] overflow-y-auto text-xs" style={{ fontSize: '12px' }}>
+            <h3 className="text-base font-bold mb-4">
               {editExercise ? 'Editar Ejercicio' : 'Agregar Ejercicio'}
             </h3>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nombre del ejercicio
-              </label>
-              <input
-                type="text"
-                value={exerciseName}
-                onChange={(e) => setExerciseName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: Sentadilla"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Series
-                </label>
-                <input
-                  type="text"
-                  value={exerciseSets}
-                  onChange={(e) => setExerciseSets(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: 3"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Repeticiones
-                </label>
-                <input
-                  type="text"
-                  value={exerciseReps}
-                  onChange={(e) => setExerciseReps(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: 10-12"
-                />
+            {/* Sección 1: Día, Sección, Round, Cant. rounds */}
+            <div className="mb-6 border-b pb-4">
+              <div className="flex gap-2 mb-2">
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Día</label>
+                  <select value={exerciseDay} onChange={(e) => setExerciseDay(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" style={{ fontSize: '12px' }}>
+                    {dayOptions.map(option => (<option key={option.value} value={option.value}>{option.label}</option>))}
+                  </select>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Sección</label>
+                  <select value={exerciseSection} onChange={(e) => setExerciseSection(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" style={{ fontSize: '12px' }}>
+                    {sectionOptions.map(option => (<option key={option.value} value={option.value}>{option.label}</option>))}
+                  </select>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Round</label>
+                  <input type="text" value={exerciseRound} onChange={(e) => setExerciseRound(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 1" style={{ fontSize: '12px' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Cant. rounds</label>
+                  <input type="number" value={exerciseCantidadRounds} onChange={(e) => setExerciseCantidadRounds(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 3" min="1" style={{ fontSize: '12px' }} />
+                </div>
               </div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Peso (kg)
-                </label>
-                <input
-                  type="text"
-                  value={exerciseWeight}
-                  onChange={(e) => setExerciseWeight(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: 80"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tiempo (seg)
-                </label>
-                <input
-                  type="text"
-                  value={exerciseTime}
-                  onChange={(e) => setExerciseTime(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: 30"
-                />
-              </div>
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Descanso (seg)
-              </label>
-              <input
-                type="text"
-                value={exerciseRest}
-                onChange={(e) => setExerciseRest(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: 90"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  RIR (Reps in Reserve)
-                </label>
-                <input
-                  type="text"
-                  value={exerciseRIR}
-                  onChange={(e) => setExerciseRIR(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: 2"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cadencia
-                </label>
-                <input
-                  type="text"
-                  value={exerciseCadencia}
-                  onChange={(e) => setExerciseCadencia(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: 3-1-2-1"
-                />
+            {/* Sección 2: Resto de campos */}
+            <div className="mb-6">
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="col-span-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Nombre del ejercicio</label>
+                  <input type="text" value={exerciseName} onChange={(e) => setExerciseName(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: Sentadilla" style={{ fontSize: '12px' }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Series</label>
+                  <input type="text" value={exerciseSets} onChange={(e) => setExerciseSets(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 3" style={{ fontSize: '12px' }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Repeticiones</label>
+                  <input type="text" value={exerciseReps} onChange={(e) => setExerciseReps(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 10-12" style={{ fontSize: '12px' }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Peso (kg)</label>
+                  <input type="text" value={exerciseWeight} onChange={(e) => setExerciseWeight(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 80" style={{ fontSize: '12px' }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Tiempo (seg)</label>
+                  <input type="text" value={exerciseTime} onChange={(e) => setExerciseTime(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 30" style={{ fontSize: '12px' }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Descanso (seg)</label>
+                  <input type="text" value={exerciseRest} onChange={(e) => setExerciseRest(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 90" style={{ fontSize: '12px' }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">RIR (Reps in Reserve)</label>
+                  <input type="text" value={exerciseRIR} onChange={(e) => setExerciseRIR(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 2" style={{ fontSize: '12px' }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Cadencia</label>
+                  <input type="text" value={exerciseCadencia} onChange={(e) => setExerciseCadencia(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 3-1-2-1" style={{ fontSize: '12px' }} />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">URL de Media (video/imagen)</label>
+                  <input type="url" value={exerciseMedia} onChange={(e) => setExerciseMedia(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: https://youtube.com/ejercicio" style={{ fontSize: '12px' }} />
+                </div>
+                <div className="col-span-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Notas adicionales</label>
+                  <textarea value={exerciseNotes} onChange={(e) => setExerciseNotes(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Cualquier nota relevante sobre el ejercicio" rows={3} style={{ fontSize: '12px' }} />
+                </div>
               </div>
             </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL de Media (video/imagen)
-              </label>
-              <input
-                type="url"
-                value={exerciseMedia}
-                onChange={(e) => setExerciseMedia(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: https://youtube.com/ejercicio"
-              />
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Día
-                </label>
-                <select
-                  value={exerciseDay}
-                  onChange={(e) => setExerciseDay(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {dayOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sección
-                </label>
-                <select
-                  value={exerciseSection}
-                  onChange={(e) => setExerciseSection(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {sectionOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Round
-                </label>
-                <input
-                  type="text"
-                  value={exerciseRound}
-                  onChange={(e) => setExerciseRound(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: 1"
-                />
-                <label className="block text-sm font-medium text-gray-700 mb-2 mt-2">
-                  Cantidad de Rounds
-                </label>
-                <input
-                  type="number"
-                  value={exerciseCantidadRounds}
-                  onChange={(e) => setExerciseCantidadRounds(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: 3"
-                  min="1"
-                />
-              </div>
-            </div>
-            
             <div className="flex gap-3">
               <button
                 onClick={() => {
@@ -1684,6 +1588,7 @@ const RoutineDetail = ({
                     cadencia: exerciseCadencia, // Incluir el campo Cadencia
                     round: exerciseRound, // Incluir el campo Round
                     cantidadRounds: exerciseCantidadRounds, // Incluir el campo cantidadRounds
+                    notes: exerciseNotes, // Incluir notas adicionales
                   };
                   
                   console.log('Datos a guardar:', exerciseData);
@@ -1714,6 +1619,7 @@ const RoutineDetail = ({
                   setExerciseCadencia(""); // Limpiar el campo Cadencia
                   setExerciseRound(""); // Limpiar el campo Round
                   setExerciseCantidadRounds(""); // Limpiar el campo cantidadRounds
+                  setExerciseNotes(""); // Limpiar el campo notas adicionales
                 }}
                 disabled={!exerciseName.trim()}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300"
@@ -1734,6 +1640,8 @@ const RoutineDetail = ({
                   setExerciseRIR(""); // Limpiar el campo RIR
                   setExerciseCadencia(""); // Limpiar el campo Cadencia
                   setExerciseRound(""); // Limpiar el campo Round
+                  setExerciseCantidadRounds(""); // Limpiar el campo cantidadRounds
+                  setExerciseNotes(""); // Limpiar el campo notas adicionales
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
               >Cancelar</button>
