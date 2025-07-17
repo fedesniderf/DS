@@ -1150,17 +1150,17 @@ const RoutineDetail = ({
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold">Ejercicios</h3>
           {/* Botón para agregar nuevo ejercicio */}
-          {isEditable && (
-            <button
-              onClick={onAddExerciseClick}
-              className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-              title="Agregar nuevo ejercicio"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </button>
-          )}
+      {isEditable && (
+        <button
+          onClick={() => setShowExerciseModal(true)}
+          className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+          title="Agregar nuevo ejercicio"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </button>
+      )}
         </div>
         {ejerciciosPorDia}
       </div>
@@ -1482,7 +1482,7 @@ const RoutineDetail = ({
               {editExercise ? 'Editar Ejercicio' : 'Agregar Ejercicio'}
             </h3>
             {/* Sección 1: Día, Sección, Round, Cant. rounds */}
-            <div className="mb-6 border-b pb-4">
+            <div className="mb-6 border-b pb-4 bg-blue-50 rounded-lg p-3">
               <div className="flex gap-2 mb-2">
                 <div className="flex-1 min-w-0">
                   <label className="block text-xs font-medium text-gray-700 mb-1">Día</label>
@@ -1507,7 +1507,7 @@ const RoutineDetail = ({
               </div>
             </div>
             {/* Sección 2: Resto de campos */}
-            <div className="mb-6">
+            <div className="mb-6 bg-gray-50 rounded-lg p-3">
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <div className="col-span-3">
                   <label className="block text-xs font-medium text-gray-700 mb-1">Nombre del ejercicio</label>
