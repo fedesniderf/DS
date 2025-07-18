@@ -220,7 +220,11 @@ const RoutineDetail = ({
     const weekOptions = getWeekOptions();
     const isCollapsed = collapsedWeeklyTracking.has(exercise.id);
     const maxWeight = getMaxWeightForExercise(exercise);
-    
+    // Calcular promedio y tonelaje
+    const weights = Object.values(exercise.weeklyData || {}).map(data => parseFloat(data.weight) || 0).filter(w => w > 0);
+    const averageWeight = weights.length > 0 ? (weights.reduce((a, b) => a + b, 0) / weights.length).toFixed(1) : 0;
+    const tonelaje = weights.length > 0 ? weights.reduce((a, b) => a + b, 0) : 0;
+
     return (
       <div className="mb-4">
         <div 
@@ -228,7 +232,7 @@ const RoutineDetail = ({
           onClick={() => toggleWeeklyTracking(exercise.id)}
         >
           <h6 className="text-sm font-semibold text-purple-700">
-            Seguimiento Semanal {maxWeight > 0 && `(Máximo: ${maxWeight} kg)`}
+            Seguimiento Semanal
           </h6>
           <svg 
             className={`w-4 h-4 text-purple-700 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
@@ -309,11 +313,17 @@ const RoutineDetail = ({
                 ))}
               </tbody>
             </table>
-            {maxWeight > 0 && (
-              <div className="mt-2 p-2 bg-green-50 rounded text-sm">
-                <span className="font-semibold text-green-700">
-                  Mayor peso levantado: {maxWeight} kg
-                </span>
+            {(maxWeight > 0 || averageWeight > 0 || tonelaje > 0) && (
+              <div className="flex justify-center gap-4 mt-3">
+                <div className="px-3 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-xs">
+                  Máx: {maxWeight} kg
+                </div>
+                <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-xs">
+                  Prom: {averageWeight} kg
+                </div>
+                <div className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 font-semibold text-xs">
+                  Tonelaje: {tonelaje} kg
+                </div>
               </div>
             )}
           </div>
