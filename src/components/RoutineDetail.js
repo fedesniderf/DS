@@ -8,6 +8,9 @@ const RoutineDetail = ({
   onAddExerciseClick = () => {},
   canAddDailyTracking = false,
 }) => {
+  // Estados para PF y PE del seguimiento semanal
+  const [weekPF, setWeekPF] = React.useState("");
+  const [weekPE, setWeekPE] = React.useState("");
   // Estado para colapsar/expandir rounds
   const [collapsedRounds, setCollapsedRounds] = React.useState({});
 
@@ -242,6 +245,8 @@ const RoutineDetail = ({
                 <tr>
                   <th className="px-2 py-1 text-center w-20">Semana</th>
                   <th className="px-2 py-1 text-center w-24">Peso (kg)</th>
+                  <th className="px-2 py-1 text-center w-12">PF</th>
+                  <th className="px-2 py-1 text-center w-12">PE</th>
                   <th className="px-2 py-1 text-center w-auto">Notas</th>
                   <th className="px-2 py-1 text-center w-24">Fecha</th>
                   <th className="px-2 py-1 text-center w-20">Acciones</th>
@@ -256,6 +261,8 @@ const RoutineDetail = ({
                       <td className="px-2 py-1 text-center">
                         {weekData?.weight ? `${weekData.weight} kg` : '-'}
                       </td>
+                      <td className="px-2 py-1 text-center">{weekData?.pf || '-'}</td>
+                      <td className="px-2 py-1 text-center">{weekData?.pe || '-'}</td>
                       <td className="px-2 py-1 text-center max-w-0">
                         <div className="break-words whitespace-normal">
                           {weekData?.generalNotes || '-'}
@@ -1195,14 +1202,13 @@ const RoutineDetail = ({
         {ejerciciosPorDia}
       </div>
 
-      {/* Sección de Percepciones (Seguimiento Diario) */}
+      {/* Sección de Percepciones (Seguimiento Diario) - OCULTA
       <div className="mb-6">
         <div 
           className="flex items-center justify-between cursor-pointer p-2 bg-green-50 rounded-lg hover:bg-green-100 transition-colors mb-4"
         >
           <h3 className="text-lg font-semibold text-green-700">Percepciones</h3>
           <div className="flex items-center gap-2">
-            {/* Botón para agregar seguimiento diario */}
             {canAddDailyTracking && (
               <button
                 onClick={handleOpenDailyModal}
@@ -1216,9 +1222,30 @@ const RoutineDetail = ({
             )}
           </div>
         </div>
-        
-        {/* Tabla de seguimiento diario */}
-        {/*
+      </div>
+      */}
+      {/*
+      <div className="mb-6">
+        <div 
+          className="flex items-center justify-between cursor-pointer p-2 bg-green-50 rounded-lg hover:bg-green-100 transition-colors mb-4"
+        >
+          <h3 className="text-lg font-semibold text-green-700">Percepciones</h3>
+          <div className="flex items-center gap-2">
+            {canAddDailyTracking && (
+              <button
+                onClick={handleOpenDailyModal}
+                className="p-1 rounded-full bg-green-100 hover:bg-green-200 text-green-700 transition-colors"
+                title="Agregar Seguimiento Diario"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/**
         {routine.dailyTracking && Object.keys(routine.dailyTracking).length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border border-green-300 rounded-lg overflow-hidden">
@@ -1230,48 +1257,7 @@ const RoutineDetail = ({
                   <th className="px-2 py-1 text-center w-20">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
-                {Object.entries(routine.dailyTracking)
-                  .sort(([a], [b]) => new Date(b) - new Date(a))
-                  .map(([date, data]) => (
-                    <tr key={date} className="border-t">
-                      <td className="px-2 py-1 text-center text-xs">{date}</td>
-                      <td className="px-2 py-1 text-center font-medium">{data.pf}</td>
-                      <td className="px-2 py-1 text-center font-medium">{data.pe}</td>
-                      <td className="px-2 py-1">
-                        <div className="flex gap-1 justify-center">
-                          <button
-                            onClick={() => handleEditDaily(date, data)}
-                            className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-                            title="Editar seguimiento"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDaily(date)}
-                            className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors"
-                            title="Eliminar seguimiento"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-4 text-gray-500">
-            No hay percepciones registradas aún.
-          </div>
-        )}
-        */}
-      </div>
+              {/* Percepciones bloqueado */}
 
       {/* Modal para seguimiento diario general */}
       {showDailyModal && (
@@ -1299,14 +1285,14 @@ const RoutineDetail = ({
             
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Percepción de Fatiga (PF) - 1 a 10
+                Percepción de Fatiga (PF) - 1 a 5
               </label>
               <input
                 type="number"
                 min="1"
-                max="10"
+                max="5"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: 7"
+                placeholder="Ej: 3"
                 value={dailyPF}
                 onChange={e => setDailyPF(e.target.value)}
               />
@@ -1314,14 +1300,14 @@ const RoutineDetail = ({
             
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Percepción de Esfuerzo (PE) - 1 a 10
+                Percepción de Esfuerzo (PE) - 1 a 5
               </label>
               <input
                 type="number"
                 min="1"
-                max="10"
+                max="5"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: 8"
+                placeholder="Ej: 4"
                 value={dailyPE}
                 onChange={e => setDailyPE(e.target.value)}
               />
@@ -1367,7 +1353,6 @@ const RoutineDetail = ({
             <p className="text-sm text-gray-600 mb-4">
               Ejercicio: <span className="font-semibold">{weeklyExercise?.name}</span>
             </p>
-            
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Semana
@@ -1386,7 +1371,6 @@ const RoutineDetail = ({
                 ))}
               </select>
             </div>
-            
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Peso (kg)
@@ -1400,7 +1384,34 @@ const RoutineDetail = ({
                 placeholder="Ej: 80.5"
               />
             </div>
-            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Percepción de Fatiga (PF) - 1 a 5
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="5"
+                value={weekPF}
+                onChange={e => setWeekPF(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ej: 3"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Percepción de Esfuerzo (PE) - 1 a 5
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="5"
+                value={weekPE}
+                onChange={e => setWeekPE(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ej: 4"
+              />
+            </div>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Notas generales
@@ -1413,7 +1424,6 @@ const RoutineDetail = ({
                 placeholder="Observaciones, sensaciones, etc."
               />
             </div>
-            
             <div className="flex gap-3">
               <button
                 onClick={handleSaveWeekly}
