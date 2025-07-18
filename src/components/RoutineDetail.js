@@ -589,10 +589,12 @@ const RoutineDetail = ({
         return;
       }
       
-      // Crear el objeto de datos semanales
+      // Crear el objeto de datos semanales, incluyendo PF y PE
       const weeklyData = {
         week: weekNumber,
         weight: weekWeight,
+        pf: weekPF,
+        pe: weekPE,
         generalNotes: weekNotes,
         date: isEditingWeekly ? editingWeeklyData.date : new Date().toISOString().split('T')[0] // Mantener fecha original si se está editando
       };
