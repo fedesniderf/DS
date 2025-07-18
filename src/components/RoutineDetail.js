@@ -1218,6 +1218,7 @@ const RoutineDetail = ({
         </div>
         
         {/* Tabla de seguimiento diario */}
+        {/*
         {routine.dailyTracking && Object.keys(routine.dailyTracking).length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border border-green-300 rounded-lg overflow-hidden">
@@ -1269,6 +1270,7 @@ const RoutineDetail = ({
             No hay percepciones registradas aún.
           </div>
         )}
+        */}
       </div>
 
       {/* Modal para seguimiento diario general */}
