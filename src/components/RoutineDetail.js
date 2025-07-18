@@ -726,15 +726,16 @@ const RoutineDetail = ({
       <div key={day} className="mb-6">
         <div className="flex items-center gap-2">
           <div 
-            className="flex items-center justify-between cursor-pointer p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex-1"
+            className="flex items-center justify-between cursor-pointer p-1 sm:p-2 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors flex-1 min-h-[32px]"
+            style={{ minHeight: '32px' }}
             onClick={() => toggleDay(day)}
           >
-            <h4 className="text-lg font-bold text-blue-700">
+            <h4 className="text-base font-bold text-blue-700" style={{ fontSize: '15px' }}>
               {['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : 'Sin día asignado'}
             </h4>
             <div className="flex items-center gap-2">
               <svg 
-                className={`w-5 h-5 text-blue-700 transform transition-transform ${collapsedDays.has(day) ? 'rotate-180' : ''}`}
+                className={`w-4 h-4 text-blue-700 transform transition-transform ${collapsedDays.has(day) ? 'rotate-180' : ''}`}
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -1122,7 +1123,7 @@ const RoutineDetail = ({
   }
 
   return (
-    <div className="p-2 sm:p-4 md:p-6 bg-white rounded-2xl shadow-md max-w-3xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 bg-white rounded-2xl shadow-md w-full max-w-none mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800">
           {routine.name || 'Rutina sin nombre'}
