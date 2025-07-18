@@ -250,8 +250,7 @@ const RoutineDetail = ({
                 <tr>
                   <th className="px-2 py-1 text-center w-20">Semana</th>
                   <th className="px-2 py-1 text-center w-24">Peso (kg)</th>
-                  <th className="px-2 py-1 text-center w-12">PF</th>
-                  <th className="px-2 py-1 text-center w-12">PE</th>
+                  {/* PF and PE columns removed as requested */}
                   <th className="px-2 py-1 text-center w-20">Acciones</th>
                 </tr>
               </thead>
@@ -262,8 +261,7 @@ const RoutineDetail = ({
                     <td className="px-2 py-1 text-center">
                       {weekData?.weight ? `${weekData.weight} kg` : '-'}
                     </td>
-                    <td className="px-2 py-1 text-center">{weekData?.pf || '-'}</td>
-                    <td className="px-2 py-1 text-center">{weekData?.pe || '-'}</td>
+                    {/* PF and PE data cells removed as requested */}
                     <td className="px-2 py-1">
                       <div className="flex gap-1 justify-center">
                         <button
@@ -314,14 +312,14 @@ const RoutineDetail = ({
               </tbody>
             </table>
             {(maxWeight > 0 || averageWeight > 0 || tonelaje > 0) && (
-              <div className="flex justify-center gap-4 mt-3">
-                <div className="px-3 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-xs">
+              <div className="flex justify-center gap-2 mt-2">
+                <div className="px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-semibold text-[10px] min-w-[60px] text-center">
                   Máx: {maxWeight} kg
                 </div>
-                <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-xs">
+                <div className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold text-[10px] min-w-[60px] text-center">
                   Prom: {averageWeight} kg
                 </div>
-                <div className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 font-semibold text-xs">
+                <div className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-semibold text-[10px] min-w-[60px] text-center">
                   Tonelaje: {tonelaje} kg
                 </div>
               </div>
@@ -1431,34 +1429,7 @@ const RoutineDetail = ({
                 placeholder="Ej: 80.5"
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Percepción de Fatiga (PF) - 1 a 5
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="5"
-                value={weekPF}
-                onChange={e => setWeekPF(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: 3"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Percepción de Esfuerzo (PE) - 1 a 5
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="5"
-                value={weekPE}
-                onChange={e => setWeekPE(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: 4"
-              />
-            </div>
+            {/* PF and PE fields removed from weekly tracking modal as requested */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Notas generales
