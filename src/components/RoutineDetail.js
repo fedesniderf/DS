@@ -851,21 +851,28 @@ const RoutineDetail = ({
                                     {Array.isArray(groupedByDay[day][sectionName][roundName]) && groupedByDay[day][sectionName][roundName].map((ex) => (
                                       <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow">
                                         <div className="flex items-center justify-between mb-2">
-                                          <div className="flex items-center gap-2">
-                                            <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
-                                            {ex.media && (
-                                              <button
-                                                className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-                                                title="Ver video del ejercicio"
-                                                onClick={() => window.open(ex.media, '_blank')}
-                                              >
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                                                </svg>
-                                              </button>
-                                            )}
-                                          </div>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                                {ex.media && (
+                                  <button
+                                    className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                                    title="Ver video del ejercicio"
+                                    onClick={() => window.open(ex.media, '_blank')}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                              {ex.notes && (
+                                <div className="text-xs text-gray-600 mt-1">
+                                  <span className="font-semibold">Notas: </span>{ex.notes}
+                                </div>
+                              )}
+                            </div>
                                           <div className="flex gap-2">
                                             {/* Botón para seguimiento semanal */}
                                             {canAddDailyTracking && (
@@ -1034,23 +1041,28 @@ const RoutineDetail = ({
                       {Array.isArray(groupedByDay[day][sectionName]) && groupedByDay[day][sectionName].map((ex) => (
                         <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow">
                           <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2 w-full">
-                              <div className="bg-gray-100 rounded-lg px-4 py-1 w-full mx-[-16px] flex items-center" style={{marginLeft: '-16px', marginRight: '-16px'}}>
-                                <h6 className="text-md font-semibold text-gray-800 flex-1">{ex.name}</h6>
-                                {ex.media && (
-                                  <button
-                                    className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors ml-2"
-                                    title="Ver video del ejercicio"
-                                    onClick={() => window.open(ex.media, '_blank')}
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                                    </svg>
-                                  </button>
+                              <div className="flex flex-col gap-1 w-full">
+                                <div className="bg-gray-100 rounded-lg px-4 py-1 w-full mx-[-16px] flex items-center" style={{marginLeft: '-16px', marginRight: '-16px'}}>
+                                  <h6 className="text-md font-semibold text-gray-800 flex-1">{ex.name}</h6>
+                                  {ex.media && (
+                                    <button
+                                      className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors ml-2"
+                                      title="Ver video del ejercicio"
+                                      onClick={() => window.open(ex.media, '_blank')}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
+                                {ex.notes && (
+                                  <div className="text-xs text-gray-600 mt-1 ml-2">
+                                    <span className="font-semibold">Notas: </span>{ex.notes}
+                                  </div>
                                 )}
                               </div>
-                            </div>
                             <div className="flex gap-2">
                               {/* Botón para seguimiento semanal */}
                               {canAddDailyTracking && (
@@ -1110,7 +1122,7 @@ const RoutineDetail = ({
   }
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-md">
+    <div className="p-2 sm:p-4 md:p-6 bg-white rounded-2xl shadow-md max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800">
           {routine.name || 'Rutina sin nombre'}
