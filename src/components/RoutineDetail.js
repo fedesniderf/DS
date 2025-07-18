@@ -1152,7 +1152,24 @@ const RoutineDetail = ({
           {/* Botón para agregar nuevo ejercicio */}
       {isEditable && (
         <button
-          onClick={() => setShowExerciseModal(true)}
+          onClick={() => {
+            setEditExercise(null);
+            setExerciseDay(dayOptions[0]?.value || '');
+            setExerciseSection(sectionOptions[0]?.value || '');
+            setExerciseRound('');
+            setExerciseCantidadRounds('');
+            setExerciseName('');
+            setExerciseSets('');
+            setExerciseReps('');
+            setExerciseWeight('');
+            setExerciseTime('');
+            setExerciseRest('');
+            setExerciseRIR('');
+            setExerciseCadencia('');
+            setExerciseMedia('');
+            setExerciseNotes('');
+            setShowExerciseModal(true);
+          }}
           className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
           title="Agregar nuevo ejercicio"
         >
@@ -1554,27 +1571,12 @@ const RoutineDetail = ({
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  // Intentar obtener el ID de diferentes formas
-                 
                   const routineId = routine?.id || routine?.routine_id || routine?.client_id;
-                  console.log('routineId detectado:', routineId);
-                  
-                  // Validar que exista el ID de la rutina
                   if (!routine || !routineId) {
-                    console.error('Error: ID de rutina no encontrado', {
-                      routine,
-                      routineId,
-                      availableKeys: Object.keys(routine || {}),
-                      routineType: typeof routine,
-                      routineConstructor: routine?.constructor?.name
-                    });
                     alert('Error: No se encontró el ID de la rutina. Por favor, recarga la página.');
                     return;
                   }
-
-                  // Datos del ejercicio a guardar
                   const exerciseData = {
-                    ...editExercise,
                     name: exerciseName,
                     sets: exerciseSets,
                     reps: exerciseReps,
@@ -1583,27 +1585,29 @@ const RoutineDetail = ({
                     rest: exerciseRest,
                     day: exerciseDay,
                     section: exerciseSection,
-                    media: exerciseMedia, // Incluir el campo media
-                    rir: exerciseRIR, // Incluir el campo RIR
-                    cadencia: exerciseCadencia, // Incluir el campo Cadencia
-                    round: exerciseRound, // Incluir el campo Round
-                    cantidadRounds: exerciseCantidadRounds, // Incluir el campo cantidadRounds
-                    notes: exerciseNotes, // Incluir notas adicionales
+                    media: exerciseMedia,
+                    rir: exerciseRIR,
+                    cadencia: exerciseCadencia,
+                    round: exerciseRound,
+                    cantidadRounds: exerciseCantidadRounds,
+                    notes: exerciseNotes,
                   };
-                  
-                  console.log('Datos a guardar:', exerciseData);
-                  console.log('Llamando onUpdateRoutine con:', {
-                    id: routineId,
-                    action: 'editExercise',
-                    data: exerciseData
-                  });
-
-                  // Guardar cambios - CORRIGIENDO EL FORMATO
-                  onUpdateRoutine({
-                    id: routineId,
-                    action: 'editExercise',
-                    data: exerciseData
-                  });
+                  if (editExercise && editExercise.id) {
+                    // Editar ejercicio existente
+                    const updatedExercises = Array.isArray(routine.exercises) ? routine.exercises.map(ex => ex.id === editExercise.id ? { ...exerciseData, id: editExercise.id } : ex) : [{ ...exerciseData, id: editExercise.id }];
+                    onUpdateRoutine({
+                      id: routineId,
+                      exercises: updatedExercises
+                    });
+                  } else {
+                    // Agregar nuevo ejercicio
+                    const newId = '_' + Math.random().toString(36).substr(2, 9);
+                    const updatedExercises = Array.isArray(routine.exercises) ? [...routine.exercises, { ...exerciseData, id: newId }] : [{ ...exerciseData, id: newId }];
+                    onUpdateRoutine({
+                      id: routineId,
+                      exercises: updatedExercises
+                    });
+                  }
                   setShowExerciseModal(false);
                   setEditExercise(null);
                   setExerciseName("");
@@ -1614,12 +1618,12 @@ const RoutineDetail = ({
                   setExerciseRest("");
                   setExerciseDay("");
                   setExerciseSection("");
-                  setExerciseMedia(""); // Limpiar el campo media
-                  setExerciseRIR(""); // Limpiar el campo RIR
-                  setExerciseCadencia(""); // Limpiar el campo Cadencia
-                  setExerciseRound(""); // Limpiar el campo Round
-                  setExerciseCantidadRounds(""); // Limpiar el campo cantidadRounds
-                  setExerciseNotes(""); // Limpiar el campo notas adicionales
+                  setExerciseMedia("");
+                  setExerciseRIR("");
+                  setExerciseCadencia("");
+                  setExerciseRound("");
+                  setExerciseCantidadRounds("");
+                  setExerciseNotes("");
                 }}
                 disabled={!exerciseName.trim()}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300"
