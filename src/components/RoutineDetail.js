@@ -266,10 +266,19 @@ const RoutineDetail = ({
             ))}
           </tbody>
         </table>
-        <div className="flex gap-4 text-xs text-gray-700">
-          <div><span className="font-semibold">Máx:</span> {weights.length > 0 ? Math.max(...weights) : 0} kg</div>
-          <div><span className="font-semibold">Promedio:</span> {averageWeight} kg</div>
-          <div><span className="font-semibold">Tonelaje:</span> {tonelaje} kg</div>
+        <div className="flex justify-center gap-2 mt-2">
+          <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-lg text-center font-semibold shadow min-w-[60px] text-[11px]">
+            Máx<br />
+            <span className="font-bold text-[11px]">{weights.length > 0 ? Math.max(...weights) : 0} kg</span>
+          </div>
+          <div className="bg-green-100 text-green-800 px-2 py-1 rounded-lg text-center font-semibold shadow min-w-[60px] text-[11px]">
+            Promedio<br />
+            <span className="font-bold text-[11px]">{averageWeight} kg</span>
+          </div>
+          <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded-lg text-center font-semibold shadow min-w-[60px] text-[11px]">
+            Tonelaje<br />
+            <span className="font-bold text-[11px]">{tonelaje} kg</span>
+          </div>
         </div>
       </div>
     );
