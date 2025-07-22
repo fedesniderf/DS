@@ -159,7 +159,6 @@ const RoutineDetail = ({
   // Estado para seguimiento diario general de rutina
   const [showDailyModal, setShowDailyModal] = React.useState(false);
   const [dailyDate, setDailyDate] = React.useState("");
-  // ...existing code...
   const [isEditingDaily, setIsEditingDaily] = React.useState(false);
   const [editingDailyDate, setEditingDailyDate] = React.useState("");
 
@@ -212,40 +211,68 @@ const RoutineDetail = ({
 
   // Función para renderizar todas las semanas del seguimiento
   const renderWeeklyTracking = (exercise) => {
-    if (!routine.startDate || !routine.endDate) return null;
-    
-    const weekOptions = getWeekOptions();
-    const isCollapsed = collapsedWeeklyTracking.has(exercise.id);
-    const maxWeight = getMaxWeightForExercise(exercise);
-    // Calcular promedio y tonelaje
-    const weights = Object.values(exercise.weeklyData || {}).map(data => parseFloat(data.weight) || 0).filter(w => w > 0);
+    const weeklyData = exercise.weeklyData || {};
+    const weeks = Object.keys(weeklyData);
+    if (weeks.length === 0) return null;
+    const weights = weeks.map(week => parseFloat(weeklyData[week].weight) || 0).filter(w => w > 0);
     const averageWeight = weights.length > 0 ? (weights.reduce((a, b) => a + b, 0) / weights.length).toFixed(1) : 0;
     const tonelaje = weights.length > 0 ? weights.reduce((a, b) => a + b, 0) : 0;
-
-    return null;
-  {/* Modal para ver notas y fecha de seguimiento semanal */}
-  {showWeeklyNotesModal.open && (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-xs">
-        <h3 className="text-lg font-bold mb-4">Notas y Fecha</h3>
-        <div className="mb-2">
-          <span className="font-semibold">Semana:</span> {showWeeklyNotesModal.week}
-        </div>
-        <div className="mb-2">
-          <span className="font-semibold">Notas:</span> {showWeeklyNotesModal.notes || 'Sin notas'}
-        </div>
-        <div className="mb-4">
-          <span className="font-semibold">Fecha:</span> {showWeeklyNotesModal.date || 'Sin fecha'}
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowWeeklyNotesModal({ open: false, notes: '', date: '', week: '' })}
-            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-          >Cerrar</button>
+    return (
+      <div className="mt-2">
+        <table className="w-full text-xs border border-gray-300 rounded-lg overflow-hidden mb-2">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-2 py-1">Semana</th>
+              <th className="px-2 py-1">Peso (kg)</th>
+              <th className="px-2 py-1">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {weeks.map(week => (
+              <tr key={week}>
+                <td className="px-2 py-1 text-center">{week}</td>
+                <td className="px-2 py-1 text-center">{weeklyData[week].weight}</td>
+                <td className="px-2 py-1 flex gap-2 justify-center">
+                  <button
+                    className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
+                    title="Ver detalle"
+                    onClick={() => setShowWeeklyNotesModal({ open: true, notes: weeklyData[week].generalNotes, date: weeklyData[week].date, week })}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z" />
+                    </svg>
+                  </button>
+                  <button
+                    className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
+                    title="Editar"
+                    onClick={() => handleEditWeeklyTracking(exercise, week, weeklyData[week])}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                    </svg>
+                  </button>
+                  <button
+                    className="p-1 rounded bg-red-100 hover:bg-red-200 text-red-700"
+                    title="Eliminar"
+                    onClick={() => handleDeleteWeeklyTracking(exercise, week)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="flex gap-4 text-xs text-gray-700">
+          <div><span className="font-semibold">Máx:</span> {weights.length > 0 ? Math.max(...weights) : 0} kg</div>
+          <div><span className="font-semibold">Promedio:</span> {averageWeight} kg</div>
+          <div><span className="font-semibold">Tonelaje:</span> {tonelaje} kg</div>
         </div>
       </div>
-    </div>
-  )}
+    );
   };
 
   const handleOpenWeeklyModal = (exercise, weekValue = "") => {
@@ -327,8 +354,6 @@ const RoutineDetail = ({
   // Handlers para seguimiento diario general
   const handleOpenDailyModal = () => {
     setDailyDate(new Date().toISOString().split('T')[0]); // Fecha actual por defecto
-    setDailyPF("");
-    setDailyPE("");
     setIsEditingDaily(false);
     setEditingDailyDate("");
     setShowDailyModal(true);
@@ -338,8 +363,6 @@ const RoutineDetail = ({
     console.log('handleEditDaily called with:', { date, data });
     try {
       setDailyDate(date);
-      setDailyPF(data?.pf != null ? data.pf.toString() : "");
-      setDailyPE(data?.pe != null ? data.pe.toString() : "");
       setIsEditingDaily(true);
       setEditingDailyDate(date);
       setShowDailyModal(true);
@@ -487,32 +510,23 @@ const RoutineDetail = ({
       isEditingWeekly,
       editingWeeklyData
     });
-    
     if (!weekNumber || !weeklyExercise) {
       alert('Por favor completa todos los campos requeridos');
       return;
     }
-    
     try {
-      // Intentar obtener el ID de diferentes formas
       const routineId = routine?.id || routine?.routine_id || routine?.client_id;
-      
       if (!routineId) {
         console.error('Error: ID de rutina no encontrado para seguimiento semanal', routine);
         alert('Error: No se encontró el ID de la rutina. Por favor, recarga la página.');
         return;
       }
-      
-      // Crear el objeto de datos semanales, incluyendo PF y PE
       const weeklyData = {
         week: weekNumber,
         weight: weekWeight,
-        pf: weekPF,
-        pe: weekPE,
         generalNotes: weekNotes,
-        date: isEditingWeekly ? editingWeeklyData.date : new Date().toISOString().split('T')[0] // Mantener fecha original si se está editando
+        date: isEditingWeekly ? editingWeeklyData?.date : new Date().toISOString().split('T')[0]
       };
-
       const updateData = {
         id: routineId,
         action: isEditingWeekly ? 'updateWeeklyTracking' : 'addWeeklyTracking',
@@ -521,12 +535,10 @@ const RoutineDetail = ({
           weeklyData: weeklyData
         }
       };
-
       console.log('Calling onUpdateRoutine with:', updateData);
-
       // Llamar a la función para actualizar la rutina
       onUpdateRoutine(updateData);
-
+      // Eliminar el refresco visual, confiar en el estado y props para actualizar la tabla
       handleCloseWeeklyModal();
     } catch (error) {
       console.error('Error in handleSaveWeekly:', error);
@@ -932,58 +944,6 @@ const RoutineDetail = ({
                 </div>
               );
             })}
-            {/* Tabla de test al final del agrupador de día */}
-            <div className="mt-6">
-              {(() => {
-                // Obtener las semanas usando la función getWeekOptions
-                const weekOptions = getWeekOptions();
-                return (
-                  <table className="w-full text-sm border border-gray-300 rounded-lg overflow-hidden">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-2 py-1 text-center">Semana</th>
-                        <th className="px-2 py-1 text-center">PF</th>
-                        <th className="px-2 py-1 text-center">PE</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {weekOptions.length > 0 ? (
-                        weekOptions.map(week => {
-                          // Buscar la fecha de la semana en dailyTracking
-                          let pf = '-';
-                          let pe = '-';
-                          if (routine.dailyTracking) {
-                            // Buscar la primera entrada de dailyTracking que pertenezca a la semana actual
-                            // Suponiendo que dailyTracking es un objeto {fecha: {pf, pe, ...}}
-                            const dailyEntries = Object.entries(routine.dailyTracking);
-                            // Buscar por nombre de semana (ej: S1, S2, ...)
-                            // Si las fechas de dailyTracking tienen week asignada, buscar por week
-                            // Si no, buscar por rango de fechas (requiere más lógica)
-                            // Aquí intentamos buscar por week si existe
-                            const found = dailyEntries.find(([date, data]) => data.week === week.value);
-                            if (found) {
-                              pf = found[1].pf !== undefined ? found[1].pf : '-';
-                              pe = found[1].pe !== undefined ? found[1].pe : '-';
-                            }
-                          }
-                          return (
-                            <tr key={week.value}>
-                              <td className="px-2 py-1 text-center">{week.label}</td>
-                              <td className="px-2 py-1 text-center">{pf}</td>
-                              <td className="px-2 py-1 text-center">{pe}</td>
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td className="px-2 py-1 text-center" colSpan={3}>Sin semanas</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                );
-              })()}
-            </div>
           </div>
         )}
       </div>
@@ -1087,62 +1047,6 @@ const RoutineDetail = ({
         </div>
       )}
 
-      {/* Sección de Percepciones (Seguimiento Diario) - OCULTA
-      <div className="mb-6">
-        <div 
-          className="flex items-center justify-between cursor-pointer p-2 bg-green-50 rounded-lg hover:bg-green-100 transition-colors mb-4"
-        >
-          <h3 className="text-lg font-semibold text-green-700">Percepciones</h3>
-          <div className="flex items-center gap-2">
-            {canAddDailyTracking && (
-              <button
-                onClick={handleOpenDailyModal}
-                className="p-1 rounded-full bg-green-100 hover:bg-green-200 text-green-700 transition-colors"
-                title="Agregar Seguimiento Diario"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-      */}
-      {/*
-      <div className="mb-6">
-        <div 
-          className="flex items-center justify-between cursor-pointer p-2 bg-green-50 rounded-lg hover:bg-green-100 transition-colors mb-4"
-        >
-          <h3 className="text-lg font-semibold text-green-700">Percepciones</h3>
-          <div className="flex items-center gap-2">
-            {canAddDailyTracking && (
-              <button
-                onClick={handleOpenDailyModal}
-                className="p-1 rounded-full bg-green-100 hover:bg-green-200 text-green-700 transition-colors"
-                title="Agregar Seguimiento Diario"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/**
-        {routine.dailyTracking && Object.keys(routine.dailyTracking).length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border border-green-300 rounded-lg overflow-hidden">
-              <thead className="bg-green-100">
-                <tr>
-                  <th className="px-2 py-1 text-center w-28">Fecha</th>
-                  <th className="px-2 py-1 text-center w-16">PF</th>
-                  <th className="px-2 py-1 text-center w-16">PE</th>
-                  <th className="px-2 py-1 text-center w-20">Acciones</th>
-                </tr>
-              </thead>
-              {/* Percepciones bloqueado */}
 
       {/* Modal para seguimiento diario general */}
       {showDailyModal && (
@@ -1231,70 +1135,55 @@ const RoutineDetail = ({
       {/* Modal para seguimiento semanal */}
       {showWeeklyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">
-              {isEditingWeekly ? 'Editar seguimiento semanal' : 'Seguimiento Semanal'}
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="bg-white p-3 rounded-lg shadow-lg w-full max-w-[280px] text-xs" style={{ fontSize: '12px' }}>
+            <h3 className="text-base font-bold mb-2">{isEditingWeekly ? 'Editar seguimiento semanal' : 'Seguimiento Semanal'}</h3>
+            <p className="text-xs text-gray-600 mb-2">
               Ejercicio: <span className="font-semibold">{weeklyExercise?.name}</span>
             </p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Semana
-              </label>
+            <div className="mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Semana</label>
               <select
                 value={weekNumber}
                 onChange={(e) => setWeekNumber(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                 disabled={isEditingWeekly}
               >
                 <option value="">Selecciona una semana</option>
                 {getWeekOptions().map(week => (
-                  <option key={week.value} value={week.value}>
-                    {week.label}
-                  </option>
+                  <option key={week.value} value={week.value}>{week.label}</option>
                 ))}
               </select>
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Peso (kg)
-              </label>
+            <div className="mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Peso (kg)</label>
               <input
                 type="number"
                 step="0.1"
                 value={weekWeight}
                 onChange={(e) => setWeekWeight(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                 placeholder="Ej: 80.5"
               />
             </div>
-            {/* PF and PE fields removed from weekly tracking modal as requested */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notas generales
-              </label>
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Notas generales</label>
               <textarea
                 value={weekNotes}
                 onChange={(e) => setWeekNotes(e.target.value)}
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="2"
+                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                 placeholder="Observaciones, sensaciones, etc."
               />
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button
                 onClick={handleSaveWeekly}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {isEditingWeekly ? 'Actualizar' : 'Guardar'}
-              </button>
+                className="flex-1 bg-blue-600 text-white py-1 px-2 rounded-md hover:bg-blue-700 transition-colors text-xs"
+              >{isEditingWeekly ? 'Actualizar' : 'Guardar'}</button>
               <button
                 onClick={handleCloseWeeklyModal}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                Cancelar
-              </button>
+                className="flex-1 bg-gray-300 text-gray-700 py-1 px-2 rounded-md hover:bg-gray-400 transition-colors text-xs"
+              >Cancelar</button>
             </div>
           </div>
         </div>
