@@ -304,6 +304,7 @@ const RoutineDetail = (props) => {
       {ex.weight && <div><span className="font-semibold">Peso (Kg):</span> {ex.weight}</div>}
       {ex.rir && <div><span className="font-semibold">RIR:</span> {ex.rir}</div>}
       {ex.cadencia && <div><span className="font-semibold">Cadencia:</span> {ex.cadencia}</div>}
+      {ex.notes && <div className="col-span-2"><span className="font-semibold">Notas:</span> {ex.notes}</div>}
     </div>
   );
 
@@ -1123,11 +1124,6 @@ const RoutineDetail = (props) => {
                                                 )}
                                               </div>
                                             </div>
-                                            {ex.notes && (
-                                              <div className="text-xs text-gray-600 mt-1">
-                                                <span className="font-semibold">Notas: </span>{ex.notes}
-                                              </div>
-                                            )}
                                           </div>
                                         {/* Mostrar detalles del ejercicio */}
                                         {renderExerciseDetails(ex)}
@@ -1192,12 +1188,6 @@ const RoutineDetail = (props) => {
                                     </button>
                                   )}
                                 </div>
-                              </div>
-                              {/* Notas en formato simple, igual que Series */}
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-700">
-                                {ex.notes && (
-                                  <span>Notas: {ex.notes}</span>
-                                )}
                               </div>
                               {/* Mostrar detalles del ejercicio */}
                               {renderExerciseDetails(ex)}
