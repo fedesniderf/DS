@@ -63,6 +63,34 @@ const AuthScreen = ({ onLogin, onGoToRegister }) => {
             Regístrate
           </button>
         </p>
+        {/* Sección de redes sociales */}
+        <div className="mt-8 flex flex-col items-center">
+          <span className="text-gray-500 text-sm mb-2">Síguenos o visita nuestro Linktree</span>
+          <div className="flex gap-6">
+            {/* Instagram */}
+            <a href="https://www.instagram.com/ds.entrenamiento/" target="_blank" rel="noopener noreferrer" title="Instagram" className="hover:scale-110 transition-transform">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7 text-black">
+                <rect width="18" height="18" x="3" y="3" rx="5" stroke="currentColor" strokeWidth="1.5"/>
+                <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5"/>
+                <circle cx="17" cy="7" r="1" fill="currentColor"/>
+              </svg>
+            </a>
+            {/* Facebook */}
+            <a href="https://facebook.com/" target="_blank" rel="noopener noreferrer" title="Facebook" className="hover:scale-110 transition-transform">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7 text-black">
+                <rect width="18" height="18" x="3" y="3" rx="5" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M15 8.5h-1.25A1.25 1.25 0 0 0 12.5 9.75V11H15l-.25 2H12.5v6h-2.25v-6H8.5V11h1.75V9.25A3.25 3.25 0 0 1 13.5 6h1.5v2.5Z" fill="currentColor"/>
+              </svg>
+            </a>
+            {/* Linktree / Mundo */}
+            <a href="https://linktr.ee/ds.entrenamiento?fbclid=PAQ0xDSwLvOp9leHRuA2FlbQIxMQABp3PzSzoD5lsfg_Tqzw06xy8Rld9RnZojU_9Cun5_U6x_N0PlS6Iyp2c0EwVS_aem_gbPAbAm7WghEYde5FpOXUw " target="_blank" rel="noopener noreferrer" title="Linktree" className="hover:scale-110 transition-transform">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7 text-black">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5"/>
+                <path stroke="currentColor" strokeWidth="1.5" d="M3 12h18M12 3a15.3 15.3 0 0 1 0 18M12 3a15.3 15.3 0 0 0 0 18"/>
+              </svg>
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
