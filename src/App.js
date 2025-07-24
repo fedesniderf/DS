@@ -685,7 +685,7 @@ const App = () => {
                       setSelectedClient(user);
                       setCurrentPage('adminViewClientRoutines');
                       setShowUserLoading(false);
-                    }, 1000); // 1000ms delay
+                    }, 0); // 1000ms delay
                   }}
                   onDeleteUser={handleDeleteUser}
                 />
