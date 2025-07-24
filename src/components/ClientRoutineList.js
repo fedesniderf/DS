@@ -8,7 +8,7 @@ const ClientRoutineList = ({
   onSelectRoutine = () => {},
   onAddRoutine = () => {},
   isEditable,
-  onDeleteRoutine = () => {},
+  onDeleteRoutine,
   onUpdateRoutine = () => {},
 }) => {
   const [newRoutineName, setNewRoutineName] = useState('');
@@ -198,8 +198,12 @@ const ClientRoutineList = ({
                     {isEditable && (
                       <button
                         onClick={() => {
-                          if (window.confirm('¿Estás seguro de que quieres eliminar esta rutina?')) {
-                            onDeleteRoutine(routine);
+                          if (typeof onDeleteRoutine === 'function') {
+                            if (window.confirm('¿Estás seguro de que quieres eliminar esta rutina?')) {
+                              onDeleteRoutine(routine);
+                            }
+                          } else {
+                            alert('Función de eliminación no disponible.');
                           }
                         }}
                         className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
