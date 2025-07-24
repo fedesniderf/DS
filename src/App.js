@@ -694,6 +694,7 @@ const App = () => {
                   client={selectedClient}
                   routines={clientRoutines}
                   onSelectRoutine={handleSelectRoutine}
+                  onAddRoutine={handleAddRoutine}
                   isEditable={true}
                   onBack={() => {
                     setCurrentPage('userManagement');
