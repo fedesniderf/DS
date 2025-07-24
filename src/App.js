@@ -26,6 +26,8 @@ const App = () => {
     // Eliminar del estado local
     setUsers(prevUsers => prevUsers.filter(u => u.client_id !== clientId));
   }, []);
+
+  // Restaurar usuario desde localStorage si existe
   const [currentPage, setCurrentPage] = useState('auth');
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedRoutine, setSelectedRoutine] = useState(null);
@@ -34,6 +36,29 @@ const App = () => {
   const [clientRoutines, setClientRoutines] = useState([]);
   const [showUserLoading, setShowUserLoading] = useState(false);
   const [showLoginLoading, setShowLoginLoading] = useState(false);
+  const [isRestored, setIsRestored] = useState(false);
+
+  // Restaurar todo el estado desde localStorage al inicio
+  useEffect(() => {
+    const savedUser = localStorage.getItem('ds_user');
+    const savedPage = localStorage.getItem('ds_page');
+    const savedClient = localStorage.getItem('ds_selectedClient');
+    const savedRoutine = localStorage.getItem('ds_selectedRoutine');
+    if (savedUser) {
+      const user = JSON.parse(savedUser);
+      setCurrentUser(user);
+      if (savedClient) {
+        setSelectedClient(JSON.parse(savedClient));
+      } else if (user.role === 'client') {
+        setSelectedClient(user);
+      }
+      if (savedRoutine) {
+        setSelectedRoutine(JSON.parse(savedRoutine));
+      }
+      if (savedPage) setCurrentPage(savedPage);
+    }
+    setIsRestored(true);
+  }, []);
 
   // LOGIN
   const handleLogin = useCallback(async (email, password, method) => {
@@ -53,6 +78,7 @@ const App = () => {
       if (users && users.length > 0) {
         const user = users[0];
         setCurrentUser(user);
+        localStorage.setItem('ds_user', JSON.stringify(user));
         if (user.role === 'client') {
           setSelectedClient(user);
           setCurrentPage('clientDashboard');
@@ -114,7 +140,29 @@ const App = () => {
     setSelectedClient(null);
     setSelectedRoutine(null);
     setCurrentPage('auth');
+    localStorage.removeItem('ds_user');
   }, []);
+  // Solo cambiar la pantalla si no hay una restaurada
+  useEffect(() => {
+    if (!isRestored) return;
+    if (currentUser) {
+      if (!localStorage.getItem('ds_page')) {
+        if (currentUser.role === 'client') {
+          setSelectedClient(currentUser);
+          setCurrentPage('clientDashboard');
+        } else if (currentUser.role === 'admin') {
+          setCurrentPage('userManagement');
+        }
+      }
+    }
+  }, [currentUser, isRestored]);
+  // ...existing code...
+  // ...existing code...
+  // ...existing code...
+  // ...existing code...
+  // ...existing code...
+  // Loader mientras se restaura el estado (debe ir después de todos los hooks y callbacks, justo antes del return principal)
+  // ...existing code...
 
   // SELECCIONAR CLIENTE Y RUTINA
   const handleSelectClient = useCallback((client) => {
@@ -158,6 +206,9 @@ const App = () => {
       handleLogout();
     }
   }, [currentPage, currentUser, handleLogout, selectedClient]);
+
+  // Loader mientras se restaura el estado (debe ir después de todos los hooks y callbacks, justo antes del return principal)
+  // ...existing code...
 
   // CARGAR USUARIOS DESDE SUPABASE
   useEffect(() => {
@@ -565,6 +616,8 @@ const App = () => {
   }
 
   // Efectos para sincronizar con localStorage
+
+  // Sincronizar currentUser con localStorage
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('ds_user', JSON.stringify(currentUser));
@@ -573,24 +626,48 @@ const App = () => {
     }
   }, [currentUser]);
 
+  // Sincronizar currentPage con localStorage
   useEffect(() => {
     localStorage.setItem('ds_page', currentPage);
   }, [currentPage]);
 
+  // Sincronizar selectedClient con localStorage
   useEffect(() => {
-    const savedUser = localStorage.getItem('ds_user');
-    const savedPage = localStorage.getItem('ds_page');
-    if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
-      if (savedPage) setCurrentPage(savedPage);
+    if (selectedClient) {
+      localStorage.setItem('ds_selectedClient', JSON.stringify(selectedClient));
+    } else {
+      localStorage.removeItem('ds_selectedClient');
     }
-  }, []);
+  }, [selectedClient]);
+
+  // Sincronizar selectedRoutine con localStorage
+  useEffect(() => {
+    if (selectedRoutine) {
+      localStorage.setItem('ds_selectedRoutine', JSON.stringify(selectedRoutine));
+    } else {
+      localStorage.removeItem('ds_selectedRoutine');
+    }
+  }, [selectedRoutine]);
+
+  // ...existing code...
 
 
   // RESTABLECER CONTRASEÑA
 
 
   // RENDER
+  // Loader mientras se restaura el estado (debe ir después de todos los hooks y callbacks, justo antes del return principal)
+  if (!isRestored) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <svg className="animate-spin h-10 w-10 text-green-700 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span className="text-gray-700 text-lg font-medium">Cargando...</span>
+      </div>
+    );
+  }
   if (!currentUser) {
     if (showLoginLoading) {
       return (
