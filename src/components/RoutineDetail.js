@@ -1142,7 +1142,7 @@ const RoutineDetail = ({
               <div className="w-full overflow-x-auto mt-6">
                 <div className="flex items-center gap-2 mb-2">
                   <div
-                    className="flex items-center gap-2 cursor-pointer select-none px-2 py-1 rounded-md transition-colors text-sm bg-purple-50 text-purple-900 hover:bg-purple-100 flex-1"
+                    className="flex items-center justify-between cursor-pointer select-none px-2 py-1 rounded-md transition-colors text-sm bg-purple-50 text-purple-900 hover:bg-purple-100 flex-1"
                     onClick={() => togglePFPE(dayKey)}
                     style={{ minHeight: '32px' }}
                   >
