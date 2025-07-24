@@ -1193,11 +1193,12 @@ const RoutineDetail = (props) => {
                                   )}
                                 </div>
                               </div>
-                              {ex.notes && (
-                                <div className="text-xs text-gray-600 mt-1">
-                                  <span className="font-semibold">Notas: </span>{ex.notes}
-                                </div>
-                              )}
+                              {/* Notas en formato simple, igual que Series */}
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-700">
+                                {ex.notes && (
+                                  <span>Notas: {ex.notes}</span>
+                                )}
+                              </div>
                               {/* Mostrar detalles del ejercicio */}
                               {renderExerciseDetails(ex)}
                               {/* Mostrar seguimiento semanal */}
