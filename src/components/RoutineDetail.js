@@ -1,21 +1,4 @@
-  // Estado para colapsar/expandir la tabla de PF/PE/Notas por día
-  const [collapsedPFPE, setCollapsedPFPE] = React.useState({});
-  const togglePFPE = (dayKey) => {
-    setCollapsedPFPE(prev => ({
-      ...prev,
-      [dayKey]: !prev[dayKey]
-    }));
-  };
-  // Handler para limpiar registros antiguos de dailyTracking
-  const handleCleanOldDailyTracking = () => {
-    if (!routine || !routine.dailyTracking) return;
-    const cleaned = cleanOldDailyTracking(routine.dailyTracking);
-    onUpdateRoutine({
-      id: routine.id,
-      action: 'updateDailyTracking',
-      data: { dailyTracking: cleaned }
-    });
-  };
+// ...existing code...
 // Utilidad para limpiar datos antiguos de dailyTracking
 function cleanOldDailyTracking(dailyTracking) {
   if (!dailyTracking || typeof dailyTracking !== 'object') return {};
@@ -34,6 +17,9 @@ function cleanOldDailyTracking(dailyTracking) {
   });
   return cleaned;
 }
+
+
+
 // Ordenar los registros de PF/PE por semana antes de pasarlos a la tabla
 function sortPFPEByWeek(recordsArray) {
   if (!Array.isArray(recordsArray)) return recordsArray;
@@ -71,6 +57,17 @@ const RoutineDetail = ({
   canAddDailyTracking = false,
 }) => {
   // ...existing code...
+
+  // Handler para limpiar registros antiguos de dailyTracking
+  const handleCleanOldDailyTracking = () => {
+    if (!routine || !routine.dailyTracking) return;
+    const cleaned = cleanOldDailyTracking(routine.dailyTracking);
+    onUpdateRoutine({
+      id: routine.id,
+      action: 'updateDailyTracking',
+      data: { dailyTracking: cleaned }
+    });
+  };
 
   // Renderizar la tabla de PF/PE por día, ordenando por semana
   function renderPFPETables(cleanedDailyTracking) {
@@ -132,6 +129,23 @@ const RoutineDetail = ({
   const [showWeeklyNotesModal, setShowWeeklyNotesModal] = React.useState({ open: false, notes: '', date: '', week: '' });
   // Estado para colapsar/expandir rounds
   const [collapsedRounds, setCollapsedRounds] = React.useState({});
+  // Estado para colapso PF/PE/Notas: inicializar todos los días colapsados al montar el componente
+  const [collapsedPFPE, setCollapsedPFPE] = React.useState(() => {
+    const collapsed = {};
+    if (routine && routine.dailyTracking) {
+      Object.keys(routine.dailyTracking).forEach(dayKey => {
+        collapsed[dayKey] = true;
+      });
+    }
+    // También incluir días de ejercicios aunque no tengan dailyTracking
+    if (Array.isArray(routine?.exercises)) {
+      routine.exercises.forEach(ex => {
+        const dayKey = ['1','2','3','4','5','6','7'].includes(ex.day) ? `Día ${ex.day}` : (ex.day || 'Sin día');
+        if (collapsed[dayKey] === undefined) collapsed[dayKey] = true;
+      });
+    }
+    return collapsed;
+  });
 
   // Función para colapsar/expandir un round
   const toggleRound = (day, section, round) => {
@@ -311,6 +325,14 @@ const RoutineDetail = ({
       newCollapsedSections.add(daySection);
     }
     setCollapsedSections(newCollapsedSections);
+  };
+
+  // Alternar colapso/expansión de PF/PE/Notas para un día
+  const togglePFPE = (dayKey) => {
+    setCollapsedPFPE(prev => ({
+      ...prev,
+      [dayKey]: !prev[dayKey]
+    }));
   };
 
   const toggleWeeklyTracking = (exerciseId) => {
@@ -823,17 +845,9 @@ const RoutineDetail = ({
       const dayKey = ['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : day;
       // Solo pasar los registros de ese día
       const pfpeRecords = cleanedDailyTracking[dayKey] || [];
-      // Estado para colapso PF/PE/Notas: inicializar colapsado si no existe
-      React.useEffect(() => {
-        setCollapsedPFPE(prev => {
-          if (prev[dayKey] === undefined) {
-            return { ...prev, [dayKey]: true };
-          }
-          return prev;
-        });
-        // eslint-disable-next-line
-      }, [dayKey]);
       return (
+  // Estado para colapso PF/PE/Notas: inicializar todos los días colapsados al montar el componente
+
         <div key={day} className="mb-6">
           <div className="flex items-center gap-2">
             <div 
