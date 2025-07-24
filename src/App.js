@@ -286,6 +286,29 @@ const App = () => {
       return;
     }
 
+    if (action === 'updateDailyTracking') {
+      // Actualizar el campo dailyTracking directamente
+      let updateObj = { dailyTracking: data.dailyTracking };
+      const { error: updateError } = await supabase
+        .from('rutinas')
+        .update(updateObj)
+        .eq('id', id);
+      if (updateError) {
+        alert('Error al actualizar la rutina: ' + updateError.message);
+        return;
+      }
+      // Refresca la rutina seleccionada desde la base de datos
+      const { data: refreshedRoutine, error: fetchRoutineError } = await supabase
+        .from('rutinas')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (!fetchRoutineError && refreshedRoutine) {
+        setSelectedRoutine(refreshedRoutine);
+      }
+      return;
+    }
+
     if (action === 'deleteRoutine') {
       // Eliminar rutina
       const { data: deletedData, error: deleteError } = await supabase
@@ -387,11 +410,20 @@ const App = () => {
     } else if (action === 'addDailyRoutineTracking') {
       // Agregar seguimiento diario de rutina
       const dailyTracking = { ...selectedRoutine.dailyTracking };
+      // Guardar bajo la fecha
       dailyTracking[data.date] = {
         pf: data.pf,
         pe: data.pe,
         timestamp: data.timestamp
       };
+      // Guardar bajo el nombre de día si viene extraDayKey
+      if (data.extraDayKey) {
+        dailyTracking[data.extraDayKey] = {
+          pf: data.pf,
+          pe: data.pe,
+          timestamp: data.timestamp
+        };
+      }
       updateObj.dailyTracking = dailyTracking;
     } else if (action === 'updateDailyRoutineTracking') {
       // Actualizar seguimiento diario de rutina
@@ -405,6 +437,14 @@ const App = () => {
         pe: data.pe,
         timestamp: data.timestamp
       };
+      // Guardar bajo el nombre de día si viene extraDayKey
+      if (data.extraDayKey) {
+        dailyTracking[data.extraDayKey] = {
+          pf: data.pf,
+          pe: data.pe,
+          timestamp: data.timestamp
+        };
+      }
       updateObj.dailyTracking = dailyTracking;
     } else if (action === 'deleteDailyRoutineTracking') {
       // Eliminar seguimiento diario de rutina
@@ -428,7 +468,47 @@ const App = () => {
       updateObj = { exercises: filteredExercises };
     } else {
       // Actualización general de rutina
-      updateObj = { ...selectedRoutine, ...updatedRoutine };
+      // Si viene dailyTracking y es un objeto, permite múltiples registros por día diferenciados por semana
+      if (updatedRoutine.dailyTracking) {
+        const newTracking = { ...selectedRoutine.dailyTracking };
+        Object.entries(updatedRoutine.dailyTracking).forEach(([dayKey, value]) => {
+          // Si el valor es un array, lo dejamos igual
+          if (Array.isArray(value)) {
+            newTracking[dayKey] = value;
+          } else if (value && value.PFPE) {
+            // Si ya hay registros previos para ese día, agregamos solo si la semana es diferente
+            const prev = newTracking[dayKey];
+            if (Array.isArray(prev)) {
+              // Filtrar para no duplicar semana
+              const exists = prev.some(r => r.PFPE?.week === value.PFPE.week);
+              if (!exists) {
+                newTracking[dayKey] = [...prev, value];
+              } else {
+                // Reemplazar el registro de esa semana
+                newTracking[dayKey] = prev.map(r => r.PFPE?.week === value.PFPE.week ? value : r);
+              }
+            } else if (prev && prev.PFPE) {
+              // Si hay un solo registro previo
+              if (prev.PFPE.week === value.PFPE.week) {
+                newTracking[dayKey] = value;
+              } else {
+                newTracking[dayKey] = [prev, value];
+              }
+            } else {
+              newTracking[dayKey] = value;
+            }
+          } else {
+            newTracking[dayKey] = value;
+          }
+        });
+        updateObj.dailyTracking = newTracking;
+        // Copiar el resto de los datos
+        Object.entries(updatedRoutine).forEach(([k, v]) => {
+          if (k !== 'dailyTracking') updateObj[k] = v;
+        });
+      } else {
+        updateObj = { ...selectedRoutine, ...updatedRoutine };
+      }
     }
 
     const { error: updateError } = await supabase

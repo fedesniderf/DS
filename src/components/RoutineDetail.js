@@ -1,5 +1,67 @@
+  // Estado para colapsar/expandir la tabla de PF/PE/Notas por día
+  const [collapsedPFPE, setCollapsedPFPE] = React.useState({});
+  const togglePFPE = (dayKey) => {
+    setCollapsedPFPE(prev => ({
+      ...prev,
+      [dayKey]: !prev[dayKey]
+    }));
+  };
+  // Handler para limpiar registros antiguos de dailyTracking
+  const handleCleanOldDailyTracking = () => {
+    if (!routine || !routine.dailyTracking) return;
+    const cleaned = cleanOldDailyTracking(routine.dailyTracking);
+    onUpdateRoutine({
+      id: routine.id,
+      action: 'updateDailyTracking',
+      data: { dailyTracking: cleaned }
+    });
+  };
+// Utilidad para limpiar datos antiguos de dailyTracking
+function cleanOldDailyTracking(dailyTracking) {
+  if (!dailyTracking || typeof dailyTracking !== 'object') return {};
+  const validKeys = /^Día \d$/;
+  const cleaned = {};
+  Object.entries(dailyTracking).forEach(([key, value]) => {
+    if (validKeys.test(key) && value) {
+      if (Array.isArray(value)) {
+        // Filtrar solo los objetos válidos con PFPE
+        const validArray = value.filter(v => v && typeof v === 'object' && v.PFPE);
+        if (validArray.length > 0) cleaned[key] = validArray;
+      } else if (typeof value === 'object' && value.PFPE) {
+        cleaned[key] = value;
+      }
+    }
+  });
+  return cleaned;
+}
+// Ordenar los registros de PF/PE por semana antes de pasarlos a la tabla
+function sortPFPEByWeek(recordsArray) {
+  if (!Array.isArray(recordsArray)) return recordsArray;
+  // Ordenar por el campo week (S1, S2, S3, ...)
+  return recordsArray.slice().sort((a, b) => {
+    // Extraer el número de semana, si no existe, poner al final
+    const getWeekNum = (rec) => {
+      const wk = rec?.PFPE?.week;
+      if (typeof wk === 'string' && /^S\d+$/.test(wk)) {
+        const num = parseInt(wk.replace('S', ''));
+        return isNaN(num) ? 999 : num;
+      }
+      return 999;
+    };
+    const numA = getWeekNum(a);
+    const numB = getWeekNum(b);
+    // Si ambos tienen semana, comparar
+    if (numA !== numB) return numA - numB;
+    // Si son iguales, mantener el orden original
+    return 0;
+  });
+}
+
+// ...existing code...
+
 // ...existing code...
 import React from "react";
+import PFPETable from "./PFPETable";
 
 const RoutineDetail = ({
   routine,
@@ -9,6 +71,63 @@ const RoutineDetail = ({
   canAddDailyTracking = false,
 }) => {
   // ...existing code...
+
+  // Renderizar la tabla de PF/PE por día, ordenando por semana
+  function renderPFPETables(cleanedDailyTracking) {
+    // Handler para editar registro PF/PE
+    const handleEditPFPE = (dayKey, idx, newPFPE) => {
+      console.log('RoutineDetail handleEditPFPE called:', { dayKey, idx, newPFPE });
+      const prevArray = Array.isArray(routine.dailyTracking?.[dayKey]) ? routine.dailyTracking[dayKey] : [];
+      const updatedArray = prevArray.map((row, i) => {
+        if (i === idx) {
+          return { PFPE: newPFPE };
+        }
+        return row;
+      });
+      const newDailyTracking = {
+        ...(routine.dailyTracking || {}),
+        [dayKey]: updatedArray
+      };
+      if (typeof onUpdateRoutine === 'function') {
+        onUpdateRoutine({
+          id: routine.id,
+          action: 'updateDailyTracking',
+          data: { dailyTracking: newDailyTracking }
+        });
+      }
+    };
+
+    const handleDeletePFPE = (dayKey, idx) => {
+      console.log('RoutineDetail handleDeletePFPE called:', { dayKey, idx });
+      const prevArray = Array.isArray(routine.dailyTracking?.[dayKey]) ? routine.dailyTracking[dayKey] : [];
+      const updatedArray = prevArray.filter((_, i) => i !== idx);
+      const newDailyTracking = {
+        ...(routine.dailyTracking || {}),
+        [dayKey]: updatedArray
+      };
+      if (typeof onUpdateRoutine === 'function') {
+        onUpdateRoutine({
+          id: routine.id,
+          action: 'updateDailyTracking',
+          data: { dailyTracking: newDailyTracking }
+        });
+      }
+    };
+
+    return Object.entries(cleanedDailyTracking).map(([day, records]) => (
+      <div key={day} className="mb-4">
+        <h5 className="font-semibold text-purple-700 mb-2">{day}</h5>
+        <div className="w-full overflow-x-auto">
+          <PFPETable
+            data={sortPFPEByWeek(records)}
+            day={day}
+            onEditPFPE={handleEditPFPE}
+            onDeletePFPE={handleDeletePFPE}
+          />
+        </div>
+      </div>
+    ));
+  }
   // Estado para mostrar el modal de notas y fecha de seguimiento semanal
   const [showWeeklyNotesModal, setShowWeeklyNotesModal] = React.useState({ open: false, notes: '', date: '', week: '' });
   // Estado para colapsar/expandir rounds
@@ -45,6 +164,7 @@ const RoutineDetail = ({
   const [exerciseRound, setExerciseRound] = React.useState(""); // Nuevo campo para Round
   const [exerciseCantidadRounds, setExerciseCantidadRounds] = React.useState(""); // Nuevo campo para cantidad de rounds
   const [exerciseNotes, setExerciseNotes] = React.useState(""); // Nuevo campo para notas adicionales
+  const [pfpeData, setPfpeData] = React.useState({});
 
   // Handler para editar ejercicio
   const handleEditExerciseClick = (ex) => {
@@ -161,6 +281,9 @@ const RoutineDetail = ({
   const [dailyDate, setDailyDate] = React.useState("");
   const [isEditingDaily, setIsEditingDaily] = React.useState(false);
   const [editingDailyDate, setEditingDailyDate] = React.useState("");
+  // Estado para los valores de PF y PE diarios
+  const [dailyPF, setDailyPF] = React.useState("");
+  const [dailyPE, setDailyPE] = React.useState("");
 
   // Estado para editar información de rutina
   const [showRoutineModal, setShowRoutineModal] = React.useState(false);
@@ -382,10 +505,11 @@ const RoutineDetail = ({
   };
 
   // Handlers para seguimiento diario general
-  const handleOpenDailyModal = () => {
+  const handleOpenDailyModal = (day) => {
     setDailyDate(new Date().toISOString().split('T')[0]); // Fecha actual por defecto
     setIsEditingDaily(false);
     setEditingDailyDate("");
+    setExerciseDay(day || "");
     setShowDailyModal(true);
   };
 
@@ -430,47 +554,54 @@ const RoutineDetail = ({
     setDailyPE("");
     setIsEditingDaily(false);
     setEditingDailyDate("");
+    setExerciseDay(""); // Fix: 'day' is not defined, reset to empty string
   };
 
   const handleSaveDaily = () => {
-    if (!dailyDate || !dailyPF || !dailyPE) {
-      alert('Por favor completa todos los campos requeridos');
+    if (!weekNumber || !dailyPF || !dailyPE || !exerciseDay) {
+      alert('Completa todos los campos para registrar PF/PE/Notas.');
       return;
     }
-    
-    // Intentar obtener el ID de diferentes formas
     const routineId = routine?.id || routine?.routine_id || routine?.client_id;
-    
     if (!routineId) {
-      console.error('Error: ID de rutina no encontrado para seguimiento diario', routine);
-      alert('Error: No se encontró el ID de la rutina. Por favor, recarga la página.');
+      alert('No se encontró el ID de la rutina.');
       return;
     }
-    
-    try {
-      // Crear el objeto de datos diarios para la rutina
-      const dailyData = {
-        date: dailyDate,
-        pf: parseInt(dailyPF) || 0,
-        pe: parseInt(dailyPE) || 0,
-        timestamp: new Date().toISOString()
-      };
-
-      console.log('Saving daily data:', dailyData);
-      console.log('Is editing:', isEditingDaily);
-
-      // Llamar a la función para actualizar la rutina
-      onUpdateRoutine({
-        id: routineId,
-        action: isEditingDaily ? 'updateDailyRoutineTracking' : 'addDailyRoutineTracking',
-        data: isEditingDaily ? { ...dailyData, originalDate: editingDailyDate } : dailyData
-      });
-
-      handleCloseDailyModal();
-    } catch (error) {
-      console.error('Error in handleSaveDaily:', error);
-      alert('Error al guardar el seguimiento diario: ' + error.message);
+    // Normalizar clave del día
+    let normalizedDay = exerciseDay;
+    if (["1","2","3","4","5","6","7"].includes(exerciseDay)) {
+      normalizedDay = `Día ${exerciseDay}`;
     }
+    // Crear el objeto de registro diario
+    const dailyRecord = {
+      PFPE: {
+        week: weekNumber,
+        day: normalizedDay,
+        pf: Number(dailyPF),
+        pe: Number(dailyPE),
+        notes: exerciseNotes || "",
+        timestamp: new Date().toISOString()
+      }
+    };
+    // Agregar el registro al array correspondiente
+    const prevTracking = routine.dailyTracking && routine.dailyTracking[normalizedDay];
+    let newArray;
+    if (Array.isArray(prevTracking)) {
+      newArray = [...prevTracking, dailyRecord];
+    } else if (prevTracking) {
+      newArray = [prevTracking, dailyRecord];
+    } else {
+      newArray = [dailyRecord];
+    }
+    const newDailyTracking = {
+      ...(routine.dailyTracking || {}),
+      [normalizedDay]: newArray
+    };
+    onUpdateRoutine({
+      id: routineId,
+      dailyTracking: newDailyTracking
+    });
+    handleCloseDailyModal();
   };
 
   // Handlers para editar información de rutina
@@ -658,15 +789,12 @@ const RoutineDetail = ({
     const groupedByDay = exercises.reduce((acc, ex) => {
       const day = ex.day || 'Sin día';
       if (!acc[day]) acc[day] = {};
-
       const section = ex.section || 'Sin sección';
       if (!acc[day][section]) acc[day][section] = {};
-
       // Agrupar por round si existe, si no, usar 'Sin round'
       const round = ex.round ? `Round ${ex.round}` : 'Sin round';
       if (!acc[day][section][round]) acc[day][section][round] = [];
       acc[day][section][round].push(ex);
-
       return acc;
     }, {});
 
@@ -687,136 +815,154 @@ const RoutineDetail = ({
       '1','2','3','4','5','6','7'
     ].filter(d => groupedByDay[d]).concat(Object.keys(groupedByDay).filter(d => !['1','2','3','4','5','6','7'].includes(d)));
 
-    ejerciciosPorDia = orderedDays.map(day => (
-      <div key={day} className="mb-6">
-        <div className="flex items-center gap-2">
-          <div 
-            className="flex items-center justify-between cursor-pointer p-1 sm:p-2 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors flex-1 min-h-[32px]"
-            style={{ minHeight: '32px' }}
-            onClick={() => toggleDay(day)}
-          >
-            <h4 className="text-base font-bold text-blue-700" style={{ fontSize: '15px' }}>
-              {['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : 'Sin día asignado'}
-            </h4>
-            <div className="flex items-center gap-2">
-              <svg 
-                className={`w-4 h-4 text-blue-700 transform transition-transform ${collapsedDays.has(day) ? 'rotate-180' : ''}`}
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+    // Filtrar dailyTracking para cada día
+    const cleanedDailyTracking = cleanOldDailyTracking(routine.dailyTracking);
+
+    ejerciciosPorDia = orderedDays.map(day => {
+      // Normalizar clave de día para dailyTracking
+      const dayKey = ['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : day;
+      // Solo pasar los registros de ese día
+      const pfpeRecords = cleanedDailyTracking[dayKey] || [];
+      // Estado para colapso PF/PE/Notas: inicializar colapsado si no existe
+      React.useEffect(() => {
+        setCollapsedPFPE(prev => {
+          if (prev[dayKey] === undefined) {
+            return { ...prev, [dayKey]: true };
+          }
+          return prev;
+        });
+        // eslint-disable-next-line
+      }, [dayKey]);
+      return (
+        <div key={day} className="mb-6">
+          <div className="flex items-center gap-2">
+            <div 
+              className="flex items-center justify-between cursor-pointer p-1 sm:p-2 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors flex-1 min-h-[32px]"
+              style={{ minHeight: '32px' }}
+              onClick={() => toggleDay(day)}
+            >
+              <h4 className="text-base font-bold text-blue-700" style={{ fontSize: '15px' }}>
+                {['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : 'Sin día asignado'}
+              </h4>
+              <div className="flex items-center gap-2">
+                <svg 
+                  className={`w-4 h-4 text-blue-700 transform transition-transform ${collapsedDays.has(day) ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
+            
+            {/* Botón para eliminar día completo - Fuera del contenedor como columna separada */}
+            {isEditable && (
+              <button
+                onClick={(e) => {
+                  console.log('Delete day button clicked for day:', day);
+                  e.stopPropagation();
+                  handleDeleteDay(day);
+                }}
+                className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors flex-shrink-0"
+                title="Eliminar día completo"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
+              </button>
+            )}
           </div>
           
-          {/* Botón para eliminar día completo - Fuera del contenedor como columna separada */}
-          {isEditable && (
-            <button
-              onClick={(e) => {
-                console.log('Delete day button clicked for day:', day);
-                e.stopPropagation();
-                handleDeleteDay(day);
-              }}
-              className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors flex-shrink-0"
-              title="Eliminar día completo"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-              </svg>
-            </button>
-          )}
-        </div>
-        
-        {!collapsedDays.has(day) && (
-          <div className="mt-4">
-            {/* Renderizar secciones en orden específico */}
-            {sectionOrder.map(sectionName => {
-              if (!groupedByDay[day][sectionName]) return null;
-              const sectionKey = `${day}-${sectionName}`;
-              return (
-                <div key={sectionName} className="mb-3">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`flex items-center justify-between cursor-pointer px-2 py-1 rounded-md transition-colors flex-1 text-sm ${sectionGradientColors[sectionName] || 'bg-purple-50 text-purple-900'}`}
-                      onClick={() => toggleSection(sectionKey)}
-                    >
-                      <h5 className="font-semibold text-sm">{sectionName}</h5>
-                      <div className="flex items-center gap-2">
-                        <svg
-                          className={`w-3 h-3 transform transition-transform ${collapsedSections.has(sectionKey) ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
-                    {isEditable && (
-                      <button
-                        onClick={(e) => {
-                          console.log('Delete section button clicked for:', { day, section: sectionName });
-                          e.stopPropagation();
-                          handleDeleteSection(day, sectionName);
-                        }}
-                        className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors flex-shrink-0"
-                        title="Eliminar sección completa"
+          {!collapsedDays.has(day) && (
+            <div className="mt-4">
+              {/* Renderizar secciones en orden específico */}
+              {sectionOrder.map(sectionName => {
+                if (!groupedByDay[day][sectionName]) return null;
+                const sectionKey = `${day}-${sectionName}`;
+                return (
+                  <div key={sectionName} className="mb-3">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`flex items-center justify-between cursor-pointer px-2 py-1 rounded-md transition-colors flex-1 text-sm ${sectionGradientColors[sectionName] || 'bg-purple-50 text-purple-900'}`}
+                        onClick={() => toggleSection(sectionKey)}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                  {!collapsedSections.has(sectionKey) && (
-                    <div className="grid gap-4 mt-3">
-                      {(() => {
-                        // rounds: todos los keys salvo 'Sin round'
-                        const allRounds = Object.keys(groupedByDay[day][sectionName]).filter(r => r !== 'Sin round');
-                        // ejercicios sin round
-                        const noRoundExercises = groupedByDay[day][sectionName]['Sin round'] || [];
-                        // Renderizar rounds colapsables
-                        const roundBlocks = allRounds
-                          .sort((a, b) => {
-                            const getRoundNumber = (roundStr) => {
-                              if (roundStr.startsWith('Round ')) {
-                                const num = parseInt(roundStr.replace('Round ', ''));
-                                return isNaN(num) ? Infinity : num;
-                              }
-                              return Infinity;
-                            };
-                            return getRoundNumber(a) - getRoundNumber(b);
-                          })
-                          .map(roundName => {
-                            const roundKey = `${day}-${sectionName}-${roundName}`;
-                            const isCollapsed = collapsedRounds[roundKey];
-                            // Buscar la cantidad de rounds del primer ejercicio del grupo
-                            const firstExercise = groupedByDay[day][sectionName][roundName][0];
-                            const cantidadRounds = firstExercise && firstExercise.cantidadRounds ? firstExercise.cantidadRounds : '';
-                            return (
-                              <div key={roundName} className="mb-2">
-                                <div
-                                  className="flex items-center justify-between px-2 py-1 rounded-md cursor-pointer bg-gray-200 hover:bg-gray-300 transition-colors mb-1 text-sm"
-                                  onClick={() => toggleRound(day, sectionName, roundName)}
-                                >
-                                  <span className="font-semibold text-purple-700 text-sm">
-                                    {`${roundName}${cantidadRounds ? ` - x${cantidadRounds}` : ''}`}
-                                  </span>
-                                  <svg
-                                    className={`w-4 h-4 text-gray-700 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                        <h5 className="font-semibold text-sm">{sectionName}</h5>
+                        <div className="flex items-center gap-2">
+                          <svg
+                            className={`w-3 h-3 transform transition-transform ${collapsedSections.has(sectionKey) ? 'rotate-180' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                      {isEditable && (
+                        <button
+                          onClick={(e) => {
+                            console.log('Delete section button clicked for:', { day, section: sectionName });
+                            e.stopPropagation();
+                            handleDeleteSection(day, sectionName);
+                          }}
+                          className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors flex-shrink-0"
+                          title="Eliminar sección completa"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    {!collapsedSections.has(sectionKey) && (
+                      <div className="grid gap-4 mt-3">
+                        {(() => {
+                          // rounds: todos los keys salvo 'Sin round'
+                          const allRounds = Object.keys(groupedByDay[day][sectionName]).filter(r => r !== 'Sin round');
+                          // ejercicios sin round
+                          const noRoundExercises = groupedByDay[day][sectionName]['Sin round'] || [];
+                          // Renderizar rounds colapsables
+                          const roundBlocks = allRounds
+                            .sort((a, b) => {
+                              const getRoundNumber = (roundStr) => {
+                                if (roundStr.startsWith('Round ')) {
+                                  const num = parseInt(roundStr.replace('Round ', ''));
+                                  return isNaN(num) ? Infinity : num;
+                                }
+                                return Infinity;
+                              };
+                              return getRoundNumber(a) - getRoundNumber(b);
+                            })
+                            .map(roundName => {
+                              const roundKey = `${day}-${sectionName}-${roundName}`;
+                              const isCollapsed = collapsedRounds[roundKey];
+                              // Buscar la cantidad de rounds del primer ejercicio del grupo
+                              const firstExercise = groupedByDay[day][sectionName][roundName][0];
+                              const cantidadRounds = firstExercise && firstExercise.cantidadRounds ? firstExercise.cantidadRounds : '';
+                              return (
+                                <div key={roundName} className="mb-2">
+                                  <div
+                                    className="flex items-center justify-between px-2 py-1 rounded-md cursor-pointer bg-gray-200 hover:bg-gray-300 transition-colors mb-1 text-sm"
+                                    onClick={() => toggleRound(day, sectionName, roundName)}
                                   >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                  </svg>
-                                </div>
-                                {!isCollapsed && (
-                                  <div>
-                                    {Array.isArray(groupedByDay[day][sectionName][roundName]) && groupedByDay[day][sectionName][roundName].map((ex) => (
-                                      <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow">
-                                        <div className="flex items-center justify-between mb-2">
+                                    <span className="font-semibold text-purple-700 text-sm">
+                                      {`${roundName}${cantidadRounds ? ` - x${cantidadRounds}` : ''}`}
+                                    </span>
+                                    <svg
+                                      className={`w-4 h-4 text-gray-700 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </div>
+                                  {!isCollapsed && (
+                                    <div>
+                                      {Array.isArray(groupedByDay[day][sectionName][roundName]) && groupedByDay[day][sectionName][roundName].map((ex) => (
+                                        <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow">
+                                          <div className="flex items-center justify-between mb-2">
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
                                 <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
@@ -839,28 +985,28 @@ const RoutineDetail = ({
                                 </div>
                               )}
                             </div>
-                                          <div className="flex gap-2">
-                                            {/* Botón para seguimiento semanal */}
-                                            {canAddDailyTracking && (
-                                              <button
-                                                className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700"
-                                                title="Agregar seguimiento semanal"
-                                                onClick={() => handleOpenWeeklyModal(ex)}
-                                              >
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                                                </svg>
-                                              </button>
-                                            )}
-                                            {/* Botón para editar ejercicio si esEditable */}
-                                            {isEditable && (
-                                              <button
-                                                className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
-                                                title="Editar ejercicio"
-                                                onClick={() => handleEditExerciseClick(ex)}
-                                              >
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                            <div className="flex gap-2">
+                                              {/* Botón para seguimiento semanal */}
+                                              {canAddDailyTracking && (
+                                                <button
+                                                  className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700"
+                                                  title="Agregar seguimiento semanal"
+                                                  onClick={() => handleOpenWeeklyModal(ex)}
+                                                >
+                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                                  </svg>
+                                                </button>
+                                              )}
+                                              {/* Botón para editar ejercicio si esEditable */}
+                                              {isEditable && (
+                                                <button
+                                                  className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
+                                                  title="Editar ejercicio"
+                                                  onClick={() => handleEditExerciseClick(ex)}
+                                                >
+                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                                                 </svg>
                                               </button>
                                             )}
@@ -889,23 +1035,29 @@ const RoutineDetail = ({
                               </div>
                             );
                           });
-                        // Renderizar ejercicios sin round directamente
-                        const noRoundBlocks = noRoundExercises.map((ex) => (
-                          <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow mb-2">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
-                                {ex.media && (
-                                  <button
-                                    className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-                                    title="Ver video del ejercicio"
-                                    onClick={() => window.open(ex.media, '_blank')}
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                                    </svg>
-                                  </button>
+                          // Renderizar ejercicios sin round directamente
+                          const noRoundBlocks = noRoundExercises.map((ex) => (
+                            <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow mb-2">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                                  {ex.media && (
+                                    <button
+                                      className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                                      title="Ver video del ejercicio"
+                                      onClick={() => window.open(ex.media, '_blank')}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
+                                {ex.notes && (
+                                  <div className="text-xs text-gray-600 mt-1">
+                                    <span className="font-semibold">Notas: </span>{ex.notes}
+                                  </div>
                                 )}
                               </div>
                               <div className="flex gap-2">
@@ -946,38 +1098,63 @@ const RoutineDetail = ({
                                   </button>
                                 )}
                               </div>
+                              {/* Mostrar detalles del ejercicio */}
+                              {renderExerciseDetails(ex)}
+                              {/* Mostrar seguimiento semanal */}
+                              {renderWeeklyTracking(ex)}
                             </div>
-                            {/* Mostrar detalles del ejercicio */}
-                            {renderExerciseDetails(ex)}
-                            {/* Mostrar seguimiento semanal */}
-                            {renderWeeklyTracking(ex)}
-                          </div>
-                        ));
-                        return [
-                          ...roundBlocks,
-                          ...noRoundBlocks
-                        ];
-                      })()}
-                    </div>
-                  )}
+                          ));
+                          return [
+                            ...roundBlocks,
+                            ...noRoundBlocks
+                          ];
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {/* Mostrar ejercicios de secciones no estándar */}
+              {Object.keys(groupedByDay[day]).filter(section => !sectionOrder.includes(section)).map(sectionName => {
+                const sectionKey = `${day}-${sectionName}`;
+                return (
+                  <div key={sectionName} className="mb-4">
+                    {/* ...existing code... */}
+                    {/* ...sección y ejercicios... */}
+                  </div>
+                );
+              })}
+              {/* Agrupador para PF/PE/Notas */}
+              <div className="w-full overflow-x-auto mt-6">
+                <div className="flex items-center gap-2 cursor-pointer select-none mb-2" onClick={() => togglePFPE(dayKey)}>
+                  <span className="font-semibold text-purple-700 text-sm">PF/PE/Notas</span>
+                  <svg
+                    className={`w-4 h-4 text-purple-700 transform transition-transform ${collapsedPFPE[dayKey] ? '' : 'rotate-180'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
-              );
-            })}
-            
-            {/* Mostrar ejercicios de secciones no estándar */}
-            {Object.keys(groupedByDay[day]).filter(section => !sectionOrder.includes(section)).map(sectionName => {
-              const sectionKey = `${day}-${sectionName}`;
-              return (
-                <div key={sectionName} className="mb-4">
-                  {/* ...existing code... */}
-                  {/* ...sección y ejercicios... */}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    ));
+                {!collapsedPFPE[dayKey] && renderPFPETables({ [dayKey]: pfpeRecords })}
+              </div>
+              <div className="flex justify-end mt-2">
+                <button
+                  className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700 transition-colors mb-2"
+                  title="Registrar PF/PE/Notas"
+                  onClick={() => handleOpenDailyModal(day)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    });
   }
 
   return (
@@ -986,19 +1163,32 @@ const RoutineDetail = ({
         <h2 className="text-2xl font-bold text-gray-800">
           {routine.name || 'Rutina sin nombre'}
         </h2>
-        
-        {/* Botón para editar rutina */}
-        {isEditable && (
-          <button
-            onClick={handleOpenRoutineModal}
-            className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-            title="Editar rutina"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-            </svg>
-          </button>
-        )}
+        <div className="flex gap-2">
+          {/* Botón para limpiar registros antiguos de dailyTracking */}
+          {isEditable && (
+            <button
+              onClick={handleCleanOldDailyTracking}
+              className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors"
+              title="Limpiar registros antiguos de PF/PE/Notas"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+          {/* Botón para editar rutina */}
+          {isEditable && (
+            <button
+              onClick={handleOpenRoutineModal}
+              className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+              title="Editar rutina"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
       
       {/* Información básica de la rutina */}
@@ -1091,15 +1281,19 @@ const RoutineDetail = ({
             
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fecha del entrenamiento
+                Semana de entrenamiento
               </label>
-              <input
-                type="date"
+              <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={dailyDate}
-                onChange={e => setDailyDate(e.target.value)}
+                value={weekNumber}
+                onChange={e => setWeekNumber(e.target.value)}
                 disabled={isEditingDaily}
-              />
+              >
+                <option value="">Selecciona una semana</option>
+                {getWeekOptions().map(week => (
+                  <option key={week.value} value={week.value}>{week.label}</option>
+                ))}
+              </select>
             </div>
             
             <div className="mb-4">
@@ -1457,6 +1651,5 @@ const RoutineDetail = ({
       )}
     </div>
   );
-};
-
+}
 export default RoutineDetail;
