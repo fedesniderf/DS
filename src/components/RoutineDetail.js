@@ -46,18 +46,9 @@ function sortPFPEByWeek(recordsArray) {
 // ...existing code...
 
 const RoutineDetail = (props) => {
-  // Handler para limpiar registros antiguos de dailyTracking
-  const handleCleanOldDailyTracking = () => {
-    if (!routine || !routine.dailyTracking) return;
-    const cleaned = cleanOldDailyTracking(routine.dailyTracking);
-    if (typeof onUpdateRoutine === 'function') {
-      onUpdateRoutine({
-        id: routine.id,
-        action: 'updateDailyTracking',
-        data: { dailyTracking: cleaned }
-      });
-    }
-  };
+// Handler para limpiar registros antiguos de dailyTracking
+  // const handleCleanOldDailyTracking = () => {
+// (handleCleanOldDailyTracking function and all references removed)
   // Desestructurar props para evitar ReferenceError
   const {
     routine = {},
@@ -65,7 +56,8 @@ const RoutineDetail = (props) => {
     isEditable = false,
     canAddDailyTracking = false
   } = props;
-  // ...existing code...
+// ...existing code...
+// (Botón de limpiar registros antiguos de PF/PE/Notas oculto de la UI)
     const handleEditPFPE = (dayKey, idx, newPFPE) => {
       console.log('RoutineDetail handleEditPFPE called:', { dayKey, idx, newPFPE });
       const prevArray = Array.isArray(routine.dailyTracking?.[dayKey]) ? routine.dailyTracking[dayKey] : [];
@@ -118,7 +110,10 @@ const RoutineDetail = (props) => {
       }
       return (
         <div key={day} className="mb-4">
-          <h5 className="font-semibold text-purple-700 mb-2">{day}</h5>
+          {/* Ocultar el título del día solo para la tabla de Seguimiento semanal - PF y PE */}
+          {!(day && day.startsWith('Día')) && (
+            <h5 className="font-semibold text-purple-700 mb-2">{day}</h5>
+          )}
           <div className="w-full overflow-x-auto">
             <div className="overflow-x-auto">
               <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden text-center text-xs">
@@ -1293,7 +1288,7 @@ const RoutineDetail = (props) => {
           {/* Botón para limpiar registros antiguos de dailyTracking */}
           {isEditable && (
             <button
-              onClick={handleCleanOldDailyTracking}
+              // onClick removed: handleCleanOldDailyTracking no longer exists
               className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors"
               title="Limpiar registros antiguos de PF/PE/Notas"
             >
