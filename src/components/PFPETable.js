@@ -2,6 +2,7 @@ import React from 'react';
 const PFPETable = ({ data = [], day, onEditPFPE, onDeletePFPE }) => {
   const [editIdx, setEditIdx] = React.useState(null);
   const [editValues, setEditValues] = React.useState({ week: '', day: '', pf: '', pe: '', notes: '' });
+  const [showNotes, setShowNotes] = React.useState({ open: false, notes: '' });
   // Eliminar el estado local de rows, usar directamente data
 
   const startEdit = (row, idx) => {
@@ -49,10 +50,8 @@ const PFPETable = ({ data = [], day, onEditPFPE, onDeletePFPE }) => {
         <thead className="bg-purple-100">
           <tr>
             <th className="px-2 py-1 text-left">Semana</th>
-            <th className="px-2 py-1 text-left">Día</th>
             <th className="px-2 py-1 text-left">PF</th>
             <th className="px-2 py-1 text-left">PE</th>
-            <th className="px-2 py-1 text-left">Notas</th>
             <th className="px-2 py-1 text-left">Acciones</th>
           </tr>
         </thead>
@@ -131,11 +130,19 @@ const PFPETable = ({ data = [], day, onEditPFPE, onDeletePFPE }) => {
               return (
                 <tr key={idx} className="border-b">
                   <td className="px-2 py-1">{pfpe.week ? pfpe.week : '-'}</td>
-                  <td className="px-2 py-1">{pfpe.day ? pfpe.day : (day || '-')}</td>
                   <td className="px-2 py-1">{pfpe.pf !== undefined ? pfpe.pf : '-'}</td>
                   <td className="px-2 py-1">{pfpe.pe !== undefined ? pfpe.pe : '-'}</td>
-                  <td className="px-2 py-1">{pfpe.notes ? pfpe.notes : '-'}</td>
                   <td className="px-2 py-1 flex gap-2 justify-center">
+                    <button
+                      className="p-1 rounded bg-purple-100 hover:bg-purple-200 text-purple-700"
+                      title="Ver notas"
+                      onClick={() => setShowNotes({ open: true, notes: pfpe.notes || 'Sin notas' })}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z" />
+                      </svg>
+                    </button>
                     <button
                       className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
                       title="Editar"
@@ -160,12 +167,25 @@ const PFPETable = ({ data = [], day, onEditPFPE, onDeletePFPE }) => {
             })
           ) : (
             <tr>
-              <td colSpan={6} className="px-4 py-2 text-center text-gray-500">No hay datos de PF/PE</td>
+              <td colSpan={4} className="px-4 py-2 text-center text-gray-500">No hay datos de PF/PE</td>
             </tr>
           )}
         </tbody>
       </table>
-    </div>
+    {/* Modal para ver notas */}
+    {showNotes.open && (
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-xs">
+          <h3 className="text-base font-bold mb-2">Notas</h3>
+          <div className="mb-4 text-sm text-gray-700 whitespace-pre-line">{showNotes.notes}</div>
+          <button
+            onClick={() => setShowNotes({ open: false, notes: '' })}
+            className="w-full bg-blue-600 text-white py-1 px-2 rounded-md hover:bg-blue-700 transition-colors text-xs"
+          >Cerrar</button>
+        </div>
+      </div>
+    )}
+  </div>
   );
 };
 
