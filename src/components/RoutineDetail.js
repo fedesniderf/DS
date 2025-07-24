@@ -1140,29 +1140,33 @@ const RoutineDetail = ({
               })}
               {/* Agrupador para PF/PE/Notas */}
               <div className="w-full overflow-x-auto mt-6">
-                <div className="flex items-center gap-2 cursor-pointer select-none mb-2" onClick={() => togglePFPE(dayKey)}>
-                  <span className="font-semibold text-purple-700 text-sm">PF/PE/Notas</span>
-                  <svg
-                    className={`w-4 h-4 text-purple-700 transform transition-transform ${collapsedPFPE[dayKey] ? '' : 'rotate-180'}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="flex items-center gap-2 mb-2">
+                  <div
+                    className="flex items-center gap-2 cursor-pointer select-none px-2 py-1 rounded-md transition-colors text-sm bg-purple-50 text-purple-900 hover:bg-purple-100 flex-1"
+                    onClick={() => togglePFPE(dayKey)}
+                    style={{ minHeight: '32px' }}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                    <span className="font-semibold text-purple-700 text-sm">PF/PE/Notas</span>
+                    <svg
+                      className={`w-3 h-3 transform transition-transform ${collapsedPFPE[dayKey] ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  <button
+                    className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700 transition-colors"
+                    title="Registrar PF/PE/Notas"
+                    onClick={() => handleOpenDailyModal(day)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
                 </div>
                 {!collapsedPFPE[dayKey] && renderPFPETables({ [dayKey]: pfpeRecords })}
-              </div>
-              <div className="flex justify-end mt-2">
-                <button
-                  className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700 transition-colors mb-2"
-                  title="Registrar PF/PE/Notas"
-                  onClick={() => handleOpenDailyModal(day)}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
               </div>
             </div>
           )}
