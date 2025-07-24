@@ -280,7 +280,7 @@ const ClientRoutineList = ({
               </div>
               <button
                 onClick={handleAddRoutine}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-md flex items-center justify-center"
+                className="w-full bg-green-900 text-white py-3 rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-md flex items-center justify-center"
                 title="Crear Rutina"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6">

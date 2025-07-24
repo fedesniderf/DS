@@ -112,7 +112,7 @@ const RoutineDetail = (props) => {
         <div key={day} className="mb-4">
           {/* Ocultar el título del día solo para la tabla de Seguimiento semanal - PF y PE */}
           {!(day && day.startsWith('Día')) && (
-            <h5 className="font-semibold text-purple-700 mb-2">{day}</h5>
+            <h5 className="font-semibold text-green-700 mb-2">{day}</h5>
           )}
           <div className="w-full overflow-x-auto">
             <div className="overflow-x-auto">
@@ -914,11 +914,11 @@ const RoutineDetail = (props) => {
 
     // Mapeo de colores degradé para cada sección
     const sectionGradientColors = {
-      'Warm Up': 'bg-gradient-to-r from-purple-900 to-purple-800 text-white', // más oscuro
-      'Activación': 'bg-gradient-to-r from-purple-800 to-purple-700 text-white',
-      'Core': 'bg-gradient-to-r from-purple-700 to-purple-500 text-white',
-      'Trabajo DS': 'bg-gradient-to-r from-purple-500 to-purple-300 text-white',
-      'Out': 'bg-gradient-to-r from-purple-200 to-purple-100 text-purple-900', // más claro
+      'Warm Up': 'bg-gradient-to-r from-green-950 to-[#183E0C] text-white', // más oscuro
+      'Activación': 'bg-gradient-to-r from-[#183E0C] to-green-800 text-white',
+      'Core': 'bg-gradient-to-r from-green-900 to-green-600 text-white',
+      'Trabajo DS': 'bg-gradient-to-r from-green-800 to-green-300 text-white',
+      'Out': 'bg-gradient-to-r from-green-700 to-green-300 text-white', // más claro
     };
     
     // Ordenar días
@@ -945,19 +945,19 @@ const RoutineDetail = (props) => {
         <div key={day} className="mb-6">
           <div className="flex items-center gap-2">
             <div 
-              className="flex items-center justify-between cursor-pointer p-1 sm:p-2 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors flex-1 min-h-[32px]"
+              className="flex items-center justify-between cursor-pointer p-1 sm:p-2 bg-black rounded-md hover:bg-gray-900 transition-colors flex-1 min-h-[32px]"
               style={{ minHeight: '32px' }}
               onClick={() => toggleDay(day)}
             >
               {/* Ocultar el título del Día solo para la tabla de seguimiento semanal PF y PE */}
               {!isPFPEGroup && (
-                <h4 className="text-base font-bold text-blue-700" style={{ fontSize: '15px' }}>
+                <h4 className="text-base font-bold text-white" style={{ fontSize: '15px' }}>
                   {['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : 'Sin día asignado'}
                 </h4>
               )}
               <div className="flex items-center gap-2">
                 <svg 
-                  className={`w-4 h-4 text-blue-700 transform transition-transform ${collapsedDays.has(day) ? 'rotate-180' : ''}`}
+                  className={`w-4 h-4 text-white transform transition-transform ${collapsedDays.has(day) ? 'rotate-180' : ''}`}
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -1091,7 +1091,7 @@ const RoutineDetail = (props) => {
                                               <div className="flex gap-2 items-center ml-auto">
                                                 {canAddDailyTracking && (
                                                   <button
-                                                    className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700"
+                                                    className="p-1 rounded-full bg-black hover:bg-gray-800 text-white"
                                                     title="Agregar seguimiento semanal"
                                                     onClick={() => handleOpenWeeklyModal(ex)}
                                                   >
@@ -1156,7 +1156,7 @@ const RoutineDetail = (props) => {
                                 <div className="flex gap-2 items-center ml-auto">
                                   {canAddDailyTracking && (
                                     <button
-                                      className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700"
+                                      className="p-1 rounded-full bg-black-900 hover:bg-black-800 text-white-900"
                                       title="Agregar seguimiento semanal"
                                       onClick={() => handleOpenWeeklyModal(ex)}
                                     >
@@ -1219,11 +1219,11 @@ const RoutineDetail = (props) => {
               <div className="w-full overflow-x-auto mt-6">
                 <div className="flex items-center gap-2 mb-2">
                   <div
-                    className="flex items-center justify-between cursor-pointer select-none px-2 py-1 rounded-md transition-colors text-sm bg-purple-50 text-purple-900 hover:bg-purple-100 flex-1"
+                    className="flex items-center justify-between cursor-pointer select-none px-2 py-1 rounded-md transition-colors text-sm bg-green-100 text-black-900 hover:bg-blue-100 flex-1"
                     onClick={() => togglePFPE(dayKey)}
                     style={{ minHeight: '32px' }}
                   >
-                    <span className="font-semibold text-purple-700 text-sm">Seguimiento semanal - PF y PE</span>
+                    <span className="font-semibold text-green-700 text-sm">Seguimiento semanal - PF y PE</span>
                     <svg
                       className={`w-3 h-3 transform transition-transform ${collapsedPFPE[dayKey] ? 'rotate-180' : ''}`}
                       fill="none"
@@ -1234,7 +1234,7 @@ const RoutineDetail = (props) => {
                     </svg>
                   </div>
                   <button
-                    className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700 transition-colors"
+                    className="p-1 rounded-full bg-green-100 hover:bg-green-200 text-green-700 transition-colors"
                     title="Registrar PF/PE/Notas"
                     onClick={() => handleOpenDailyModal(day)}
                   >
