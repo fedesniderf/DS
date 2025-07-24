@@ -1,4 +1,6 @@
-// ...existing code...
+import React from "react";
+import PFPETable from "./PFPETable";
+
 // Utilidad para limpiar datos antiguos de dailyTracking
 function cleanOldDailyTracking(dailyTracking) {
   if (!dailyTracking || typeof dailyTracking !== 'object') return {};
@@ -17,8 +19,6 @@ function cleanOldDailyTracking(dailyTracking) {
   });
   return cleaned;
 }
-
-
 
 // Ordenar los registros de PF/PE por semana antes de pasarlos a la tabla
 function sortPFPEByWeek(recordsArray) {
@@ -45,33 +45,27 @@ function sortPFPEByWeek(recordsArray) {
 
 // ...existing code...
 
-// ...existing code...
-import React from "react";
-import PFPETable from "./PFPETable";
-
-const RoutineDetail = ({
-  routine,
-  onUpdateRoutine = () => {},
-  isEditable,
-  onAddExerciseClick = () => {},
-  canAddDailyTracking = false,
-}) => {
-  // ...existing code...
-
+const RoutineDetail = (props) => {
   // Handler para limpiar registros antiguos de dailyTracking
   const handleCleanOldDailyTracking = () => {
     if (!routine || !routine.dailyTracking) return;
     const cleaned = cleanOldDailyTracking(routine.dailyTracking);
-    onUpdateRoutine({
-      id: routine.id,
-      action: 'updateDailyTracking',
-      data: { dailyTracking: cleaned }
-    });
+    if (typeof onUpdateRoutine === 'function') {
+      onUpdateRoutine({
+        id: routine.id,
+        action: 'updateDailyTracking',
+        data: { dailyTracking: cleaned }
+      });
+    }
   };
-
-  // Renderizar la tabla de PF/PE por día, ordenando por semana
-  function renderPFPETables(cleanedDailyTracking) {
-    // Handler para editar registro PF/PE
+  // Desestructurar props para evitar ReferenceError
+  const {
+    routine = {},
+    onUpdateRoutine,
+    isEditable = false,
+    canAddDailyTracking = false
+  } = props;
+  // ...existing code...
     const handleEditPFPE = (dayKey, idx, newPFPE) => {
       console.log('RoutineDetail handleEditPFPE called:', { dayKey, idx, newPFPE });
       const prevArray = Array.isArray(routine.dailyTracking?.[dayKey]) ? routine.dailyTracking[dayKey] : [];
@@ -111,20 +105,31 @@ const RoutineDetail = ({
       }
     };
 
-    return Object.entries(cleanedDailyTracking).map(([day, records]) => (
-      <div key={day} className="mb-4">
-        <h5 className="font-semibold text-purple-700 mb-2">{day}</h5>
-        <div className="w-full overflow-x-auto">
-          <PFPETable
-            data={sortPFPEByWeek(records)}
-            day={day}
-            onEditPFPE={handleEditPFPE}
-            onDeletePFPE={handleDeletePFPE}
-          />
+  // Helper to render PFPE tables
+  const renderPFPETables = (cleanedDailyTracking) => {
+    return Object.entries(cleanedDailyTracking).map(([day, records]) => {
+      // Asegurar que records siempre sea un array
+      let safeRecords = [];
+      if (Array.isArray(records)) {
+        safeRecords = records;
+      } else if (records && typeof records === 'object') {
+        safeRecords = [records];
+      }
+      return (
+        <div key={day} className="mb-4">
+          <h5 className="font-semibold text-purple-700 mb-2">{day}</h5>
+          <div className="w-full overflow-x-auto">
+            <PFPETable
+              data={sortPFPEByWeek(safeRecords)}
+              day={day}
+              onEditPFPE={handleEditPFPE}
+              onDeletePFPE={handleDeletePFPE}
+            />
+          </div>
         </div>
-      </div>
-    ));
-  }
+      );
+    });
+  };
   // Estado para mostrar el modal de notas y fecha de seguimiento semanal
   const [showWeeklyNotesModal, setShowWeeklyNotesModal] = React.useState({ open: false, notes: '', date: '', week: '' });
   // Estado para colapsar/expandir rounds
@@ -845,6 +850,11 @@ const RoutineDetail = ({
       const dayKey = ['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : day;
       // Solo pasar los registros de ese día
       const pfpeRecords = cleanedDailyTracking[dayKey] || [];
+      // Detectar si el día actual es solo para PF/PE/Notas
+      const isPFPEGroup =
+        groupedByDay[day] &&
+        Object.keys(groupedByDay[day]).length === 1 &&
+        (Object.keys(groupedByDay[day])[0] === 'PFPE' || Object.keys(groupedByDay[day])[0] === 'Seguimiento semanal - PF y PE');
       return (
   // Estado para colapso PF/PE/Notas: inicializar todos los días colapsados al montar el componente
 
@@ -855,9 +865,12 @@ const RoutineDetail = ({
               style={{ minHeight: '32px' }}
               onClick={() => toggleDay(day)}
             >
-              <h4 className="text-base font-bold text-blue-700" style={{ fontSize: '15px' }}>
-                {['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : 'Sin día asignado'}
-              </h4>
+              {/* Ocultar el título del Día solo para la tabla de seguimiento semanal PF y PE */}
+              {!isPFPEGroup && (
+                <h4 className="text-base font-bold text-blue-700" style={{ fontSize: '15px' }}>
+                  {['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : 'Sin día asignado'}
+                </h4>
+              )}
               <div className="flex items-center gap-2">
                 <svg 
                   className={`w-4 h-4 text-blue-700 transform transition-transform ${collapsedDays.has(day) ? 'rotate-180' : ''}`}
@@ -1146,7 +1159,7 @@ const RoutineDetail = ({
                     onClick={() => togglePFPE(dayKey)}
                     style={{ minHeight: '32px' }}
                   >
-                    <span className="font-semibold text-purple-700 text-sm">PF/PE/Notas</span>
+                    <span className="font-semibold text-purple-700 text-sm">Seguimiento semanal - PF y PE</span>
                     <svg
                       className={`w-3 h-3 transform transition-transform ${collapsedPFPE[dayKey] ? 'rotate-180' : ''}`}
                       fill="none"
@@ -1166,7 +1179,14 @@ const RoutineDetail = ({
                     </svg>
                   </button>
                 </div>
-                {!collapsedPFPE[dayKey] && renderPFPETables({ [dayKey]: pfpeRecords })}
+                {!collapsedPFPE[dayKey] && (
+                  <>
+                    {renderPFPETables({
+                      [dayKey]: Array.isArray(pfpeRecords) ? pfpeRecords : (pfpeRecords ? [pfpeRecords] : [])
+                    })}
+                    {/* Modal para editar PF/PE/Notas ya está implementado abajo y se reutiliza para edición */}
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -1289,20 +1309,16 @@ const RoutineDetail = ({
       {/* Modal para seguimiento diario general */}
       {showDailyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">
-              {isEditingDaily ? 'Editar seguimiento diario' : 'Seguimiento Diario de la Rutina'}
+          <div className="bg-white p-4 rounded-xl shadow-lg w-full max-w-md max-h-[80vh] overflow-y-auto text-xs" style={{ fontSize: '12px' }}>
+            <h3 className="text-base font-bold mb-4">
+              {isEditingDaily ? 'Editar PF/PE/Notas' : 'Registrar PF/PE/Notas'}
             </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              {isEditingDaily ? 'Modifica tu percepción de fatiga y esfuerzo' : 'Registra tu percepción de fatiga y esfuerzo'}
-            </p>
-            
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Semana de entrenamiento
               </label>
               <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                 value={weekNumber}
                 onChange={e => setWeekNumber(e.target.value)}
                 disabled={isEditingDaily}
@@ -1313,45 +1329,42 @@ const RoutineDetail = ({
                 ))}
               </select>
             </div>
-            
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Percepción de Fatiga (PF) - 1 a 5
               </label>
               <input
                 type="number"
                 min="1"
                 max="5"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                 placeholder="Ej: 3"
                 value={dailyPF}
                 onChange={e => setDailyPF(e.target.value)}
               />
             </div>
-            
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Percepción de Esfuerzo (PE) - 1 a 5
               </label>
               <input
                 type="number"
                 min="1"
                 max="5"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                 placeholder="Ej: 4"
                 value={dailyPE}
                 onChange={e => setDailyPE(e.target.value)}
               />
             </div>
-            
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Notas adicionales
               </label>
               <textarea
                 value={exerciseNotes}
                 onChange={(e) => setExerciseNotes(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                 placeholder="Cualquier nota relevante sobre el ejercicio"
                 rows={3}
               />
@@ -1359,13 +1372,13 @@ const RoutineDetail = ({
             <div className="flex gap-3">
               <button
                 onClick={handleSaveDaily}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-xs"
               >
                 {isEditingDaily ? 'Actualizar' : 'Guardar'}
               </button>
               <button
                 onClick={handleCloseDailyModal}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors text-xs"
               >
                 Cancelar
               </button>
@@ -1436,7 +1449,6 @@ const RoutineDetail = ({
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
             <h3 className="text-lg font-bold mb-4">Editar Rutina</h3>
-            
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Nombre de la rutina
@@ -1449,7 +1461,6 @@ const RoutineDetail = ({
                 placeholder="Ej: Rutina de fuerza"
               />
             </div>
-            
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fecha de inicio
@@ -1461,7 +1472,6 @@ const RoutineDetail = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fecha de fin
@@ -1473,7 +1483,6 @@ const RoutineDetail = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Descripción
@@ -1486,7 +1495,6 @@ const RoutineDetail = ({
                 placeholder="Describe los objetivos y características de la rutina"
               />
             </div>
-            
             <div className="flex gap-3">
               <button
                 onClick={handleSaveRoutine}
