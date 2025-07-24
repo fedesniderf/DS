@@ -121,7 +121,7 @@ const RoutineDetail = (props) => {
           <h5 className="font-semibold text-purple-700 mb-2">{day}</h5>
           <div className="w-full overflow-x-auto">
             <div className="overflow-x-auto">
-              <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden text-center">
+              <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden text-center text-xs">
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="px-2 py-1 text-center">Semana</th>
