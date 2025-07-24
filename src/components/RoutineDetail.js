@@ -81,6 +81,9 @@ const RoutineDetail = (props) => {
     };
 
     const handleDeletePFPE = (dayKey, idx) => {
+      if (!window.confirm('¿Estás seguro de que quieres eliminar este registro de seguimiento semanal (PF y PE)?')) {
+        return;
+      }
       console.log('RoutineDetail handleDeletePFPE called:', { dayKey, idx });
       const prevArray = Array.isArray(routine.dailyTracking?.[dayKey]) ? routine.dailyTracking[dayKey] : [];
       const updatedArray = prevArray.filter((_, i) => i !== idx);
@@ -548,31 +551,18 @@ const RoutineDetail = (props) => {
   };
 
   const handleDeleteWeeklyTracking = (exercise, weekValue) => {
-    console.log('handleDeleteWeeklyTracking called with:', { exercise, weekValue });
+    // Confirmación específica para PF y PE
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este registro de seguimiento semanal (PF y PE)?')) {
+      return;
+    }
     try {
-      if (!confirm('¿Estás seguro de que quieres eliminar este seguimiento semanal?')) {
-        return;
-      }
-      
       // Obtener el ID de la rutina
       const routineId = routine?.id || routine?.routine_id || routine?.client_id;
-      
       if (!routineId) {
         console.error('Error: ID de rutina no encontrado para eliminar seguimiento semanal', routine);
         alert('Error: No se encontró el ID de la rutina. Por favor, recarga la página.');
         return;
       }
-      
-      console.log('Deleting weekly tracking with data:', {
-        id: routineId,
-        action: 'deleteWeeklyTracking',
-        data: {
-          exerciseId: exercise.id,
-          week: weekValue
-        }
-      });
-      
-      // Llamar a la función para eliminar el seguimiento semanal
       onUpdateRoutine({
         id: routineId,
         action: 'deleteWeeklyTracking',
