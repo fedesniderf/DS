@@ -12,12 +12,63 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
   const [phone, setPhone] = useState('');
 
   const handleRegister = () => {
+    // Validación de contraseña
     if (password !== confirmPassword) {
       alert('Las contraseñas no coinciden.');
       return;
     }
+
     if (!fullName || !email || !password || !age || !weight || !height || !goals || !phone) {
       alert('Por favor, completa todos los campos.');
+      return;
+    }
+
+    // Validar email con dominio válido y dominio común
+    const emailRegex = /^[^@\s]+@([^@\s]+)\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      alert('Por favor, ingresa un correo electrónico con un dominio válido.');
+      return;
+    }
+    // Validar dominio común
+    const allowedDomains = [
+      'gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com', 'protonmail.com', 'live.com',
+      'gmail.es', 'outlook.es', 'hotmail.es', 'yahoo.es', 'icloud.es', 'protonmail.es', 'live.es',
+      'gmail.com.ar', 'outlook.com.ar', 'hotmail.com.ar', 'yahoo.com.ar', 'icloud.com.ar', 'protonmail.com.ar', 'live.com.ar',
+      'gmail.com.mx', 'outlook.com.mx', 'hotmail.com.mx', 'yahoo.com.mx', 'icloud.com.mx', 'protonmail.com.mx', 'live.com.mx',
+      'gmail.com.br', 'outlook.com.br', 'hotmail.com.br', 'yahoo.com.br', 'icloud.com.br', 'protonmail.com.br', 'live.com.br',
+      'gmail.com.uy', 'outlook.com.uy', 'hotmail.com.uy', 'yahoo.com.uy', 'icloud.com.uy', 'protonmail.com.uy', 'live.com.uy',
+      'gmail.com.cl', 'outlook.com.cl', 'hotmail.com.cl', 'yahoo.com.cl', 'icloud.com.cl', 'protonmail.com.cl', 'live.com.cl',
+    ];
+    const emailDomain = email.split('@')[1]?.toLowerCase();
+    if (!allowedDomains.includes(emailDomain)) {
+      alert('Por favor, utiliza un correo de dominio común como gmail, outlook, hotmail, yahoo, icloud, live, etc.');
+      return;
+    }
+
+    // No debe contener datos personales
+    const lowerPassword = password.toLowerCase();
+    const personalData = [fullName, email, phone].map(x => (x || '').toLowerCase());
+    if (personalData.some(data => data && lowerPassword.includes(data))) {
+      alert('La contraseña no debe contener tu nombre, email o teléfono.');
+      return;
+    }
+
+    // Debe tener al menos una mayúscula
+    if (!/[A-Z]/.test(password)) {
+      alert('La contraseña debe tener al menos una letra mayúscula.');
+      return;
+    }
+
+    // Debe tener al menos un caracter especial
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
+      alert('La contraseña debe tener al menos un caracter especial.');
+      return;
+    }
+
+    // No debe contener números en escala (ej: 123, 456, 789, 012, 234, etc)
+    const escalas = ['012','123','234','345','456','567','678','789','890','098','987','876','765','654','543','432','321','210'];
+    if (escalas.some(seq => password.includes(seq))) {
+      alert('La contraseña no debe contener números en escala (ej: 123, 456, 789, etc).');
       return;
     }
 
@@ -69,6 +120,15 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <p className="text-xs text-gray-500 mt-2">
+            La contraseña debe tener al menos:
+            <ul className="list-disc ml-5">
+              <li>Una letra mayúscula</li>
+              <li>Un caracter especial (ej: !@#$%^&amp;*)</li>
+              <li>No debe contener tu nombre, email ni teléfono</li>
+              <li>No debe contener números en escala (ej: 123, 456, 789, etc)</li>
+            </ul>
+          </p>
         </div>
 
         <div className="mb-6">
