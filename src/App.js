@@ -319,30 +319,40 @@ const App = () => {
         alert('Error al eliminar la rutina: ' + deleteError.message);
         return;
       }
-      // No verificar deletedData, Supabase no retorna datos eliminados por defecto
       // Recargar rutinas y limpiar selección
       let routinesData = [];
-      if (currentUser?.role === 'admin' && !selectedClient) {
-        const res = await supabase.from('rutinas').select('*');
-        routinesData = res.data || [];
-        setClientRoutines(routinesData);
-      } else if (selectedClient && selectedClient.client_id) {
+      if (currentUser?.role === 'admin' && selectedClient && selectedClient.client_id) {
+        // Admin viendo rutinas de un usuario específico
         const res = await supabase
           .from('rutinas')
           .select('*')
           .eq('client_id', selectedClient.client_id);
         routinesData = res.data || [];
         setClientRoutines(routinesData);
+        setSelectedRoutine(null);
+        setCurrentPage('adminViewClientRoutines');
+      } else if (currentUser?.role === 'admin' && !selectedClient) {
+        // Admin viendo todas las rutinas
+        const res = await supabase.from('rutinas').select('*');
+        routinesData = res.data || [];
+        setClientRoutines(routinesData);
+        setSelectedRoutine(null);
+        setCurrentPage('routines');
       } else if (currentUser?.role === 'client') {
+        // Cliente viendo sus propias rutinas
         const res = await supabase
           .from('rutinas')
           .select('*')
           .eq('client_id', currentUser.client_id);
         routinesData = res.data || [];
         setClientRoutines(routinesData);
+        setSelectedRoutine(null);
+        setCurrentPage('clientDashboard');
+      } else {
+        setClientRoutines([]);
+        setSelectedRoutine(null);
+        setCurrentPage('routines');
       }
-      setSelectedRoutine(null);
-      setCurrentPage('routines');
       return;
     }
 
@@ -696,6 +706,7 @@ const App = () => {
                   onSelectRoutine={handleSelectRoutine}
                   onAddRoutine={handleAddRoutine}
                   isEditable={true}
+                  onDeleteRoutine={handleDeleteRoutine}
                   onBack={() => {
                     setCurrentPage('userManagement');
                     setSelectedClient(null);
