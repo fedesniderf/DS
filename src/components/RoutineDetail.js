@@ -299,8 +299,8 @@ const RoutineDetail = (props) => {
     <div className="grid grid-cols-2 gap-2 mb-2 text-sm text-gray-700">
       {ex.sets && <div><span className="font-semibold">Series:</span> {ex.sets}</div>}
       {ex.reps && <div><span className="font-semibold">Reps:</span> {ex.reps}</div>}
-      {ex.time && <div><span className="font-semibold">Tiempo (seg):</span> {ex.time}</div>}
-      {ex.rest && <div><span className="font-semibold">Descanso (seg):</span> {ex.rest}</div>}
+      {ex.time && <div><span className="font-semibold">Tiempo:</span> {ex.time}</div>}
+      {ex.rest && <div><span className="font-semibold">Descanso:</span> {ex.rest}</div>}
       {ex.weight && <div><span className="font-semibold">Peso (Kg):</span> {ex.weight}</div>}
       {ex.rir && <div><span className="font-semibold">RIR:</span> {ex.rir}</div>}
       {ex.cadencia && <div><span className="font-semibold">Cadencia:</span> {ex.cadencia}</div>}
@@ -1629,15 +1629,15 @@ const RoutineDetail = (props) => {
                   <input type="text" value={exerciseWeight} onChange={(e) => setExerciseWeight(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 80" style={{ fontSize: '12px' }} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Tiempo (seg)</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Tiempo</label>
                   <input type="text" value={exerciseTime} onChange={(e) => setExerciseTime(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 30" style={{ fontSize: '12px' }} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Descanso (seg)</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Descanso</label>
                   <input type="text" value={exerciseRest} onChange={(e) => setExerciseRest(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 90" style={{ fontSize: '12px' }} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">RIR (Reps in Reserve)</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">RIR</label>
                   <input type="text" value={exerciseRIR} onChange={(e) => setExerciseRIR(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 2" style={{ fontSize: '12px' }} />
                 </div>
                 <div>
