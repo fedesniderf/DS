@@ -145,46 +145,46 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
           />
         </div>
 
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="age">
-            Edad
-          </label>
-          <input
-            type="number"
-            id="age"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
-            placeholder="Ej. 30"
-            value={age}
-            onChange={(e) => setAge(e.target.value)}
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="weight">
-            Peso (kg)
-          </label>
-          <input
-            type="number"
-            id="weight"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
-            placeholder="Ej. 75"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="height">
-            Altura (cm)
-          </label>
-          <input
-            type="number"
-            id="height"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
-            placeholder="Ej. 170"
-            value={height}
-            onChange={(e) => setHeight(e.target.value)}
-          />
+        <div className="mb-4 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="age">
+              Edad
+            </label>
+            <input
+              type="number"
+              id="age"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+              placeholder="Ej. 30"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="weight">
+              Peso (kg)
+            </label>
+            <input
+              type="number"
+              id="weight"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+              placeholder="Ej. 75"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="height">
+              Altura (cm)
+            </label>
+            <input
+              type="number"
+              id="height"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+              placeholder="Ej. 170"
+              value={height}
+              onChange={(e) => setHeight(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="mb-4">
