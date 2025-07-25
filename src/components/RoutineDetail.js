@@ -915,17 +915,54 @@ const RoutineDetail = (props) => {
       return acc;
     }, {});
 
-    // Orden específico de las secciones
-    const sectionOrder = ['Warm Up', 'Activación', 'Core', 'Trabajo DS', 'Out'];
 
-    // Mapeo de colores degradé para cada sección
-    const sectionGradientColors = {
-      'Warm Up': 'bg-gradient-to-r from-green-950 to-[#183E0C] text-white', // más oscuro
-      'Activación': 'bg-gradient-to-r from-[#183E0C] to-green-800 text-white',
-      'Core': 'bg-gradient-to-r from-green-900 to-green-600 text-white',
-      'Trabajo DS': 'bg-gradient-to-r from-green-800 to-green-300 text-white',
-      'Out': 'bg-gradient-to-r from-green-700 to-green-300 text-white', // más claro
+    // Persistencia global de sectionOrder por rutina y día (sincronizado con base de datos)
+    const routineId = routine?.id || routine?.routine_id || routine?.client_id || 'default';
+    // Inicializar y sincronizar sectionOrderByDay con la rutina
+    const getInitialSectionOrderByDay = () => {
+      if (routine && routine.sectionOrderByDay && typeof routine.sectionOrderByDay === 'object') {
+        return routine.sectionOrderByDay;
+      }
+      return {};
     };
+    const [sectionOrderByDay, setSectionOrderByDay] = React.useState(getInitialSectionOrderByDay);
+
+    // Sincronizar el estado local con la rutina cada vez que cambie routine.sectionOrderByDay
+    React.useEffect(() => {
+      if (routine && routine.sectionOrderByDay && typeof routine.sectionOrderByDay === 'object') {
+        setSectionOrderByDay(routine.sectionOrderByDay);
+      }
+    }, [routine && routine.id, routine && routine.sectionOrderByDay]);
+
+    // Sincronizar con base de datos cada vez que cambia el objeto (pero solo si cambia localmente, no al recibir de props)
+    const prevRoutineSectionOrder = React.useRef(routine && routine.sectionOrderByDay);
+    React.useEffect(() => {
+      // Solo enviar si el cambio no proviene de la rutina recibida por props
+      if (
+        typeof onUpdateRoutine === 'function' &&
+        routineId &&
+        sectionOrderByDay &&
+        JSON.stringify(sectionOrderByDay) !== JSON.stringify(prevRoutineSectionOrder.current)
+      ) {
+        onUpdateRoutine({
+          id: routineId,
+          action: 'updateSectionOrder',
+          data: { sectionOrderByDay }
+        });
+        prevRoutineSectionOrder.current = sectionOrderByDay;
+      }
+    }, [routineId, sectionOrderByDay, onUpdateRoutine]);
+
+    // Paleta de colores por posición de sección (degradé)
+    const sectionGradientColorsByIndex = [
+      'bg-gradient-to-r from-green-950 to-[#183E0C] text-white', // 0 - más oscuro
+      'bg-gradient-to-r from-[#183E0C] to-green-800 text-white', // 1
+      'bg-gradient-to-r from-green-900 to-green-600 text-white', // 2
+      'bg-gradient-to-r from-green-800 to-green-300 text-white', // 3
+      'bg-gradient-to-r from-green-700 to-green-300 text-white', // 4 - más claro
+      'bg-gradient-to-r from-green-400 to-green-200 text-green-900', // 5 - extra
+      'bg-gradient-to-r from-green-200 to-green-100 text-green-900', // 6 - extra
+    ];
     
     // Ordenar días
     const orderedDays = [
@@ -945,6 +982,39 @@ const RoutineDetail = (props) => {
         groupedByDay[day] &&
         Object.keys(groupedByDay[day]).length === 1 &&
         (Object.keys(groupedByDay[day])[0] === 'PFPE' || Object.keys(groupedByDay[day])[0] === 'Seguimiento semanal - PF y PE');
+      // Asegurar que sectionOrder tenga todas las secciones presentes en el día
+      const allSections = Object.keys(groupedByDay[day]);
+      // Obtener el orden actual para este día
+      const sectionOrder = sectionOrderByDay[day] || ['Warm Up', 'Activación', 'Core', 'Trabajo DS', 'Out'];
+      // Sincronizar el orden cuando cambian las secciones
+      React.useEffect(() => {
+        setSectionOrderByDay(prev => {
+          let newOrder = prev[day] ? [...prev[day]] : ['Warm Up', 'Activación', 'Core', 'Trabajo DS', 'Out'];
+          allSections.forEach(sec => {
+            if (!newOrder.includes(sec)) newOrder.push(sec);
+          });
+          newOrder = newOrder.filter(sec => allSections.includes(sec));
+          if (JSON.stringify(newOrder) !== JSON.stringify(prev[day])) {
+            return { ...prev, [day]: newOrder };
+          }
+          return prev;
+        });
+        // eslint-disable-next-line
+      }, [JSON.stringify(allSections)]);
+      // Función para mover secciones
+      const moveSection = (direction, sectionName) => {
+        setSectionOrderByDay(prev => {
+          const currentOrder = prev[day] ? [...prev[day]] : ['Warm Up', 'Activación', 'Core', 'Trabajo DS', 'Out'];
+          const idx = currentOrder.indexOf(sectionName);
+          if (direction === 'up' && idx > 0) {
+            [currentOrder[idx - 1], currentOrder[idx]] = [currentOrder[idx], currentOrder[idx - 1]];
+          } else if (direction === 'down' && idx < currentOrder.length - 1) {
+            [currentOrder[idx], currentOrder[idx + 1]] = [currentOrder[idx + 1], currentOrder[idx]];
+          }
+          // El nuevo objeto será sincronizado con la base de datos por el useEffect
+          return { ...prev, [day]: currentOrder };
+        });
+      };
       return (
   // Estado para colapso PF/PE/Notas: inicializar todos los días colapsados al montar el componente
 
@@ -994,14 +1064,16 @@ const RoutineDetail = (props) => {
           {!collapsedDays.has(day) && (
             <div className="mt-4">
               {/* Renderizar secciones en orden específico */}
-              {sectionOrder.map(sectionName => {
+              {sectionOrder.map((sectionName, sectionIdx) => {
                 if (!groupedByDay[day][sectionName]) return null;
                 const sectionKey = `${day}-${sectionName}`;
+                // Color según el orden, no el nombre
+                const colorClass = sectionGradientColorsByIndex[sectionIdx] || 'bg-purple-50 text-purple-900';
                 return (
                   <div key={sectionName} className="mb-3">
                     <div className="flex items-center gap-2">
                       <div
-                        className={`flex items-center justify-between cursor-pointer px-2 py-1 rounded-md transition-colors flex-1 text-sm ${sectionGradientColors[sectionName] || 'bg-purple-50 text-purple-900'}`}
+                        className={`flex items-center justify-between cursor-pointer px-2 py-1 rounded-md transition-colors flex-1 text-sm ${colorClass}`}
                         onClick={() => toggleSection(sectionKey)}
                       >
                         <h5 className="font-semibold text-sm">{sectionName}</h5>
@@ -1017,19 +1089,43 @@ const RoutineDetail = (props) => {
                         </div>
                       </div>
                       {isEditable && (
-                        <button
-                          onClick={(e) => {
-                            console.log('Delete section button clicked for:', { day, section: sectionName });
-                            e.stopPropagation();
-                            handleDeleteSection(day, sectionName);
-                          }}
-                          className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors flex-shrink-0"
-                          title="Eliminar sección completa"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                          </svg>
-                        </button>
+                        <>
+                          <button
+                            onClick={(e) => {
+                              console.log('Delete section button clicked for:', { day, section: sectionName });
+                              e.stopPropagation();
+                              handleDeleteSection(day, sectionName);
+                            }}
+                            className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors flex-shrink-0 ml-1"
+                            title="Eliminar sección completa"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            </svg>
+                          </button>
+                          <div className="flex flex-col ml-1">
+                            <button
+                              className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 mb-0.5 disabled:opacity-40"
+                              title="Subir sección"
+                              disabled={sectionIdx === 0}
+                              onClick={e => { e.stopPropagation(); moveSection('up', sectionName); }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                              </svg>
+                            </button>
+                            <button
+                              className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 mt-0.5 disabled:opacity-40"
+                              title="Bajar sección"
+                              disabled={sectionIdx === sectionOrder.length - 1}
+                              onClick={e => { e.stopPropagation(); moveSection('down', sectionName); }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3 h-3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                     {!collapsedSections.has(sectionKey) && (
