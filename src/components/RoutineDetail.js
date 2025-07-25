@@ -303,7 +303,7 @@ const RoutineDetail = (props) => {
       {ex.sets && <div><span className="font-semibold">Series:</span> {ex.sets}</div>}
       {ex.reps && <div><span className="font-semibold">Reps:</span> {ex.reps}</div>}
       {ex.time && <div><span className="font-semibold">Tiempo:</span> {ex.time}</div>}
-      {ex.rest && <div><span className="font-semibold">Descanso:</span> {ex.rest}</div>}
+      {ex.rest && !ex.hideRest && <div><span className="font-semibold">Descanso:</span> {ex.rest}</div>}
       {ex.weight && <div><span className="font-semibold">Peso (Kg):</span> {ex.weight}</div>}
       {ex.rir && <div><span className="font-semibold">RIR:</span> {ex.rir}</div>}
       {ex.cadencia && <div><span className="font-semibold">Cadencia:</span> {ex.cadencia}</div>}
@@ -1041,15 +1041,18 @@ const RoutineDetail = (props) => {
                               // Buscar la cantidad de rounds del primer ejercicio del grupo
                               const firstExercise = groupedByDay[day][sectionName][roundName][0];
                               const cantidadRounds = firstExercise && firstExercise.cantidadRounds ? firstExercise.cantidadRounds : '';
+                              const descansoRound = firstExercise && firstExercise.rest ? firstExercise.rest : '';
                               return (
                                 <div key={roundName} className="mb-2">
                                   <div
                                     className="flex items-center justify-between px-2 py-1 rounded-md cursor-pointer bg-gray-200 hover:bg-gray-300 transition-colors mb-1 text-sm"
                                     onClick={() => toggleRound(day, sectionName, roundName)}
                                   >
-                                    <span className="font-semibold text-purple-700 text-sm">
-                                      {`${roundName}${cantidadRounds ? ` - x${cantidadRounds}` : ''}`}
-                                    </span>
+                                    <span className="font-semibold text-gray-700 text-sm flex gap-4 items-center">
+                                    <span>{roundName}</span>
+                                    {cantidadRounds && <span className="text-gray-700">x{cantidadRounds}</span>}
+                                    {descansoRound && <span className="text-gray-700">Descanso: {descansoRound}</span>}
+                                  </span>
                                     <svg
                                       className={`w-4 h-4 text-gray-700 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
                                       fill="none"
@@ -1061,67 +1064,69 @@ const RoutineDetail = (props) => {
                                   </div>
                                   {!isCollapsed && (
                                     <div>
-                                      {Array.isArray(groupedByDay[day][sectionName][roundName]) && groupedByDay[day][sectionName][roundName].map((ex) => (
-                                        <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow">
-                                          <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2 w-full">
-                                              <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
-                                              {ex.media && (
-                                                <button
-                                                  className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-                                                  title="Ver video del ejercicio"
-                                                  onClick={() => window.open(ex.media, '_blank')}
-                                                >
-                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                                                  </svg>
-                                                </button>
-                                              )}
-                                              <div className="flex gap-2 items-center ml-auto">
-                                                {canAddDailyTracking && (
-                                                  <button
-                                                    className="p-1 rounded-full bg-black hover:bg-gray-800 text-white"
-                                                    title="Agregar seguimiento semanal"
-                                                    onClick={() => handleOpenWeeklyModal(ex)}
-                                                  >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                                                    </svg>
-                                                  </button>
-                                                )}
-                                                {isEditable && (
-                                                  <button
-                                                    className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
-                                                    title="Editar ejercicio"
-                                                    onClick={() => handleEditExerciseClick(ex)}
-                                                  >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                                    </svg>
-                                                  </button>
-                                                )}
-                                                {isEditable && (
-                                                  <button
-                                                    className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
-                                                    title="Eliminar ejercicio"
-                                                    onClick={() => handleDeleteExercise(ex.id)}
-                                                  >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                                    </svg>
-                                                  </button>
-                                                )}
+                                      {Array.isArray(groupedByDay[day][sectionName][roundName]) && (
+                                        <div className="p-4 bg-gray-50 rounded-xl shadow flex flex-col gap-4">
+                                          {groupedByDay[day][sectionName][roundName].map((ex) => (
+                                            <div key={ex.id} className="flex flex-col gap-2 border-b last:border-b-0 pb-2 last:pb-0">
+                                              <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2 w-full">
+                                                  <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                                                  {ex.media && (
+                                                    <button
+                                                      className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                                                      title="Ver video del ejercicio"
+                                                      onClick={() => window.open(ex.media, '_blank')}
+                                                    >
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                                      </svg>
+                                                    </button>
+                                                  )}
+                                                  <div className="flex gap-2 items-center ml-auto">
+                                                    {canAddDailyTracking && (
+                                                      <button
+                                                        className="p-1 rounded-full bg-black hover:bg-gray-800 text-white"
+                                                        title="Agregar seguimiento semanal"
+                                                        onClick={() => handleOpenWeeklyModal(ex)}
+                                                      >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                                        </svg>
+                                                      </button>
+                                                    )}
+                                                    {isEditable && (
+                                                      <button
+                                                        className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
+                                                        title="Editar ejercicio"
+                                                        onClick={() => handleEditExerciseClick(ex)}
+                                                      >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                                        </svg>
+                                                      </button>
+                                                    )}
+                                                    {isEditable && (
+                                                      <button
+                                                        className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
+                                                        title="Eliminar ejercicio"
+                                                        onClick={() => handleDeleteExercise(ex.id)}
+                                                      >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                        </svg>
+                                                      </button>
+                                                    )}
+                                                  </div>
+                                                </div>
                                               </div>
+                                              {renderExerciseDetails({ ...ex, hideRest: true })}
+                                              {renderWeeklyTracking(ex)}
                                             </div>
-                                          </div>
-                                        {/* Mostrar detalles del ejercicio */}
-                                        {renderExerciseDetails(ex)}
-                                        {/* Mostrar seguimiento semanal */}
-                                        {renderWeeklyTracking(ex)}
-                                      </div>
-                                    ))}
-                                  </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
                                 )}
                               </div>
                             );
@@ -1163,7 +1168,7 @@ const RoutineDetail = (props) => {
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                      </svg>
+                                    </svg>
                                     </button>
                                   )}
                                   {isEditable && (
@@ -1327,7 +1332,7 @@ const RoutineDetail = (props) => {
           title="Agregar nuevo ejercicio"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
         </button>
       )}
