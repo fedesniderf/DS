@@ -259,6 +259,7 @@ const RoutineDetail = (props) => {
     setExerciseName(ex.name || "");
     setExerciseSets(ex.sets || "");
     setExerciseReps(ex.reps || "");
+    setExerciseDropset(ex.dropset || "");
     setExerciseWeight(ex.weight || "");
     setExerciseTime(ex.time || "");
     setExerciseRest(ex.rest || "");
@@ -302,6 +303,7 @@ const RoutineDetail = (props) => {
     <div className="grid grid-cols-2 gap-2 mb-2 text-xs text-gray-700">
       {ex.sets && <div><span className="font-semibold">Series:</span> {ex.sets}</div>}
       {ex.reps && <div><span className="font-semibold">Reps:</span> {ex.reps}</div>}
+      {ex.dropset && <div><span className="font-semibold">Dropset:</span> {ex.dropset}</div>}
       {ex.time && <div><span className="font-semibold">Tiempo:</span> {ex.time}</div>}
       {ex.rest && !ex.hideRest && <div><span className="font-semibold">Descanso:</span> {ex.rest}</div>}
       {ex.weight && <div><span className="font-semibold">Peso (Kg):</span> {ex.weight}</div>}
@@ -1171,7 +1173,7 @@ const RoutineDetail = (props) => {
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                    </svg>
+                                      </svg>
                                     </button>
                                   )}
                                   {isEditable && (
@@ -1187,18 +1189,7 @@ const RoutineDetail = (props) => {
                                   )}
                                 </div>
                               </div>
-                              {/* Mostrar detalles del ejercicio */}
-                              {/* Detalle del ejercicio */}
-                              <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                                {ex.sets && <div><span className="font-semibold">Series:</span> {ex.sets}</div>}
-                                {ex.reps && <div><span className="font-semibold">Repeticiones:</span> {ex.reps}</div>}
-                                {ex.dropset && <div><span className="font-semibold">Dropset:</span> {ex.dropset}</div>}
-                                {ex.weight && <div><span className="font-semibold">Peso (kg):</span> {ex.weight}</div>}
-                                {ex.time && <div><span className="font-semibold">Tiempo:</span> {ex.time}</div>}
-                                {ex.rest && <div><span className="font-semibold">Descanso:</span> {ex.rest}</div>}
-                                {ex.rir && <div><span className="font-semibold">RIR:</span> {ex.rir}</div>}
-                                {ex.cadencia && <div><span className="font-semibold">Cadencia:</span> {ex.cadencia}</div>}
-                              </div>
+                              {/* Mostrar detalles del ejercicio solo una vez */}
                               {renderExerciseDetails(ex)}
                               {/* Mostrar seguimiento semanal */}
                               {renderWeeklyTracking(ex)}
