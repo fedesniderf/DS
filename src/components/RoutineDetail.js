@@ -650,6 +650,17 @@ const RoutineDetail = (props) => {
       alert('Completa todos los campos para registrar PF/PE/Notas.');
       return;
     }
+    // Validación PF y PE entre 1 y 5
+    const pfNum = Number(dailyPF);
+    const peNum = Number(dailyPE);
+    if (
+      isNaN(pfNum) || isNaN(peNum) ||
+      pfNum < 1 || pfNum > 5 ||
+      peNum < 1 || peNum > 5
+    ) {
+      alert('PF y PE deben ser valores entre 1 y 5.');
+      return;
+    }
     const routineId = routine?.id || routine?.routine_id || routine?.client_id;
     if (!routineId) {
       alert('No se encontró el ID de la rutina.');
@@ -665,8 +676,8 @@ const RoutineDetail = (props) => {
       PFPE: {
         week: weekNumber,
         day: normalizedDay,
-        pf: Number(dailyPF),
-        pe: Number(dailyPE),
+        pf: pfNum,
+        pe: peNum,
         notes: exerciseNotes || "",
         timestamp: isEditingDaily && editingDailyDate ? editingDailyDate : new Date().toISOString()
       }
@@ -946,7 +957,7 @@ const RoutineDetail = (props) => {
             >
               {/* Ocultar el título del Día solo para la tabla de seguimiento semanal PF y PE */}
               {!isPFPEGroup && (
-                <h4 className="text-base font-bold text-white" style={{ fontSize: '15px' }}>
+                <h4 className="text-base font-bold text-white pl-1" style={{ fontSize: '15px' }}>
                   {['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : 'Sin día asignado'}
                 </h4>
               )}
