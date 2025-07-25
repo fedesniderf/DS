@@ -299,7 +299,7 @@ const RoutineDetail = (props) => {
 
   // Función para renderizar detalles del ejercicio
   const renderExerciseDetails = (ex) => (
-    <div className="grid grid-cols-2 gap-2 mb-2 text-sm text-gray-700">
+    <div className="grid grid-cols-2 gap-2 mb-2 text-xs text-gray-700">
       {ex.sets && <div><span className="font-semibold">Series:</span> {ex.sets}</div>}
       {ex.reps && <div><span className="font-semibold">Reps:</span> {ex.reps}</div>}
       {ex.time && <div><span className="font-semibold">Tiempo:</span> {ex.time}</div>}
@@ -374,6 +374,9 @@ const RoutineDetail = (props) => {
   const [dailyPE, setDailyPE] = React.useState("");
 
   // Estado para editar información de rutina
+
+  // Estado para el campo Dropset en el modal de ejercicio
+  const [exerciseDropset, setExerciseDropset] = React.useState("");
   const [showRoutineModal, setShowRoutineModal] = React.useState(false);
   const [routineName, setRoutineName] = React.useState("");
   const [routineStartDate, setRoutineStartDate] = React.useState("");
@@ -1185,6 +1188,17 @@ const RoutineDetail = (props) => {
                                 </div>
                               </div>
                               {/* Mostrar detalles del ejercicio */}
+                              {/* Detalle del ejercicio */}
+                              <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                                {ex.sets && <div><span className="font-semibold">Series:</span> {ex.sets}</div>}
+                                {ex.reps && <div><span className="font-semibold">Repeticiones:</span> {ex.reps}</div>}
+                                {ex.dropset && <div><span className="font-semibold">Dropset:</span> {ex.dropset}</div>}
+                                {ex.weight && <div><span className="font-semibold">Peso (kg):</span> {ex.weight}</div>}
+                                {ex.time && <div><span className="font-semibold">Tiempo:</span> {ex.time}</div>}
+                                {ex.rest && <div><span className="font-semibold">Descanso:</span> {ex.rest}</div>}
+                                {ex.rir && <div><span className="font-semibold">RIR:</span> {ex.rir}</div>}
+                                {ex.cadencia && <div><span className="font-semibold">Cadencia:</span> {ex.cadencia}</div>}
+                              </div>
                               {renderExerciseDetails(ex)}
                               {/* Mostrar seguimiento semanal */}
                               {renderWeeklyTracking(ex)}
@@ -1319,6 +1333,7 @@ const RoutineDetail = (props) => {
             setExerciseName('');
             setExerciseSets('');
             setExerciseReps('');
+            setExerciseDropset('');
             setExerciseWeight('');
             setExerciseTime('');
             setExerciseRest('');
@@ -1620,6 +1635,10 @@ const RoutineDetail = (props) => {
                   <input type="text" value={exerciseReps} onChange={(e) => setExerciseReps(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 10-12" style={{ fontSize: '12px' }} />
                 </div>
                 <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Dropset</label>
+                  <input type="text" value={exerciseDropset} onChange={(e) => setExerciseDropset(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 2" style={{ fontSize: '12px' }} />
+                </div>
+                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Peso (kg)</label>
                   <input type="text" value={exerciseWeight} onChange={(e) => setExerciseWeight(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 80" style={{ fontSize: '12px' }} />
                 </div>
@@ -1661,6 +1680,7 @@ const RoutineDetail = (props) => {
                     name: exerciseName,
                     sets: exerciseSets,
                     reps: exerciseReps,
+                    dropset: exerciseDropset,
                     weight: exerciseWeight,
                     time: exerciseTime,
                     rest: exerciseRest,
@@ -1694,6 +1714,7 @@ const RoutineDetail = (props) => {
                   setExerciseName("");
                   setExerciseSets("");
                   setExerciseReps("");
+                  setExerciseDropset("");
                   setExerciseWeight("");
                   setExerciseTime("");
                   setExerciseRest("");
@@ -1716,6 +1737,7 @@ const RoutineDetail = (props) => {
                   setExerciseName("");
                   setExerciseSets("");
                   setExerciseReps("");
+                  setExerciseDropset("");
                   setExerciseWeight("");
                   setExerciseTime("");
                   setExerciseRest("");
