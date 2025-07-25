@@ -301,9 +301,11 @@ const RoutineDetail = (props) => {
   // Función para renderizar detalles del ejercicio
   const renderExerciseDetails = (ex) => (
     <div className="grid grid-cols-2 gap-2 mb-2 text-sm text-gray-700">
+      {/* Orden fijo: Series, Dropset, Repeticiones */}
       {ex.sets && <div><span className="font-semibold">Series:</span> {ex.sets}</div>}
-      {ex.reps && <div><span className="font-semibold">Reps:</span> {ex.reps}</div>}
       {ex.dropset && <div><span className="font-semibold">Dropset:</span> {ex.dropset}</div>}
+      {ex.reps && <div><span className="font-semibold">Repeticiones:</span> {ex.reps}</div>}
+      {/* El resto igual que antes */}
       {ex.time && <div><span className="font-semibold">Tiempo:</span> {ex.time}</div>}
       {ex.rest && !ex.hideRest && <div><span className="font-semibold">Descanso:</span> {ex.rest}</div>}
       {ex.weight && <div><span className="font-semibold">Peso (Kg):</span> {ex.weight}</div>}
@@ -1729,12 +1731,12 @@ const RoutineDetail = (props) => {
                   <input type="text" value={exerciseSets} onChange={(e) => setExerciseSets(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 3" style={{ fontSize: '12px' }} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Repeticiones</label>
-                  <input type="text" value={exerciseReps} onChange={(e) => setExerciseReps(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 10-12" style={{ fontSize: '12px' }} />
-                </div>
-                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Dropset</label>
                   <input type="text" value={exerciseDropset} onChange={(e) => setExerciseDropset(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 2" style={{ fontSize: '12px' }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Repeticiones</label>
+                  <input type="text" value={exerciseReps} onChange={(e) => setExerciseReps(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: 10-12" style={{ fontSize: '12px' }} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Peso (kg)</label>

@@ -79,6 +79,7 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="sets">
             Series:
@@ -104,6 +105,20 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
             placeholder="Ej. 10-12"
             value={reps}
             onChange={(e) => setReps(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="dropset">
+            Dropset:
+          </label>
+          <input
+            type="text"
+            id="dropset"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+            placeholder="Ej. 2"
+            value={dropset}
+            onChange={(e) => setDropset(e.target.value)}
           />
         </div>
 
