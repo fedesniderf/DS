@@ -329,9 +329,34 @@ const App = () => {
 
   // ACTUALIZAR RUTINA
   const handleUpdateRoutine = async (updatedRoutine) => {
-
     // Manejador universal para acciones desde RoutineDetail
     const { id, action, data } = updatedRoutine;
+
+    // Soporte para actualizar el orden de secciones globalmente
+    if (action === 'updateSectionOrder') {
+      if (!data || typeof data.sectionOrderByDay !== 'object') {
+        alert('No se recibió el objeto sectionOrderByDay.');
+        return;
+      }
+      const { error: updateError } = await supabase
+        .from('rutinas')
+        .update({ sectionOrderByDay: data.sectionOrderByDay })
+        .eq('id', id);
+      if (updateError) {
+        alert('Error al actualizar el orden de secciones: ' + updateError.message);
+        return;
+      }
+      // Refresca la rutina seleccionada desde la base de datos
+      const { data: refreshedRoutine, error: fetchRoutineError } = await supabase
+        .from('rutinas')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (!fetchRoutineError && refreshedRoutine) {
+        setSelectedRoutine(refreshedRoutine);
+      }
+      return;
+    }
     if (!id) {
       alert('No se encontró el ID de la rutina.');
       return;
