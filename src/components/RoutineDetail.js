@@ -300,7 +300,7 @@ const RoutineDetail = (props) => {
 
   // Función para renderizar detalles del ejercicio
   const renderExerciseDetails = (ex) => (
-    <div className="grid grid-cols-2 gap-2 mb-2 text-xs text-gray-700">
+    <div className="grid grid-cols-2 gap-2 mb-2 text-sm text-gray-700">
       {ex.sets && <div><span className="font-semibold">Series:</span> {ex.sets}</div>}
       {ex.reps && <div><span className="font-semibold">Reps:</span> {ex.reps}</div>}
       {ex.dropset && <div><span className="font-semibold">Dropset:</span> {ex.dropset}</div>}
