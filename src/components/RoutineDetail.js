@@ -974,6 +974,31 @@ const RoutineDetail = (props) => {
     // Filtrar dailyTracking para cada día
     const cleanedDailyTracking = cleanOldDailyTracking(routine.dailyTracking);
 
+    // Sincronizar el orden de secciones para todos los días ANTES del map
+    React.useEffect(() => {
+      setSectionOrderByDay(prev => {
+        const newSectionOrder = { ...prev };
+        let hasChanges = false;
+        
+        orderedDays.forEach(day => {
+          const allSections = Object.keys(groupedByDay[day]);
+          let newOrder = prev[day] ? [...prev[day]] : ['Warm Up', 'Activación', 'Core', 'Trabajo DS', 'Out'];
+          
+          allSections.forEach(sec => {
+            if (!newOrder.includes(sec)) newOrder.push(sec);
+          });
+          newOrder = newOrder.filter(sec => allSections.includes(sec));
+          
+          if (JSON.stringify(newOrder) !== JSON.stringify(prev[day])) {
+            newSectionOrder[day] = newOrder;
+            hasChanges = true;
+          }
+        });
+        
+        return hasChanges ? newSectionOrder : prev;
+      });
+    }, [JSON.stringify(orderedDays.map(day => Object.keys(groupedByDay[day])))]);
+
     ejerciciosPorDia = orderedDays.map(day => {
       // Normalizar clave de día para dailyTracking
       const dayKey = ['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : day;
@@ -988,21 +1013,6 @@ const RoutineDetail = (props) => {
       const allSections = Object.keys(groupedByDay[day]);
       // Obtener el orden actual para este día
       const sectionOrder = sectionOrderByDay[day] || ['Warm Up', 'Activación', 'Core', 'Trabajo DS', 'Out'];
-      // Sincronizar el orden cuando cambian las secciones
-      React.useEffect(() => {
-        setSectionOrderByDay(prev => {
-          let newOrder = prev[day] ? [...prev[day]] : ['Warm Up', 'Activación', 'Core', 'Trabajo DS', 'Out'];
-          allSections.forEach(sec => {
-            if (!newOrder.includes(sec)) newOrder.push(sec);
-          });
-          newOrder = newOrder.filter(sec => allSections.includes(sec));
-          if (JSON.stringify(newOrder) !== JSON.stringify(prev[day])) {
-            return { ...prev, [day]: newOrder };
-          }
-          return prev;
-        });
-        // eslint-disable-next-line
-      }, [JSON.stringify(allSections)]);
       // Función para mover secciones
       const moveSection = (direction, sectionName) => {
         setSectionOrderByDay(prev => {
