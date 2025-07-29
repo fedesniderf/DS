@@ -1,5 +1,6 @@
 import React from "react";
 import PFPETable from "./PFPETable";
+import { supabase } from "../supabaseClient";
 
 // Utilidad para limpiar datos antiguos de dailyTracking
 function cleanOldDailyTracking(dailyTracking) {
@@ -386,6 +387,84 @@ const RoutineDetail = (props) => {
   const [routineStartDate, setRoutineStartDate] = React.useState("");
   const [routineEndDate, setRoutineEndDate] = React.useState("");
   const [routineDescription, setRoutineDescription] = React.useState("");
+
+  // Estados para sectionOrder - Movidos fuera del bloque condicional
+  const routineId = routine?.id || routine?.routine_id || routine?.client_id || 'default';
+  
+  const getInitialSectionOrderByDay = React.useCallback(() => {
+    if (routine && routine.sectionOrderByDay && typeof routine.sectionOrderByDay === 'object') {
+      return routine.sectionOrderByDay;
+    }
+    return {};
+  }, [routine]);
+
+  const [sectionOrderByDay, setSectionOrderByDay] = React.useState(getInitialSectionOrderByDay);
+  const prevRoutineSectionOrder = React.useRef(routine && routine.sectionOrderByDay);
+
+  // Sincronizar el estado local con la rutina cada vez que cambie routine.sectionOrderByDay
+  React.useEffect(() => {
+    if (routine && routine.sectionOrderByDay && typeof routine.sectionOrderByDay === 'object') {
+      setSectionOrderByDay(routine.sectionOrderByDay);
+    }
+  }, [routine && routine.id, routine && routine.sectionOrderByDay]);
+
+  // Sincronizar con base de datos cada vez que cambia el objeto
+  React.useEffect(() => {
+    if (
+      typeof onUpdateRoutine === 'function' &&
+      routineId &&
+      sectionOrderByDay &&
+      JSON.stringify(sectionOrderByDay) !== JSON.stringify(prevRoutineSectionOrder.current)
+    ) {
+      onUpdateRoutine({
+        id: routineId,
+        action: 'updateSectionOrder',
+        data: { sectionOrderByDay }
+      });
+      prevRoutineSectionOrder.current = sectionOrderByDay;
+    }
+  }, [routineId, sectionOrderByDay, onUpdateRoutine]);
+
+  // Sincronizar sectionOrder cuando cambian las secciones de los ejercicios
+  React.useEffect(() => {
+    if (exercises.length > 0) {
+      const groupedByDay = exercises.reduce((acc, ex) => {
+        const day = ex.day || 'Sin día';
+        if (!acc[day]) acc[day] = {};
+        const section = ex.section || 'Sin sección';
+        if (!acc[day][section]) acc[day][section] = {};
+        return acc;
+      }, {});
+
+      setSectionOrderByDay(prev => {
+        let hasChanges = false;
+        const newSectionOrder = { ...prev };
+
+        Object.keys(groupedByDay).forEach(day => {
+          const allSections = Object.keys(groupedByDay[day]);
+          let newOrder = prev[day] ? [...prev[day]] : ['Warm Up', 'Activación', 'Core', 'Trabajo DS', 'Out'];
+          
+          // Añadir nuevas secciones
+          allSections.forEach(sec => {
+            if (!newOrder.includes(sec)) {
+              newOrder.push(sec);
+              hasChanges = true;
+            }
+          });
+          
+          // Remover secciones que ya no existen
+          newOrder = newOrder.filter(sec => allSections.includes(sec));
+          
+          if (JSON.stringify(newOrder) !== JSON.stringify(prev[day])) {
+            newSectionOrder[day] = newOrder;
+            hasChanges = true;
+          }
+        });
+
+        return hasChanges ? newSectionOrder : prev;
+      });
+    }
+  }, [exercises]);
 
   // Funciones para manejar colapso/expansión
   const toggleDay = (day) => {
@@ -917,44 +996,6 @@ const RoutineDetail = (props) => {
       return acc;
     }, {});
 
-
-    // Persistencia global de sectionOrder por rutina y día (sincronizado con base de datos)
-    const routineId = routine?.id || routine?.routine_id || routine?.client_id || 'default';
-    // Inicializar y sincronizar sectionOrderByDay con la rutina
-    const getInitialSectionOrderByDay = () => {
-      if (routine && routine.sectionOrderByDay && typeof routine.sectionOrderByDay === 'object') {
-        return routine.sectionOrderByDay;
-      }
-      return {};
-    };
-    const [sectionOrderByDay, setSectionOrderByDay] = React.useState(getInitialSectionOrderByDay);
-
-    // Sincronizar el estado local con la rutina cada vez que cambie routine.sectionOrderByDay
-    React.useEffect(() => {
-      if (routine && routine.sectionOrderByDay && typeof routine.sectionOrderByDay === 'object') {
-        setSectionOrderByDay(routine.sectionOrderByDay);
-      }
-    }, [routine && routine.id, routine && routine.sectionOrderByDay]);
-
-    // Sincronizar con base de datos cada vez que cambia el objeto (pero solo si cambia localmente, no al recibir de props)
-    const prevRoutineSectionOrder = React.useRef(routine && routine.sectionOrderByDay);
-    React.useEffect(() => {
-      // Solo enviar si el cambio no proviene de la rutina recibida por props
-      if (
-        typeof onUpdateRoutine === 'function' &&
-        routineId &&
-        sectionOrderByDay &&
-        JSON.stringify(sectionOrderByDay) !== JSON.stringify(prevRoutineSectionOrder.current)
-      ) {
-        onUpdateRoutine({
-          id: routineId,
-          action: 'updateSectionOrder',
-          data: { sectionOrderByDay }
-        });
-        prevRoutineSectionOrder.current = sectionOrderByDay;
-      }
-    }, [routineId, sectionOrderByDay, onUpdateRoutine]);
-
     // Paleta de colores por posición de sección (degradé)
     const sectionGradientColorsByIndex = [
       'bg-gradient-to-r from-green-950 to-[#183E0C] text-white', // 0 - más oscuro
@@ -974,31 +1015,6 @@ const RoutineDetail = (props) => {
     // Filtrar dailyTracking para cada día
     const cleanedDailyTracking = cleanOldDailyTracking(routine.dailyTracking);
 
-    // Sincronizar el orden de secciones para todos los días ANTES del map
-    React.useEffect(() => {
-      setSectionOrderByDay(prev => {
-        const newSectionOrder = { ...prev };
-        let hasChanges = false;
-        
-        orderedDays.forEach(day => {
-          const allSections = Object.keys(groupedByDay[day]);
-          let newOrder = prev[day] ? [...prev[day]] : ['Warm Up', 'Activación', 'Core', 'Trabajo DS', 'Out'];
-          
-          allSections.forEach(sec => {
-            if (!newOrder.includes(sec)) newOrder.push(sec);
-          });
-          newOrder = newOrder.filter(sec => allSections.includes(sec));
-          
-          if (JSON.stringify(newOrder) !== JSON.stringify(prev[day])) {
-            newSectionOrder[day] = newOrder;
-            hasChanges = true;
-          }
-        });
-        
-        return hasChanges ? newSectionOrder : prev;
-      });
-    }, [JSON.stringify(orderedDays.map(day => Object.keys(groupedByDay[day])))]);
-
     ejerciciosPorDia = orderedDays.map(day => {
       // Normalizar clave de día para dailyTracking
       const dayKey = ['1','2','3','4','5','6','7'].includes(day) ? `Día ${day}` : day;
@@ -1013,6 +1029,7 @@ const RoutineDetail = (props) => {
       const allSections = Object.keys(groupedByDay[day]);
       // Obtener el orden actual para este día
       const sectionOrder = sectionOrderByDay[day] || ['Warm Up', 'Activación', 'Core', 'Trabajo DS', 'Out'];
+      
       // Función para mover secciones
       const moveSection = (direction, sectionName) => {
         setSectionOrderByDay(prev => {
@@ -1143,40 +1160,80 @@ const RoutineDetail = (props) => {
                     {!collapsedSections.has(sectionKey) && (
                       <div className="grid gap-4 mt-3">
                         {(() => {
-                          // rounds: todos los keys salvo 'Sin round'
-                          const allRounds = Object.keys(groupedByDay[day][sectionName]).filter(r => r !== 'Sin round');
-                          // ejercicios sin round
-                          const noRoundExercises = groupedByDay[day][sectionName]['Sin round'] || [];
-                          // Renderizar rounds colapsables
-                          const roundBlocks = allRounds
-                            .sort((a, b) => {
-                              const getRoundNumber = (roundStr) => {
-                                if (roundStr.startsWith('Round ')) {
-                                  const num = parseInt(roundStr.replace('Round ', ''));
-                                  return isNaN(num) ? Infinity : num;
-                                }
-                                return Infinity;
-                              };
-                              return getRoundNumber(a) - getRoundNumber(b);
-                            })
-                            .map(roundName => {
-                              const roundKey = `${day}-${sectionName}-${roundName}`;
+                          // Obtener ejercicios directamente del array original preservando el orden de inserción
+                          const exercisesInOriginalOrder = exercises.filter(ex => {
+                            const exDay = ex.day || 'Sin día';
+                            const exSection = ex.section || 'Sin sección';
+                            return exDay === day && exSection === sectionName;
+                          });
+
+                          // Primero, agrupar ejercicios por round manteniendo el orden cronológico
+                          const roundGroups = new Map();
+                          const singleExercises = [];
+                          
+                          exercisesInOriginalOrder.forEach(exercise => {
+                            const isRoundExercise = exercise.round && exercise.round !== '';
+                            
+                            if (isRoundExercise) {
+                              const roundNumber = exercise.round;
+                              if (!roundGroups.has(roundNumber)) {
+                                roundGroups.set(roundNumber, []);
+                              }
+                              roundGroups.get(roundNumber).push(exercise);
+                            } else {
+                              singleExercises.push(exercise);
+                            }
+                          });
+
+                          // Crear grupos de renderizado manteniendo el orden de aparición
+                          const renderGroups = [];
+                          const processedRounds = new Set();
+                          
+                          // Procesar ejercicios en orden original, pero agrupando rounds completos
+                          exercisesInOriginalOrder.forEach(exercise => {
+                            const isRoundExercise = exercise.round && exercise.round !== '';
+                            
+                            if (isRoundExercise) {
+                              const roundNumber = exercise.round;
+                              if (!processedRounds.has(roundNumber)) {
+                                // Agregar todo el grupo de este round
+                                renderGroups.push({
+                                  type: 'round',
+                                  roundName: `Round ${roundNumber}`,
+                                  exercises: roundGroups.get(roundNumber)
+                                });
+                                processedRounds.add(roundNumber);
+                              }
+                            } else {
+                              // Ejercicio individual sin round
+                              renderGroups.push({
+                                type: 'single',
+                                exercise: exercise
+                              });
+                            }
+                          });
+
+                          // Renderizar los grupos en orden original
+                          return renderGroups.map((group, groupIndex) => {
+                            if (group.type === 'round') {
+                              // Renderizar grupo de round
+                              const roundKey = `${day}-${sectionName}-${group.roundName}`;
                               const isCollapsed = collapsedRounds[roundKey];
-                              // Buscar la cantidad de rounds del primer ejercicio del grupo
-                              const firstExercise = groupedByDay[day][sectionName][roundName][0];
+                              const firstExercise = group.exercises[0];
                               const cantidadRounds = firstExercise && firstExercise.cantidadRounds ? firstExercise.cantidadRounds : '';
                               const descansoRound = firstExercise && firstExercise.rest ? firstExercise.rest : '';
+                              
                               return (
-                                <div key={roundName} className="mb-2">
+                                <div key={`${group.roundName}-${groupIndex}`} className="mb-2">
                                   <div
                                     className="flex items-center justify-between px-2 py-1 rounded-md cursor-pointer bg-gray-200 hover:bg-gray-300 transition-colors mb-1 text-sm"
-                                    onClick={() => toggleRound(day, sectionName, roundName)}
+                                    onClick={() => toggleRound(day, sectionName, group.roundName)}
                                   >
                                     <span className="font-semibold text-gray-700 text-sm flex gap-4 items-center">
-                                    <span>{roundName}</span>
-                                    {cantidadRounds && <span className="text-gray-700">x{cantidadRounds}</span>}
-                                    {descansoRound && <span className="text-gray-700">Descanso: {descansoRound}</span>}
-                                  </span>
+                                      <span>{group.roundName}</span>
+                                      {cantidadRounds && <span className="text-gray-700">x{cantidadRounds}</span>}
+                                      {descansoRound && <span className="text-gray-700">Descanso: {descansoRound}</span>}
+                                    </span>
                                     <svg
                                       className={`w-4 h-4 text-gray-700 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
                                       fill="none"
@@ -1188,9 +1245,9 @@ const RoutineDetail = (props) => {
                                   </div>
                                   {!isCollapsed && (
                                     <div>
-                                      {Array.isArray(groupedByDay[day][sectionName][roundName]) && (
+                                      {Array.isArray(group.exercises) && (
                                         <div className="p-4 bg-gray-50 rounded-xl shadow flex flex-col gap-4">
-                                          {groupedByDay[day][sectionName][roundName].map((ex) => (
+                                          {group.exercises.map((ex) => (
                                             <div key={ex.id} className="flex flex-col gap-2 border-b last:border-b-0 pb-2 last:pb-0">
                                               <div className="flex items-center justify-between mb-2">
                                                 <div className="flex items-center gap-2 w-full">
@@ -1251,73 +1308,70 @@ const RoutineDetail = (props) => {
                                         </div>
                                       )}
                                     </div>
-                                )}
-                              </div>
-                            );
-                          });
-                          // Renderizar ejercicios sin round directamente
-                          const noRoundBlocks = noRoundExercises.map((ex) => (
-                            <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow mb-2">
-                              <div className="flex items-center gap-2 w-full mb-2">
-                                <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
-                                {ex.media && (
-                                  <button
-                                    className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-                                    title="Ver video del ejercicio"
-                                    onClick={() => window.open(ex.media, '_blank')}
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                                    </svg>
-                                  </button>
-                                )}
-                                <div className="flex gap-2 items-center ml-auto">
-                                  {canAddDailyTracking && (
-                                    <button
-                                      className="p-1 rounded-full bg-black-900 hover:bg-black-800 text-white-900"
-                                      title="Agregar seguimiento semanal"
-                                      onClick={() => handleOpenWeeklyModal(ex)}
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                                      </svg>
-                                    </button>
-                                  )}
-                                  {isEditable && (
-                                    <button
-                                      className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
-                                      title="Editar ejercicio"
-                                      onClick={() => handleEditExerciseClick(ex)}
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                      </svg>
-                                    </button>
-                                  )}
-                                  {isEditable && (
-                                    <button
-                                      className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
-                                      title="Eliminar ejercicio"
-                                      onClick={() => handleDeleteExercise(ex.id)}
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                      </svg>
-                                    </button>
                                   )}
                                 </div>
-                              </div>
-                              {/* Mostrar detalles del ejercicio solo una vez */}
-                              {renderExerciseDetails(ex)}
-                              {/* Mostrar seguimiento semanal */}
-                              {renderWeeklyTracking(ex)}
-                            </div>
-                          ));
-                          return [
-                            ...roundBlocks,
-                            ...noRoundBlocks
-                          ];
+                              );
+                            } else {
+                              // Renderizar ejercicio individual sin round
+                              const ex = group.exercise;
+                              return (
+                                <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow mb-2">
+                                  <div className="flex items-center gap-2 w-full mb-2">
+                                    <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                                    {ex.media && (
+                                      <button
+                                        className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                                        title="Ver video del ejercicio"
+                                        onClick={() => window.open(ex.media, '_blank')}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                    <div className="flex gap-2 items-center ml-auto">
+                                      {canAddDailyTracking && (
+                                        <button
+                                          className="p-1 rounded-full bg-black hover:bg-gray-800 text-white"
+                                          title="Agregar seguimiento semanal"
+                                          onClick={() => handleOpenWeeklyModal(ex)}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                          </svg>
+                                        </button>
+                                      )}
+                                      {isEditable && (
+                                        <button
+                                          className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
+                                          title="Editar ejercicio"
+                                          onClick={() => handleEditExerciseClick(ex)}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                          </svg>
+                                        </button>
+                                      )}
+                                      {isEditable && (
+                                        <button
+                                          className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
+                                          title="Eliminar ejercicio"
+                                          onClick={() => handleDeleteExercise(ex.id)}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {renderExerciseDetails(ex)}
+                                  {renderWeeklyTracking(ex)}
+                                </div>
+                              );
+                            }
+                          });
                         })()}
                       </div>
                     )}
@@ -1378,6 +1432,52 @@ const RoutineDetail = (props) => {
     });
   }
 
+  // Función para guardar la rutina actual como plantilla
+  const handleSaveAsTemplate = async () => {
+    if (!routine.name || exercises.length === 0) {
+      alert('La rutina debe tener un nombre y al menos un ejercicio para guardar como plantilla.');
+      return;
+    }
+
+    const templateName = prompt(`Ingresa el nombre para la plantilla (actual: "${routine.name}"):`);
+    if (!templateName || templateName.trim() === '') {
+      return; // Usuario canceló
+    }
+
+    try {
+      // Crear la plantilla sin datos específicos del cliente
+      const templateData = {
+        name: templateName.trim(),
+        description: routine.description || '',
+        exercises: exercises.map(ex => ({
+          id: ex.id,
+          name: ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          weight: ex.weight,
+          time: ex.time,
+          rest: ex.rest,
+          day: ex.day,
+          round: ex.round
+        })),
+        // No incluir datos específicos del cliente como startDate, endDate, client_id
+      };
+
+      const { data, error } = await supabase
+        .from('rutinas_templates')
+        .insert([templateData])
+        .select();
+
+      if (error) {
+        alert('Error al guardar la plantilla: ' + error.message);
+      } else {
+        alert('Plantilla guardada exitosamente. Ahora está disponible en la sección de plantillas.');
+      }
+    } catch (error) {
+      alert('Error inesperado al guardar la plantilla: ' + error.message);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 md:p-8 bg-white rounded-2xl shadow-md w-full max-w-none mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -1385,15 +1485,15 @@ const RoutineDetail = (props) => {
           {routine.name || 'Rutina sin nombre'}
         </h2>
         <div className="flex gap-2">
-          {/* Botón para limpiar registros antiguos de dailyTracking */}
-          {isEditable && (
+          {/* Botón para guardar como plantilla */}
+          {isEditable && exercises.length > 0 && (
             <button
-              // onClick removed: handleCleanOldDailyTracking no longer exists
-              className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors"
-              title="Limpiar registros antiguos de PF/PE/Notas"
+              onClick={handleSaveAsTemplate}
+              className="p-2 rounded-full bg-green-100 hover:bg-green-200 text-green-700 transition-colors"
+              title="Guardar como plantilla"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
               </svg>
             </button>
           )}

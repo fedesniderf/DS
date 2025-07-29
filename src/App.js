@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+
 import LayoutHeader from './components/LayoutHeader';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { supabase } from './supabaseClient';
+import AdminHomeScreen from './components/AdminHomeScreen';
+import RoutineTemplatesScreen from './components/RoutineTemplatesScreen';
 
 const ClientRoutineList = lazy(() => import('./components/ClientRoutineList'));
 const RoutineDetail = lazy(() => import('./components/RoutineDetail'));
@@ -29,6 +32,7 @@ const App = () => {
 
   // Restaurar usuario desde localStorage si existe
   const [currentPage, setCurrentPage] = useState('auth');
+  const [showTemplatesScreen, setShowTemplatesScreen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedRoutine, setSelectedRoutine] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -83,7 +87,7 @@ const App = () => {
           setSelectedClient(user);
           setCurrentPage('clientDashboard');
         } else if (user.role === 'admin') {
-          setCurrentPage('userManagement');
+          setCurrentPage('adminHome');
         }
       } else {
         alert('Credenciales incorrectas.');
@@ -151,12 +155,16 @@ const App = () => {
           setSelectedClient(currentUser);
           setCurrentPage('clientDashboard');
         } else if (currentUser.role === 'admin') {
-          setCurrentPage('userManagement');
+          setCurrentPage('adminHome');
         }
       }
     }
   }, [currentUser, isRestored]);
   // ...existing code...
+
+  // Handlers para navegación desde AdminHomeScreen
+  const handleGoToClientes = () => setCurrentPage('userManagement');
+  const handleGoToTemplates = () => setCurrentPage('routineTemplates');
   // ...existing code...
   // ...existing code...
   // ...existing code...
@@ -201,7 +209,9 @@ const App = () => {
     } else if (currentPage === 'addExercise') {
       setCurrentPage('routineDetail');
     } else if (currentPage === 'userManagement') {
-      setCurrentPage('adminClientDashboard');
+      setCurrentPage('adminHome');
+    } else if (currentPage === 'routineTemplates') {
+      setCurrentPage('adminHome');
     } else if (currentPage === 'adminClientDashboard') {
       handleLogout();
     }
@@ -768,7 +778,9 @@ const App = () => {
       <LayoutHeader
         title={getHeaderTitle()}
         onBackClick={handleBack}
-        showBackButton={currentPage !== 'adminClientDashboard' && currentPage !== 'clientDashboard' && currentPage !== 'auth' && currentPage !== 'register' && currentPage !== 'userManagement' && currentPage !== undefined}
+        showBackButton={currentPage !== 'adminClientDashboard' && currentPage !== 'clientDashboard' && currentPage !== 'auth' && currentPage !== 'register' && currentPage !== undefined}
+        onLogout={handleLogout}
+        showLogoutButton={currentPage !== 'auth' && currentPage !== 'register' && currentUser}
       />
 
       <main className="p-6 max-w-4xl mx-auto">
@@ -787,9 +799,11 @@ const App = () => {
                       setSelectedClient(user);
                       setCurrentPage('adminViewClientRoutines');
                       setShowUserLoading(false);
-                    }, 0); // 1000ms delay
+                    }, 0);
                   }}
                   onDeleteUser={handleDeleteUser}
+                  onBack={() => setCurrentPage('adminHome')}
+                  isAdmin={true}
                 />
               )}
               {showUserLoading && (
@@ -800,6 +814,19 @@ const App = () => {
                   </svg>
                   <span className="text-gray-700 text-lg font-medium">Cargando rutinas del usuario...</span>
                 </div>
+              )}
+              {currentUser.role === 'admin' && currentPage === 'adminHome' && (
+                <AdminHomeScreen
+                  onNavigateClientes={handleGoToClientes}
+                  onNavigateTemplates={handleGoToTemplates}
+                />
+              )}
+              {currentUser.role === 'admin' && currentPage === 'routineTemplates' && (
+                <RoutineTemplatesScreen
+                  // Pasa aquí los props necesarios: clients, etc.
+                  clients={users}
+                  onGoBack={() => setCurrentPage('adminHome')}
+                />
               )}
               {!showUserLoading && currentPage === 'adminViewClientRoutines' && selectedClient && (
                 <ClientRoutineList
@@ -856,14 +883,6 @@ const App = () => {
             </>
           )}
         </Suspense>
-
-        <button
-          onClick={handleLogout}
-          className="w-full mt-8 text-white py-3 rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-md"
-          style={{ backgroundColor: '#183E0C' }}
-        >
-          Cerrar Sesión
-        </button>
       </main>
 
       <SpeedInsights />
