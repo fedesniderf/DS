@@ -729,7 +729,6 @@ const App = () => {
     );
   }
 
-
   // RESTABLECER CONTRASEÑA
   const handleResetPassword = async (client_id, newPassword, newRole) => {
     console.log('Reset password for:', client_id, newPassword, newRole);
@@ -751,7 +750,6 @@ const App = () => {
     }
   };
 
-  // Define la función aquí, antes del return
   // Agregar ejercicio directamente desde el modal
   const handleAddExerciseClick = (exerciseData) => {
     if (!selectedRoutine) return;
@@ -786,7 +784,7 @@ const App = () => {
       <main className="p-6 max-w-4xl mx-auto">
         <Suspense fallback={<div>Cargando contenido...</div>}>
           {/* Sección para el Coach (Administrador) */}
-          {currentUser.role === 'admin' && (
+          {currentUser && currentUser.role === 'admin' && (
             <>
               {currentPage === 'userManagement' && (
                 <UserManagementScreen
@@ -861,7 +859,7 @@ const App = () => {
           )}
 
                     {/* Sección para el Cliente */}
-          {currentUser.role === 'client' && (
+          {currentUser && currentUser.role === 'client' && (
             <>
               {currentPage === 'clientDashboard' && selectedClient && (
                 <ClientRoutineList

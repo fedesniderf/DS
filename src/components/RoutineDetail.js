@@ -1453,12 +1453,19 @@ const RoutineDetail = (props) => {
           id: ex.id,
           name: ex.name,
           sets: ex.sets,
+          dropset: ex.dropset,
           reps: ex.reps,
           weight: ex.weight,
           time: ex.time,
           rest: ex.rest,
           day: ex.day,
-          round: ex.round
+          section: ex.section,
+          media: ex.media,
+          rir: ex.rir,
+          cadencia: ex.cadencia,
+          round: ex.round,
+          cantidadRounds: ex.cantidadRounds,
+          notes: ex.notes
         })),
         // No incluir datos específicos del cliente como startDate, endDate, client_id
       };
