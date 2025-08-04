@@ -133,6 +133,9 @@ const ClientDashboardAdmin = ({ clients, onSelectClient, onBack, isAdmin }) => {
                                         ? client.goals
                                         : 'N/A'}
                                   </p>
+                                  {client.medicalConditions && (
+                                    <p><span className="font-semibold">Dolencias médicas:</span> {client.medicalConditions}</p>
+                                  )}
                                 </div>
                               </div>
                             </td>

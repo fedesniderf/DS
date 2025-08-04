@@ -10,18 +10,19 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
   const [height, setHeight] = useState('');
   const [goals, setGoals] = useState('');
   const [phone, setPhone] = useState('');
+  const [medicalConditions, setMedicalConditions] = useState('');
 
   const handleRegister = () => {
     if (password !== confirmPassword) {
       alert('Las contraseñas no coinciden.');
       return;
     }
-    if (!fullName || !email || !password || !age || !weight || !height || !goals || !phone) {
+    if (!fullName || !email || !password || !age || !weight || !height || !goals || !phone || !medicalConditions) {
       alert('Por favor, completa todos los campos.');
       return;
     }
 
-    onRegister({ fullName, email, password, age, weight, height, goals, phone });
+    onRegister({ fullName, email, password, age, weight, height, goals, phone, medicalConditions });
   };
 
   return (
@@ -152,6 +153,20 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
             placeholder="Ej. 5512345678"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
+          />
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="medicalConditions">
+            Dolencias o Indicaciones médicas
+          </label>
+          <textarea
+            id="medicalConditions"
+            rows="3"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out resize-vertical"
+            placeholder="Describe cualquier dolencia, lesión previa, indicación médica o condición de salud que deba considerar tu entrenador (ej. problemas de espalda, restricciones alimentarias, medicación, etc.)"
+            value={medicalConditions}
+            onChange={(e) => setMedicalConditions(e.target.value)}
           />
         </div>
 

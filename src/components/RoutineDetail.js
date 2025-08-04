@@ -283,6 +283,52 @@ const RoutineDetail = (props) => {
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     const numWeeks = Math.max(1, Math.ceil(diffDays / 7));
+    
+    // Si estamos creando un nuevo registro (no editando), filtrar semanas ya utilizadas
+    if (!isEditingWeekly && weeklyExercise) {
+      const existingWeeks = weeklyExercise.weeklyData ? Object.keys(weeklyExercise.weeklyData) : [];
+      return Array.from({ length: numWeeks }, (_, i) => ({ value: `S${i + 1}`, label: `S${i + 1}` }))
+        .filter(week => !existingWeeks.includes(week.value));
+    }
+    
+    return Array.from({ length: numWeeks }, (_, i) => ({ value: `S${i + 1}`, label: `S${i + 1}` }));
+  };
+
+  // Calcular semanas disponibles para PF/PE
+  const getWeekOptionsForPFPE = () => {
+    if (!routine.startDate || !routine.endDate) return [];
+    const start = new Date(routine.startDate);
+    const end = new Date(routine.endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const numWeeks = Math.max(1, Math.ceil(diffDays / 7));
+    
+    // Si estamos creando un nuevo registro (no editando), filtrar semanas ya utilizadas
+    if (!isEditingDaily && exerciseDay) {
+      // Normalizar clave del día
+      let normalizedDay = exerciseDay;
+      if (["1","2","3","4","5","6","7"].includes(exerciseDay)) {
+        normalizedDay = `Día ${exerciseDay}`;
+      }
+      
+      // Obtener semanas ya utilizadas para este día
+      const existingRecords = routine.dailyTracking?.[normalizedDay] || [];
+      const existingWeeks = [];
+      
+      if (Array.isArray(existingRecords)) {
+        existingRecords.forEach(record => {
+          if (record.PFPE && record.PFPE.week) {
+            existingWeeks.push(record.PFPE.week);
+          }
+        });
+      } else if (existingRecords.PFPE && existingRecords.PFPE.week) {
+        existingWeeks.push(existingRecords.PFPE.week);
+      }
+      
+      return Array.from({ length: numWeeks }, (_, i) => ({ value: `S${i + 1}`, label: `S${i + 1}` }))
+        .filter(week => !existingWeeks.includes(week.value));
+    }
+    
     return Array.from({ length: numWeeks }, (_, i) => ({ value: `S${i + 1}`, label: `S${i + 1}` }));
   };
   // Definir exercises al inicio para evitar ReferenceError
@@ -355,6 +401,8 @@ const RoutineDetail = (props) => {
   const [weeklyExercise, setWeeklyExercise] = React.useState(null);
   const [weekNumber, setWeekNumber] = React.useState("");
   const [weekWeight, setWeekWeight] = React.useState("");
+  const [weekSeries, setWeekSeries] = React.useState(1);
+  const [seriesWeights, setSeriesWeights] = React.useState([""]);
   const [weekNotes, setWeekNotes] = React.useState("");
   const [isEditingWeekly, setIsEditingWeekly] = React.useState(false);
   const [editingWeeklyData, setEditingWeeklyData] = React.useState(null);
@@ -507,11 +555,11 @@ const RoutineDetail = (props) => {
 
   // Función para calcular el mayor peso levantado por ejercicio
   const getMaxWeightForExercise = (exercise) => {
-    if (!exercise.weeklyData) return 0;
+    if (!exercise.weeklyData) return '0.00';
     const weights = Object.values(exercise.weeklyData)
       .map(data => parseFloat(data.weight) || 0)
       .filter(weight => weight > 0);
-    return weights.length > 0 ? Math.max(...weights) : 0;
+    return weights.length > 0 ? Math.max(...weights).toFixed(2) : '0.00';
   };
 
   // Función para renderizar todas las semanas del seguimiento
@@ -519,9 +567,26 @@ const RoutineDetail = (props) => {
     const weeklyData = exercise.weeklyData || {};
     const weeks = Object.keys(weeklyData);
     if (weeks.length === 0) return null;
-    const weights = weeks.map(week => parseFloat(weeklyData[week].weight) || 0).filter(w => w > 0);
-    const averageWeight = weights.length > 0 ? (weights.reduce((a, b) => a + b, 0) / weights.length).toFixed(1) : 0;
-    const tonelaje = weights.length > 0 ? weights.reduce((a, b) => a + b, 0) : 0;
+    
+    // Calculate weights considering both series weights and legacy single weight
+    const allWeights = [];
+    weeks.forEach(week => {
+      const weekData = weeklyData[week];
+      if (weekData.seriesWeights && Array.isArray(weekData.seriesWeights)) {
+        // Use series weights
+        weekData.seriesWeights.forEach(weight => {
+          const w = parseFloat(weight);
+          if (!isNaN(w) && w > 0) allWeights.push(w);
+        });
+      } else if (weekData.weight) {
+        // Use legacy single weight
+        const w = parseFloat(weekData.weight);
+        if (!isNaN(w) && w > 0) allWeights.push(w);
+      }
+    });
+    
+    const averageWeight = allWeights.length > 0 ? (allWeights.reduce((a, b) => a + b, 0) / allWeights.length).toFixed(2) : '0.00';
+    const tonelaje = allWeights.length > 0 ? allWeights.reduce((a, b) => a + b, 0).toFixed(2) : '0.00';
     return (
       <div className="mt-2">
         <div
@@ -550,52 +615,62 @@ const RoutineDetail = (props) => {
               <thead className="bg-gray-100">
                 <tr>
                   <th className="px-2 py-1">Semana</th>
-                  <th className="px-2 py-1">Peso (kg)</th>
+                  <th className="px-2 py-1">Series</th>
+                  <th className="px-2 py-1">Pesos (kg)</th>
                   <th className="px-2 py-1">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {weeks.map(week => (
-                  <tr key={week}>
-                    <td className="px-2 py-1 text-center">{week}</td>
-                    <td className="px-2 py-1 text-center">{weeklyData[week].weight}</td>
-                    <td className="px-2 py-1 flex gap-2 justify-center">
-                      <button
-                        className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
-                        title="Ver detalle"
-                        onClick={() => setShowWeeklyNotesModal({ open: true, notes: weeklyData[week].generalNotes, date: weeklyData[week].date, week })}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z" />
-                        </svg>
-                      </button>
-                      <button
-                        className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
-                        title="Editar"
-                        onClick={() => handleEditWeeklyTracking(exercise, week, weeklyData[week])}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                        </svg>
-                      </button>
-                      <button
-                        className="p-1 rounded bg-red-100 hover:bg-red-200 text-red-700"
-                        title="Eliminar"
-                        onClick={() => handleDeleteWeeklyTracking(exercise, week)}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {weeks.map(week => {
+                  const weekData = weeklyData[week];
+                  const displayWeights = weekData.seriesWeights && Array.isArray(weekData.seriesWeights) 
+                    ? weekData.seriesWeights.filter(w => w && w.trim() !== "").join(", ") 
+                    : weekData.weight || "0";
+                  const seriesCount = weekData.series || (weekData.seriesWeights ? weekData.seriesWeights.length : 1);
+                  
+                  return (
+                    <tr key={week}>
+                      <td className="px-2 py-1 text-center">{week}</td>
+                      <td className="px-2 py-1 text-center">{seriesCount}</td>
+                      <td className="px-2 py-1 text-center">{displayWeights}</td>
+                      <td className="px-2 py-1 flex gap-2 justify-center">
+                        <button
+                          className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
+                          title="Ver detalle"
+                          onClick={() => setShowWeeklyNotesModal({ open: true, notes: weeklyData[week].generalNotes, date: weeklyData[week].date, week })}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z" />
+                          </svg>
+                        </button>
+                        <button
+                          className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
+                          title="Editar"
+                          onClick={() => handleEditWeeklyTracking(exercise, week, weeklyData[week])}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                          </svg>
+                        </button>
+                        <button
+                          className="p-1 rounded bg-red-100 hover:bg-red-200 text-red-700"
+                          title="Eliminar"
+                          onClick={() => handleDeleteWeeklyTracking(exercise, week)}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             <div className="flex justify-center gap-2 mt-2">
               <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg font-semibold shadow w-[100px] text-[10px] flex items-center justify-center whitespace-nowrap">
-                <span className="font-bold">Máx:</span>&nbsp;<span>{weights.length > 0 ? Math.max(...weights) : 0} kg</span>
+                <span className="font-bold">Máx:</span>&nbsp;<span>{allWeights.length > 0 ? Math.max(...allWeights).toFixed(2) : '0.00'} kg</span>
               </div>
               <div className="bg-green-100/60 text-green-800 px-3 py-2 rounded-lg font-semibold shadow w-[100px] text-[10px] flex items-center justify-center whitespace-nowrap">
                 <span className="font-bold">Promedio:</span>&nbsp;<span>{averageWeight} kg</span>
@@ -614,6 +689,12 @@ const RoutineDetail = (props) => {
     setWeeklyExercise(exercise);
     setWeekNumber(weekValue);
     setWeekWeight("");
+    
+    // Get series count from exercise, default to 1 if not specified
+    const exerciseSeries = parseInt(exercise.sets) || 1;
+    setWeekSeries(exerciseSeries);
+    setSeriesWeights(Array(exerciseSeries).fill(""));
+    
     setWeekNotes("");
     setIsEditingWeekly(false);
     setEditingWeeklyData(null);
@@ -625,7 +706,33 @@ const RoutineDetail = (props) => {
     try {
       setWeeklyExercise(exercise);
       setWeekNumber(weekValue);
-      setWeekWeight(weekData.weight || "");
+      
+      // Get series count from exercise, default to 1 if not specified
+      const exerciseSeries = parseInt(exercise.sets) || 1;
+      setWeekSeries(exerciseSeries);
+      
+      // Handle series data - check if we have series weights or just a single weight
+      if (weekData.seriesWeights && Array.isArray(weekData.seriesWeights)) {
+        // Use existing series weights, but adjust to match current exercise series count
+        const existingWeights = [...weekData.seriesWeights];
+        while (existingWeights.length < exerciseSeries) {
+          existingWeights.push("");
+        }
+        if (existingWeights.length > exerciseSeries) {
+          existingWeights.splice(exerciseSeries);
+        }
+        setSeriesWeights(existingWeights);
+        setWeekWeight("");
+      } else {
+        // Legacy single weight support - distribute to first series
+        const newSeriesWeights = Array(exerciseSeries).fill("");
+        if (weekData.weight) {
+          newSeriesWeights[0] = weekData.weight;
+        }
+        setSeriesWeights(newSeriesWeights);
+        setWeekWeight("");
+      }
+      
       setWeekNotes(weekData.generalNotes || "");
       setIsEditingWeekly(true);
       setEditingWeeklyData(weekData);
@@ -637,8 +744,8 @@ const RoutineDetail = (props) => {
   };
 
   const handleDeleteWeeklyTracking = (exercise, weekValue) => {
-    // Confirmación específica para PF y PE
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este registro de seguimiento semanal (PF y PE)?')) {
+    // Confirmación para eliminar seguimiento semanal
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este registro de seguimiento semanal?')) {
       return;
     }
     try {
@@ -668,9 +775,18 @@ const RoutineDetail = (props) => {
     setWeeklyExercise(null);
     setWeekNumber("");
     setWeekWeight("");
+    setWeekSeries(1);
+    setSeriesWeights([""]);
     setWeekNotes("");
     setIsEditingWeekly(false);
     setEditingWeeklyData(null);
+  };
+
+  // Function to handle weight change for a specific series
+  const handleSeriesWeightChange = (seriesIndex, weight) => {
+    const newSeriesWeights = [...seriesWeights];
+    newSeriesWeights[seriesIndex] = weight;
+    setSeriesWeights(newSeriesWeights);
   };
 
   // Handlers para seguimiento diario general
@@ -731,6 +847,32 @@ const RoutineDetail = (props) => {
       alert('Completa todos los campos para registrar PF/PE/Notas.');
       return;
     }
+    
+    // Normalizar clave del día para validación
+    let normalizedDay = exerciseDay;
+    if (["1","2","3","4","5","6","7"].includes(exerciseDay)) {
+      normalizedDay = `Día ${exerciseDay}`;
+    }
+    
+    // Validar que no se dupliquen datos para la misma semana (solo para nuevos registros)
+    if (!isEditingDaily) {
+      const existingRecords = routine.dailyTracking?.[normalizedDay] || [];
+      let weekExists = false;
+      
+      if (Array.isArray(existingRecords)) {
+        weekExists = existingRecords.some(record => 
+          record.PFPE && record.PFPE.week === weekNumber
+        );
+      } else if (existingRecords.PFPE && existingRecords.PFPE.week === weekNumber) {
+        weekExists = true;
+      }
+      
+      if (weekExists) {
+        alert(`Ya existen datos de PF/PE para la semana ${weekNumber}. Puedes editarlos desde el botón "Editar" en la tabla de seguimiento.`);
+        return;
+      }
+    }
+    
     // Validación PF y PE entre 1 y 5
     const pfNum = Number(dailyPF);
     const peNum = Number(dailyPE);
@@ -748,7 +890,6 @@ const RoutineDetail = (props) => {
       return;
     }
     // Normalizar clave del día
-    let normalizedDay = exerciseDay;
     if (["1","2","3","4","5","6","7"].includes(exerciseDay)) {
       normalizedDay = `Día ${exerciseDay}`;
     }
@@ -865,6 +1006,8 @@ const RoutineDetail = (props) => {
       weekNumber,
       weeklyExercise,
       weekWeight,
+      weekSeries,
+      seriesWeights,
       weekNotes,
       isEditingWeekly,
       editingWeeklyData
@@ -873,6 +1016,20 @@ const RoutineDetail = (props) => {
       alert('Por favor completa todos los campos requeridos');
       return;
     }
+    
+    // Validar que no se dupliquen datos para la misma semana (solo para nuevos registros)
+    if (!isEditingWeekly && weeklyExercise.weeklyData && weeklyExercise.weeklyData[weekNumber]) {
+      alert(`Ya existen datos para la semana ${weekNumber}. Puedes editarlos desde el botón "Editar" en la tabla de seguimiento.`);
+      return;
+    }
+    
+    // Validate that at least one series weight is provided
+    const hasValidWeights = seriesWeights.some(weight => weight && weight.trim() !== "");
+    if (!hasValidWeights) {
+      alert('Por favor ingresa al menos un peso para las series');
+      return;
+    }
+    
     try {
       const routineId = routine?.id || routine?.routine_id || routine?.client_id;
       if (!routineId) {
@@ -880,9 +1037,16 @@ const RoutineDetail = (props) => {
         alert('Error: No se encontró el ID de la rutina. Por favor, recarga la página.');
         return;
       }
+      
+      // Calculate average weight for backward compatibility
+      const validWeights = seriesWeights.filter(weight => weight && weight.trim() !== "").map(weight => parseFloat(weight));
+      const averageWeight = validWeights.length > 0 ? validWeights.reduce((sum, weight) => sum + weight, 0) / validWeights.length : 0;
+      
       const weeklyData = {
         week: weekNumber,
-        weight: weekWeight,
+        weight: averageWeight.toFixed(2), // Keep for backward compatibility
+        seriesWeights: seriesWeights,
+        series: weekSeries,
         generalNotes: weekNotes,
         date: isEditingWeekly ? editingWeeklyData?.date : new Date().toISOString().split('T')[0]
       };
@@ -1608,17 +1772,23 @@ const RoutineDetail = (props) => {
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Semana de entrenamiento
               </label>
-              <select
-                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
-                value={weekNumber}
-                onChange={e => setWeekNumber(e.target.value)}
-                disabled={isEditingDaily}
-              >
-                <option value="">Selecciona una semana</option>
-                {getWeekOptions().map(week => (
-                  <option key={week.value} value={week.value}>{week.label}</option>
-                ))}
-              </select>
+              {getWeekOptionsForPFPE().length === 0 && !isEditingDaily ? (
+                <div className="w-full px-2 py-1 bg-yellow-50 border border-yellow-300 rounded-lg text-xs text-yellow-700">
+                  No hay semanas disponibles. Ya se han registrado datos para todas las semanas.
+                </div>
+              ) : (
+                <select
+                  className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  value={weekNumber}
+                  onChange={e => setWeekNumber(e.target.value)}
+                  disabled={isEditingDaily}
+                >
+                  <option value="">Selecciona una semana</option>
+                  {getWeekOptionsForPFPE().map(week => (
+                    <option key={week.value} value={week.value}>{week.label}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <div className="mb-4">
               <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -1663,7 +1833,12 @@ const RoutineDetail = (props) => {
             <div className="flex gap-3">
               <button
                 onClick={handleSaveDaily}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-xs"
+                disabled={!isEditingDaily && getWeekOptionsForPFPE().length === 0}
+                className={`flex-1 py-2 px-4 rounded-lg transition-colors text-xs ${
+                  !isEditingDaily && getWeekOptionsForPFPE().length === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
               >
                 {isEditingDaily ? 'Actualizar' : 'Guardar'}
               </button>
@@ -1688,28 +1863,44 @@ const RoutineDetail = (props) => {
             </p>
             <div className="mb-2">
               <label className="block text-xs font-medium text-gray-700 mb-1">Semana</label>
-              <select
-                value={weekNumber}
-                onChange={(e) => setWeekNumber(e.target.value)}
-                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
-                disabled={isEditingWeekly}
-              >
-                <option value="">Selecciona una semana</option>
-                {getWeekOptions().map(week => (
-                  <option key={week.value} value={week.value}>{week.label}</option>
-                ))}
-              </select>
+              {getWeekOptions().length === 0 && !isEditingWeekly ? (
+                <div className="w-full px-2 py-1 bg-yellow-50 border border-yellow-300 rounded-lg text-xs text-yellow-700">
+                  No hay semanas disponibles. Ya se han registrado datos para todas las semanas.
+                </div>
+              ) : (
+                <select
+                  value={weekNumber}
+                  onChange={(e) => setWeekNumber(e.target.value)}
+                  className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  disabled={isEditingWeekly}
+                >
+                  <option value="">Selecciona una semana</option>
+                  {getWeekOptions().map(week => (
+                    <option key={week.value} value={week.value}>{week.label}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <div className="mb-2">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Peso (kg)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={weekWeight}
-                onChange={(e) => setWeekWeight(e.target.value)}
-                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
-                placeholder="Ej: 80.5"
-              />
+              <label className="block text-xs font-medium text-gray-700 mb-1">Series</label>
+              <div className="w-full px-2 py-1 bg-gray-100 border border-gray-300 rounded-lg text-xs text-gray-600">
+                {weekSeries} serie{weekSeries > 1 ? 's' : ''} (del ejercicio)
+              </div>
+            </div>
+            <div className="mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Peso por serie (kg)</label>
+              {Array.from({ length: weekSeries }, (_, index) => (
+                <div key={index} className="mb-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={seriesWeights[index] || ""}
+                    onChange={(e) => handleSeriesWeightChange(index, e.target.value)}
+                    className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                    placeholder={`Serie ${index + 1} - Ej: 80.5`}
+                  />
+                </div>
+              ))}
             </div>
             <div className="mb-4">
               <label className="block text-xs font-medium text-gray-700 mb-1">Notas generales</label>
@@ -1724,7 +1915,12 @@ const RoutineDetail = (props) => {
             <div className="flex gap-2">
               <button
                 onClick={handleSaveWeekly}
-                className="flex-1 bg-blue-600 text-white py-1 px-2 rounded-md hover:bg-blue-700 transition-colors text-xs"
+                disabled={!isEditingWeekly && getWeekOptions().length === 0}
+                className={`flex-1 py-1 px-2 rounded-md transition-colors text-xs ${
+                  !isEditingWeekly && getWeekOptions().length === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
               >{isEditingWeekly ? 'Actualizar' : 'Guardar'}</button>
               <button
                 onClick={handleCloseWeeklyModal}

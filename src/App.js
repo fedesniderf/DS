@@ -5,6 +5,8 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { supabase } from './supabaseClient';
 import AdminHomeScreen from './components/AdminHomeScreen';
 import RoutineTemplatesScreen from './components/RoutineTemplatesScreen';
+import { NotificationService } from './services/NotificationService';
+import { NotificationProvider } from './hooks/useNotifications';
 
 const ClientRoutineList = lazy(() => import('./components/ClientRoutineList'));
 const RoutineDetail = lazy(() => import('./components/RoutineDetail'));
@@ -63,6 +65,51 @@ const App = () => {
     }
     setIsRestored(true);
   }, []);
+
+  // Inicializar verificador automático de rutinas próximas a vencer
+  useEffect(() => {
+    let checkInterval = null;
+
+    if (currentUser?.role === 'admin') {
+      console.log('🚀 Iniciando verificador automático de rutinas para admin...');
+      
+      // Verificar inmediatamente
+      NotificationService.checkExpiringRoutines()
+        .then(result => {
+          if (result.success) {
+            console.log(`✅ Verificación inicial completada: ${result.checked} rutinas revisadas, ${result.notifications} notificaciones enviadas`);
+          } else {
+            console.error('❌ Error en verificación inicial:', result.error);
+          }
+        })
+        .catch(error => {
+          console.error('💥 Error inesperado en verificación inicial:', error);
+        });
+
+      // Programar verificaciones cada 6 horas
+      checkInterval = setInterval(async () => {
+        try {
+          console.log('🔄 Ejecutando verificación programada de rutinas...');
+          const result = await NotificationService.checkExpiringRoutines();
+          if (result.success) {
+            console.log(`✅ Verificación programada completada: ${result.notifications} notificaciones enviadas`);
+          }
+        } catch (error) {
+          console.error('💥 Error en verificación programada:', error);
+        }
+      }, 6 * 60 * 60 * 1000); // 6 horas
+
+      console.log('⏰ Verificador programado para ejecutarse cada 6 horas');
+    }
+
+    // Cleanup: detener el intervalo cuando el componente se desmonte o el usuario cambie
+    return () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+        console.log('🛑 Verificador automático detenido');
+      }
+    };
+  }, [currentUser?.role]); // Solo ejecutar cuando cambie el rol del usuario
 
   // LOGIN
   const handleLogin = useCallback(async (email, password, method) => {
@@ -126,6 +173,7 @@ const App = () => {
         height: userData.height,
         goals: userData.goals,
         phone: userData.phone,
+        medicalConditions: userData.medicalConditions,
         role: 'client'
       }]);
 
@@ -279,17 +327,36 @@ const App = () => {
 
   // AGREGAR RUTINA
   const handleAddRoutine = async (routine) => {
-    const { error } = await supabase
+    const { data: newRoutine, error } = await supabase
       .from('rutinas')
       .insert([{
         client_id: routine.client_id,
         name: routine.name,
         startDate: routine.startDate,
         endDate: routine.endDate,
-      }]);
+      }])
+      .select()
+      .single();
+      
     if (error) {
       alert('Error al crear la rutina: ' + error.message);
       return;
+    }
+
+    // Enviar notificación al cliente
+    if (newRoutine && routine.client_id) {
+      try {
+        console.log('🔔 Enviando notificación de rutina creada...');
+        await NotificationService.notifyRoutineCreated(
+          routine.client_id,
+          currentUser?.id || currentUser?.client_id,
+          newRoutine.name,
+          newRoutine.id
+        );
+      } catch (notifError) {
+        console.error('Error enviando notificación:', notifError);
+        // No bloqueamos la creación de rutina por error de notificación
+      }
     }
 
     // Recarga las rutinas según el contexto
@@ -311,6 +378,99 @@ const App = () => {
         .select('*')
         .eq('client_id', currentUser.client_id);
       setClientRoutines(data || []);
+    }
+  };
+
+  // ASIGNAR RUTINA DESDE TEMPLATE
+  const handleAssignRoutineFromTemplate = async (templateId, clientId) => {
+    console.log('🚀 handleAssignRoutineFromTemplate iniciado con:', { 
+      templateId, 
+      clientId,
+      'currentUser completo': currentUser,
+      'currentUser.id': currentUser?.id,
+      'currentUser.client_id': currentUser?.client_id,
+      'adminId que se usará': currentUser?.id || currentUser?.client_id
+    });
+    
+    try {
+      // Obtener el template
+      const { data: template, error: templateError } = await supabase
+        .from('rutinas_templates')
+        .select('*')
+        .eq('id', templateId)
+        .single();
+
+      if (templateError || !template) {
+        alert('Error al obtener el template: ' + (templateError?.message || 'Template no encontrado'));
+        return;
+      }
+
+      // Crear nueva rutina basada en el template
+      const newRoutine = {
+        client_id: clientId,
+        name: template.name,
+        description: template.description,
+        startDate: template.startDate,
+        endDate: template.endDate,
+        exercises: template.exercises || []
+      };
+
+      const { data: createdRoutine, error: routineError } = await supabase
+        .from('rutinas')
+        .insert([newRoutine])
+        .select()
+        .single();
+
+      if (routineError) {
+        alert('Error al crear la rutina: ' + routineError.message);
+        return;
+      }
+
+      // Enviar notificación al cliente
+      if (createdRoutine && clientId) {
+        try {
+          console.log('🔔 Enviando notificación de rutina asignada...');
+          console.log('📊 Datos para notificación:', {
+            clientId,
+            adminId: currentUser?.id || currentUser?.client_id,
+            routineName: createdRoutine.name,
+            routineId: createdRoutine.id,
+            currentUser
+          });
+          
+          const notificationResult = await NotificationService.notifyRoutineAssigned(
+            clientId,
+            currentUser?.id || currentUser?.client_id,
+            createdRoutine.name,
+            createdRoutine.id
+          );
+          
+          console.log('📧 Resultado de notificación:', notificationResult);
+        } catch (notifError) {
+          console.error('❌ Error enviando notificación:', notifError);
+          // No bloqueamos la asignación por error de notificación
+        }
+      } else {
+        console.log('⚠️ No se envió notificación:', { 
+          createdRoutine: !!createdRoutine, 
+          clientId: !!clientId 
+        });
+      }
+
+      alert('Rutina asignada exitosamente al cliente');
+      
+      // Recargar rutinas si es necesario
+      if (currentUser?.role === 'admin' && selectedClient && selectedClient.client_id === clientId) {
+        const { data } = await supabase
+          .from('rutinas')
+          .select('*')
+          .eq('client_id', clientId);
+        setClientRoutines(data || []);
+      }
+
+    } catch (error) {
+      console.error('Error en handleAssignRoutineFromTemplate:', error);
+      alert('Error inesperado al asignar la rutina');
     }
   };
 
@@ -772,21 +932,26 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans antialiased">
-      <LayoutHeader
-        title={getHeaderTitle()}
-        onBackClick={handleBack}
-        showBackButton={currentPage !== 'adminClientDashboard' && currentPage !== 'clientDashboard' && currentPage !== 'auth' && currentPage !== 'register' && currentPage !== undefined}
-        onLogout={handleLogout}
-        showLogoutButton={currentPage !== 'auth' && currentPage !== 'register' && currentUser}
-      />
+    <NotificationProvider>
+      <div className="min-h-screen bg-gray-100 font-sans antialiased">
+        <LayoutHeader
+          title={getHeaderTitle()}
+          onBackClick={handleBack}
+          showBackButton={currentPage !== 'adminClientDashboard' && currentPage !== 'clientDashboard' && currentPage !== 'auth' && currentPage !== 'register' && currentPage !== undefined}
+          onLogout={handleLogout}
+          showLogoutButton={currentPage !== 'auth' && currentPage !== 'register' && currentUser}
+          userId={currentUser?.id || currentUser?.client_id}
+          currentUser={currentUser}
+          isAdmin={currentUser?.role === 'admin'}
+          showNotifications={currentUser && currentPage !== 'auth' && currentPage !== 'register'}
+        />
 
-      <main className="p-6 max-w-4xl mx-auto">
-        <Suspense fallback={<div>Cargando contenido...</div>}>
-          {/* Sección para el Coach (Administrador) */}
-          {currentUser && currentUser.role === 'admin' && (
-            <>
-              {currentPage === 'userManagement' && (
+        <main className="p-6 max-w-4xl mx-auto">
+          <Suspense fallback={<div>Cargando contenido...</div>}>
+            {/* Sección para el Coach (Administrador) */}
+            {currentUser && currentUser.role === 'admin' && (
+              <>
+                {currentPage === 'userManagement' && (
                 <UserManagementScreen
                   users={users}
                   onRoleChange={handleRoleChange}
@@ -822,8 +987,9 @@ const App = () => {
               {currentUser.role === 'admin' && currentPage === 'routineTemplates' && (
                 <RoutineTemplatesScreen
                   // Pasa aquí los props necesarios: clients, etc.
-                  clients={users}
+                  clients={users.filter(user => user.role === 'client')}
                   onGoBack={() => setCurrentPage('adminHome')}
+                  onAssignRoutine={handleAssignRoutineFromTemplate}
                 />
               )}
               {!showUserLoading && currentPage === 'adminViewClientRoutines' && selectedClient && (
@@ -885,6 +1051,7 @@ const App = () => {
 
       <SpeedInsights />
     </div>
+    </NotificationProvider>
   );
 };
 

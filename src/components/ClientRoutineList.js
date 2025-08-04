@@ -27,6 +27,7 @@ const ClientRoutineList = ({
   const [editGender, setEditGender] = useState(client?.gender || '');
   const [editWeight, setEditWeight] = useState(client?.weight || '');
   const [editHeight, setEditHeight] = useState(client?.height || '');
+  const [editMedicalConditions, setEditMedicalConditions] = useState(client?.medicalConditions || '');
   
   // Estados para el proceso de edición de usuario
   const [isUpdatingUser, setIsUpdatingUser] = useState(false);
@@ -61,6 +62,7 @@ const ClientRoutineList = ({
           gender: editGender,
           weight: editWeight,
           height: editHeight,
+          medicalConditions: editMedicalConditions,
         })
         .eq('client_id', client.client_id);
         
@@ -82,6 +84,7 @@ const ClientRoutineList = ({
           client.gender = editGender;
           client.weight = editWeight;
           client.height = editHeight;
+          client.medicalConditions = editMedicalConditions;
         }
       }
     } catch (err) {
@@ -106,6 +109,7 @@ const ClientRoutineList = ({
     setEditGender(client?.gender || '');
     setEditWeight(client?.weight || '');
     setEditHeight(client?.height || '');
+    setEditMedicalConditions(client?.medicalConditions || '');
   };
 
   const handleAddRoutine = async () => {
@@ -183,6 +187,7 @@ const ClientRoutineList = ({
           {client.gender && <div className="text-gray-700 text-sm mb-1"><span className="font-semibold">Género:</span> {client.gender}</div>}
           {client.weight && <div className="text-gray-700 text-sm mb-1"><span className="font-semibold">Peso:</span> {client.weight} kg</div>}
           {client.height && <div className="text-gray-700 text-sm mb-1"><span className="font-semibold">Altura:</span> {client.height} cm</div>}
+          {client.medicalConditions && <div className="text-gray-700 text-sm mb-1"><span className="font-semibold">Dolencias médicas:</span> {client.medicalConditions}</div>}
 
           {/* Formulario de edición modal */}
           {showEditUser && (
@@ -293,6 +298,18 @@ const ClientRoutineList = ({
                           max="250"
                         />
                       </div>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Dolencias o Indicaciones médicas</label>
+                      <textarea 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical" 
+                        rows="3"
+                        value={editMedicalConditions} 
+                        onChange={e => setEditMedicalConditions(e.target.value)}
+                        disabled={isUpdatingUser}
+                        placeholder="Describe cualquier dolencia, lesión previa, indicación médica o condición de salud relevante..."
+                      />
                     </div>
                     
                     {/* Mensaje de error si existe */}
