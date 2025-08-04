@@ -79,6 +79,7 @@ const App = () => {
         height: userData.height,
         goals: userData.goals,
         phone: userData.phone,
+        medicalConditions: userData.medicalConditions,
         role: 'client'
       }]);
 
