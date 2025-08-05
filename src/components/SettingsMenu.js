@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useSimpleWakeLock } from '../hooks/useSimpleWakeLock';
+import { useEnhancedWakeLock } from '../hooks/useEnhancedWakeLock';
 import ChangePasswordModal from './ChangePasswordModal';
 import SecurityInfoModal from './SecurityInfoModal';
 import BlockedUsersPanel from './BlockedUsersPanel';
@@ -13,7 +13,15 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate })
   const [showBlockedUsersPanel, setShowBlockedUsersPanel] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
-  const { isWakeLockActive, isSupported, toggleWakeLock } = useSimpleWakeLock();
+  const { 
+    isWakeLockActive, 
+    isSupported, 
+    toggleWakeLock, 
+    preferences, 
+    toggleDimming,
+    currentBrightness,
+    isBrightnessSupported 
+  } = useEnhancedWakeLock();
   const menuRef = useRef(null);
 
     console.log('⚙️ SettingsMenu - Renderizado');
@@ -28,8 +36,10 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate })
     }
   };
 
-  console.log('SettingsMenu renderizado'); // Debug log
+  console.log('Enhanced SettingsMenu renderizado'); // Debug log
   console.log('Wake Lock Active:', isWakeLockActive);
+  console.log('Dimming Enabled:', preferences.dimScreenOnWakeLock);
+  console.log('Current Brightness:', Math.round(currentBrightness * 100) + '%');
   console.log('Device:', /SamsungBrowser/i.test(navigator.userAgent) ? 'Samsung Internet' : 'Other Browser');
 
   // Cerrar menú al hacer clic fuera
@@ -179,6 +189,50 @@ Recomendaciones:
               <div className="mt-2 px-2 py-1 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
                 ⚠️ Esta función puede no estar disponible en todos los navegadores y dispositivos
               </div>
+              
+              {/* Opción de dimming de pantalla */}
+              {isSupported && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={toggleDimming}
+                    className="w-full flex items-center justify-between text-left"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <svg 
+                        className="w-5 h-5 text-gray-600" 
+                        fill="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 18.5A6.5 6.5 0 1 1 18.5 12 6.51 6.51 0 0 1 12 18.5ZM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z" />
+                        <path d="M12 7a5 5 0 0 1 0 10Z" />
+                      </svg>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          Reducir brillo automáticamente
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {preferences.dimScreenOnWakeLock 
+                            ? `Brillo al 50% cuando esté activo (actual: ${Math.round(currentBrightness * 100)}%)`
+                            : 'Mantener brillo normal cuando esté activo'
+                          }
+                        </div>
+                      </div>
+                    </div>
+                    <div className={`ml-3 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      preferences.dimScreenOnWakeLock ? 'bg-blue-600' : 'bg-gray-200'
+                    }`}>
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        preferences.dimScreenOnWakeLock ? 'translate-x-6' : 'translate-x-1'
+                      }`} />
+                    </div>
+                  </button>
+                  
+                  {/* Información adicional sobre dimming */}
+                  <div className="mt-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                    💡 Ayuda a ahorrar batería manteniendo la pantalla visible pero menos brillante
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Divider */}

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Test Enhanced Wake Lock - DS Entrenamiento</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 15px;
+        }
+        .status.active {
+            background: rgba(34, 197, 94, 0.2);
+            border: 2px solid #22c55e;
+        }
+        .status.inactive {
+            background: rgba(156, 163, 175, 0.2);
+            border: 2px solid #9ca3af;
+        }
+        .wake-button, .brightness-button {
+            width: 100%;
+            padding: 15px 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .wake-button.active {
+            background: #22c55e;
+            color: white;
+        }
+        .wake-button.inactive {
+            background: #9ca3af;
+            color: white;
+        }
+        .brightness-button {
+            background: #3b82f6;
+            color: white;
+            margin: 5px;
+            padding: 10px 15px;
+            width: auto;
+            display: inline-block;
+        }
+        .brightness-button:hover {
+            background: #2563eb;
+        }
+        .brightness-button:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+        .info {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid #3b82f6;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .preferences {
+            background: rgba(168, 85, 247, 0.2);
+            border: 1px solid #a855f7;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .logs {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .timer {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+        }
+        #timerDisplay {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin: 0 10px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #22c55e;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .brightness-info {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Enhanced Wake Lock</h1>
+        <p>Prueba las nuevas funcionalidades de Wake Lock con preferencias de usuario y control de brillo</p>
+        
+        <div id="compatibility" class="info">
+            <strong>🔍 Verificando compatibilidad...</strong>
+        </div>
+
+        <div id="status" class="status inactive">
+            <div>📱 Estado: <span id="statusText">INACTIVO</span></div>
+            <div>🔋 Pantalla puede apagarse normalmente</div>
+        </div>
+
+        <!-- Controles principales -->
+        <button id="wakeButton" class="wake-button inactive" disabled>
+            🔋 Activar Enhanced Wake Lock
+        </button>
+
+        <!-- Preferencias del usuario -->
+        <div class="preferences">
+            <h3>⚙️ Preferencias del Usuario</h3>
+            <div style="margin: 15px 0;">
+                <label>
+                    💡 Reducir brillo automáticamente al activar Wake Lock
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="dimmingToggle" checked>
+                        <span class="slider"></span>
+                    </div>
+                </label>
+            </div>
+            <div style="margin: 10px 0;">
+                <button onclick="savePreferences()" style="background: #a855f7; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">
+                    💾 Guardar Preferencias
+                </button>
+                <button onclick="loadPreferences()" style="background: #059669; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                    📂 Cargar Preferencias
+                </button>
+            </div>
+        </div>
+
+        <!-- Control de brillo -->
+        <div class="brightness-info">
+            <h3>🔅 Control de Brillo</h3>
+            <div id="brightnessInfo">
+                <p>Brillo actual: <span id="brightnessLevel">100%</span></p>
+                <p>Soporte nativo: <span id="brightnessSupport">Verificando...</span></p>
+            </div>
+            <div style="margin-top: 15px;">
+                <button onclick="setBrightness(1)" class="brightness-button">🔆 100%</button>
+                <button onclick="setBrightness(0.7)" class="brightness-button">🔅 70%</button>
+                <button onclick="setBrightness(0.5)" class="brightness-button">🌑 50%</button>
+                <button onclick="setBrightness(0.3)" class="brightness-button">🌚 30%</button>
+                <button onclick="restoreBrightness()" class="brightness-button" style="background: #f59e0b;">🔄 Restaurar</button>
+            </div>
+        </div>
+
+        <!-- Timer de prueba -->
+        <div class="timer" id="timer">
+            <div>⏱️ Temporizador de Prueba Enhanced</div>
+            <div id="timerDisplay">00:00</div>
+            <button onclick="startTimer()" style="margin-top: 10px; padding: 10px 20px; border: none; border-radius: 5px; background: #ffd700; color: #333; font-weight: bold; cursor: pointer;">
+                Iniciar Timer de 3 minutos
+            </button>
+        </div>
+
+        <div class="info">
+            <strong>💡 Cómo probar las nuevas funcionalidades:</strong><br>
+            1. Configura tus preferencias (dimming automático)<br>
+            2. Activa Enhanced Wake Lock con el botón<br>
+            3. Observa si el brillo se reduce automáticamente<br>
+            4. Inicia el temporizador<br>
+            5. Deja el dispositivo sin tocar por 3 minutos<br>
+            6. Verifica que la pantalla NO se apague y mantenga el brillo reducido
+        </div>
+
+        <div class="logs" id="logs">
+            <div><strong>📋 Logs del Sistema Enhanced:</strong></div>
+        </div>
+    </div>
+
+    <script>
+        let wakeLock = null;
+        let isWakeLockActive = false;
+        let timerInterval = null;
+        let seconds = 0;
+        let currentBrightness = 1;
+        let originalBrightness = 1;
+        let brightnessOverlay = null;
+
+        // Preferencias del usuario
+        let userPreferences = {
+            wakeLockEnabled: false,
+            dimScreenOnWakeLock: true,
+            originalBrightness: 1
+        };
+
+        // Elementos del DOM
+        const compatibilityDiv = document.getElementById('compatibility');
+        const statusDiv = document.getElementById('status');
+        const statusText = document.getElementById('statusText');
+        const wakeButton = document.getElementById('wakeButton');
+        const logsDiv = document.getElementById('logs');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const dimmingToggle = document.getElementById('dimmingToggle');
+        const brightnessLevel = document.getElementById('brightnessLevel');
+        const brightnessSupport = document.getElementById('brightnessSupport');
+
+        // Función para agregar logs
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        // Verificar compatibilidad mejorada
+        function checkCompatibility() {
+            const hasWakeLock = 'wakeLock' in navigator;
+            const hasBrightnessAPI = 'screen' in navigator && 'brightness' in navigator.screen;
+            
+            if (hasWakeLock) {
+                compatibilityDiv.innerHTML = '<strong>✅ Enhanced Wake Lock API soportado</strong>';
+                compatibilityDiv.style.borderColor = '#4caf50';
+                wakeButton.disabled = false;
+                addLog('✅ Enhanced Wake Lock API detectado y disponible');
+            } else {
+                compatibilityDiv.innerHTML = '<strong>❌ Wake Lock API NO soportado</strong><br>Funcionalidades limitadas disponibles';
+                compatibilityDiv.style.borderColor = '#ff6b6b';
+                addLog('❌ Wake Lock API no disponible - usando fallbacks');
+                wakeButton.disabled = false; // Permitir fallbacks
+            }
+
+            // Verificar soporte de brillo
+            if (hasBrightnessAPI) {
+                brightnessSupport.textContent = '✅ API Nativa';
+                addLog('✅ Screen Brightness API detectada');
+            } else {
+                brightnessSupport.textContent = '🔄 Overlay Fallback';
+                addLog('🔄 Screen Brightness API no disponible - usando overlay fallback');
+            }
+        }
+
+        // Gestión de preferencias
+        function savePreferences() {
+            userPreferences.dimScreenOnWakeLock = dimmingToggle.checked;
+            localStorage.setItem('ds_enhanced_preferences', JSON.stringify(userPreferences));
+            addLog('💾 Preferencias guardadas en localStorage');
+        }
+
+        function loadPreferences() {
+            try {
+                const saved = localStorage.getItem('ds_enhanced_preferences');
+                if (saved) {
+                    userPreferences = { ...userPreferences, ...JSON.parse(saved) };
+                    dimmingToggle.checked = userPreferences.dimScreenOnWakeLock;
+                    addLog('📂 Preferencias cargadas desde localStorage');
+                } else {
+                    addLog('📂 No se encontraron preferencias guardadas');
+                }
+            } catch (error) {
+                addLog('❌ Error cargando preferencias: ' + error.message);
+            }
+        }
+
+        // Control de brillo mejorado
+        function createBrightnessOverlay(dimLevel) {
+            // Remover overlay existente
+            if (brightnessOverlay) {
+                document.body.removeChild(brightnessOverlay);
+                brightnessOverlay = null;
+            }
+
+            if (dimLevel < 1) {
+                const overlay = document.createElement('div');
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100vw';
+                overlay.style.height = '100vh';
+                overlay.style.backgroundColor = 'black';
+                overlay.style.opacity = (1 - dimLevel).toString();
+                overlay.style.pointerEvents = 'none';
+                overlay.style.zIndex = '9998';
+                overlay.style.transition = 'opacity 0.3s ease-in-out';
+
+                document.body.appendChild(overlay);
+                brightnessOverlay = overlay;
+            }
+        }
+
+        async function setBrightness(brightness) {
+            try {
+                const normalizedBrightness = Math.max(0.1, Math.min(1, brightness));
+                
+                if ('screen' in navigator && 'brightness' in navigator.screen) {
+                    // Intentar API nativa
+                    await navigator.screen.setBrightness(normalizedBrightness);
+                    addLog(`🔅 Brillo establecido a ${Math.round(normalizedBrightness * 100)}% (API nativa)`);
+                } else {
+                    // Usar overlay fallback
+                    createBrightnessOverlay(normalizedBrightness);
+                    addLog(`🔅 Brillo establecido a ${Math.round(normalizedBrightness * 100)}% (overlay fallback)`);
+                }
+                
+                currentBrightness = normalizedBrightness;
+                brightnessLevel.textContent = Math.round(normalizedBrightness * 100) + '%';
+                return true;
+            } catch (error) {
+                addLog('❌ Error estableciendo brillo: ' + error.message);
+                // Fallback con overlay
+                createBrightnessOverlay(brightness);
+                currentBrightness = brightness;
+                brightnessLevel.textContent = Math.round(brightness * 100) + '%';
+                return false;
+            }
+        }
+
+        function restoreBrightness() {
+            setBrightness(originalBrightness);
+            addLog('🔄 Brillo restaurado al valor original');
+        }
+
+        // Enhanced Wake Lock functionality
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator && window.isSecureContext) {
+                    try {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        isWakeLockActive = true;
+                        updateUI();
+                        addLog('🔆 Enhanced Wake Lock activado exitosamente');
+
+                        wakeLock.addEventListener('release', () => {
+                            isWakeLockActive = false;
+                            updateUI();
+                            // Restaurar brillo automáticamente
+                            if (userPreferences.dimScreenOnWakeLock) {
+                                restoreBrightness();
+                            }
+                            addLog('🔋 Enhanced Wake Lock liberado automáticamente');
+                        });
+
+                        // Aplicar dimming si está habilitado
+                        if (userPreferences.dimScreenOnWakeLock) {
+                            setTimeout(() => {
+                                setBrightness(0.5);
+                                addLog('🌑 Brillo reducido automáticamente al 50%');
+                            }, 500);
+                        }
+
+                        return true;
+                    } catch (error) {
+                        addLog(`❌ Error con Wake Lock API: ${error.message}`);
+                        return false;
+                    }
+                } else {
+                    addLog('🔄 Wake Lock API no disponible - activando modo básico');
+                    isWakeLockActive = true;
+                    updateUI();
+                    
+                    // Aplicar dimming en modo fallback
+                    if (userPreferences.dimScreenOnWakeLock) {
+                        setTimeout(() => {
+                            setBrightness(0.5);
+                            addLog('🌑 Brillo reducido automáticamente al 50% (modo fallback)');
+                        }, 500);
+                    }
+                    
+                    return true;
+                }
+            } catch (error) {
+                addLog(`❌ Error general activando Enhanced Wake Lock: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function releaseWakeLock() {
+            try {
+                if (wakeLock) {
+                    await wakeLock.release();
+                    wakeLock = null;
+                }
+                
+                isWakeLockActive = false;
+                updateUI();
+                
+                // Restaurar brillo
+                if (userPreferences.dimScreenOnWakeLock) {
+                    restoreBrightness();
+                }
+                
+                addLog('🔋 Enhanced Wake Lock liberado manualmente');
+                return true;
+            } catch (error) {
+                addLog(`❌ Error liberando Enhanced Wake Lock: ${error.message}`);
+                return false;
+            }
+        }
+
+        function updateUI() {
+            if (isWakeLockActive) {
+                statusDiv.className = 'status active';
+                statusText.textContent = 'ACTIVO';
+                statusDiv.innerHTML = '<div>📱 Estado: <span id="statusText">ACTIVO</span></div><div>🔆 Pantalla permanecerá encendida' + 
+                    (userPreferences.dimScreenOnWakeLock ? ' con brillo reducido' : '') + '</div>';
+                wakeButton.className = 'wake-button active';
+                wakeButton.textContent = '🔆 Desactivar Enhanced Wake Lock';
+            } else {
+                statusDiv.className = 'status inactive';
+                statusText.textContent = 'INACTIVO';
+                statusDiv.innerHTML = '<div>📱 Estado: <span id="statusText">INACTIVO</span></div><div>🔋 Pantalla puede apagarse normalmente</div>';
+                wakeButton.className = 'wake-button inactive';
+                wakeButton.textContent = '🔋 Activar Enhanced Wake Lock';
+            }
+        }
+
+        async function toggleWakeLock() {
+            if (isWakeLockActive) {
+                await releaseWakeLock();
+            } else {
+                await requestWakeLock();
+            }
+        }
+
+        function startTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            seconds = 180; // 3 minutos
+            addLog('⏱️ Temporizador Enhanced iniciado - 3 minutos de prueba');
+            
+            timerInterval = setInterval(() => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                if (seconds <= 0) {
+                    clearInterval(timerInterval);
+                    addLog('⏰ Temporizador completado - ¿La pantalla permaneció encendida con las configuraciones correctas?');
+                    alert('⏰ ¡Temporizador completado! ¿La pantalla permaneció encendida y mantuvo el brillo configurado?');
+                }
+                seconds--;
+            }, 1000);
+        }
+
+        // Auto-guardar preferencias cuando cambie el toggle
+        dimmingToggle.addEventListener('change', () => {
+            userPreferences.dimScreenOnWakeLock = dimmingToggle.checked;
+            addLog('⚙️ Preferencia de dimming ' + (dimmingToggle.checked ? 'activada' : 'desactivada'));
+            
+            // Si wake lock está activo, aplicar cambio inmediatamente
+            if (isWakeLockActive) {
+                if (dimmingToggle.checked) {
+                    setBrightness(0.5);
+                } else {
+                    restoreBrightness();
+                }
+            }
+        });
+
+        // Re-activar Enhanced Wake Lock cuando la página vuelve a estar visible
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && isWakeLockActive && !wakeLock) {
+                addLog('👁️ Página visible de nuevo - reactivando Enhanced Wake Lock...');
+                await requestWakeLock();
+            }
+        });
+
+        // Event listeners
+        wakeButton.addEventListener('click', toggleWakeLock);
+
+        // Inicializar
+        checkCompatibility();
+        loadPreferences();
+        updateUI();
+        addLog('🚀 Página de testing Enhanced Wake Lock inicializada');
+    </script>
+</body>
+</html>
