@@ -65,6 +65,46 @@ const NotificationCenter = ({ currentUser }) => {
     }
   };
 
+  const handleDeleteNotification = async (notificationId, event) => {
+    // Prevenir que se marque como leída cuando se elimina
+    event.stopPropagation();
+    
+    try {
+      const result = await NotificationService.deleteNotification(notificationId);
+      if (result.success) {
+        // Recargar notificaciones para actualizar la lista
+        await loadNotifications();
+        console.log('✅ Notificación eliminada exitosamente');
+      } else {
+        console.error('❌ Error eliminando notificación:', result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const handleDeleteAllNotifications = async () => {
+    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar todas las notificaciones? Esta acción no se puede deshacer.');
+    
+    if (!confirmDelete) return;
+
+    try {
+      const userId = currentUser?.id || currentUser?.client_id;
+      if (!userId) return;
+
+      const result = await NotificationService.deleteAllNotifications(userId);
+      if (result.success) {
+        // Recargar notificaciones para actualizar la lista
+        await loadNotifications();
+        console.log('✅ Todas las notificaciones eliminadas exitosamente');
+      } else {
+        console.error('❌ Error eliminando todas las notificaciones:', result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting all notifications:', error);
+    }
+  };
+
   const createTestNotification = async () => {
     try {
       console.log('🧪 Creando notificación de prueba...');
@@ -394,6 +434,17 @@ const NotificationCenter = ({ currentUser }) => {
                   Marcar todas como leídas
                 </button>
               )}
+              
+              {/* Botón para eliminar todas las notificaciones */}
+              {notifications.length > 0 && (
+                <button
+                  onClick={handleDeleteAllNotifications}
+                  className="text-sm text-red-600 hover:text-red-800 ml-4"
+                  title="Eliminar todas las notificaciones"
+                >
+                  Eliminar todas
+                </button>
+              )}
             </div>
           </div>
 
@@ -415,27 +466,41 @@ const NotificationCenter = ({ currentUser }) => {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 md:p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-all duration-200 cursor-pointer ${
+                  className={`p-4 md:p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-all duration-200 ${
                     !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                   }`}
-                  onClick={() => handleMarkAsRead(notification.id)}
                 >
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
                       <span className="text-2xl md:text-2xl">{getTypeIcon(notification.type)}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div 
+                      className="flex-1 min-w-0 cursor-pointer" 
+                      onClick={() => handleMarkAsRead(notification.id)}
+                    >
                       <div className="flex items-start justify-between mb-2 md:mb-1">
                         <h4 className="text-base md:text-sm font-semibold text-gray-900 pr-2 leading-tight">
                           {notification.title}
                         </h4>
-                        <div className="flex flex-col md:flex-row items-end md:items-center space-y-1 md:space-y-0 md:space-x-2 flex-shrink-0">
-                          {!notification.read && (
-                            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                          )}
-                          <span className="text-xs text-gray-500 whitespace-nowrap">
-                            {formatDate(notification.created_at)}
-                          </span>
+                        <div className="flex items-center space-x-2 flex-shrink-0">
+                          <div className="flex flex-col md:flex-row items-end md:items-center space-y-1 md:space-y-0 md:space-x-2">
+                            {!notification.read && (
+                              <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                            )}
+                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                              {formatDate(notification.created_at)}
+                            </span>
+                          </div>
+                          {/* Botón de eliminar */}
+                          <button
+                            onClick={(e) => handleDeleteNotification(notification.id, e)}
+                            className="p-1 rounded-full hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors"
+                            title="Eliminar notificación"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
                       <p className="text-sm md:text-sm text-gray-600 mb-3 md:mb-2 line-clamp-3 md:line-clamp-2 leading-relaxed">

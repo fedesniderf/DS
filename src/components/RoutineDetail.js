@@ -101,6 +101,37 @@ const RoutineDetail = (props) => {
       }
     };
 
+  // Función para calcular semanas restantes
+  const calculateRemainingWeeks = () => {
+    if (!routine.endDate) return 0;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Resetear a medianoche para comparación precisa
+    
+    const endDate = new Date(routine.endDate);
+    endDate.setHours(23, 59, 59, 999); // Fin del día de la fecha de fin
+    
+    // Si la rutina ya terminó, devolver 0
+    if (today > endDate) return 0;
+    
+    // Calcular la diferencia en milisegundos y convertir a semanas
+    const diffTime = endDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffWeeks = Math.ceil(diffDays / 7);
+    
+    return Math.max(0, diffWeeks);
+  };
+
+  // Función para formatear fecha a DD/MM/AA
+  const formatDate = (dateString) => {
+    if (!dateString) return 'No especificada';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2); // Últimos 2 dígitos del año
+    return `${day}/${month}/${year}`;
+  };
+
   // Helper to render PFPE tables
   const [showPFPENotesModal, setShowPFPENotesModal] = React.useState({ open: false, notes: '' });
   const renderPFPETables = (cleanedDailyTracking) => {
@@ -183,11 +214,11 @@ const RoutineDetail = (props) => {
           {/* Modal para ver notas de PF/PE */}
           {showPFPENotesModal.open && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-              <div className="bg-white rounded-lg shadow-lg p-6 max-w-xs w-full">
-                <h3 className="text-lg font-bold mb-2 text-purple-700">Notas</h3>
-                <div className="mb-4 text-gray-800 whitespace-pre-line">{showPFPENotesModal.notes}</div>
+              <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-bold mb-4 text-purple-700">Notas</h3>
+                <div className="mb-6 text-gray-800 whitespace-pre-line text-sm">{showPFPENotesModal.notes}</div>
                 <button
-                  className="mt-2 px-4 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                  className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
                   onClick={() => setShowPFPENotesModal({ open: false, notes: '' })}
                 >
                   Cerrar
@@ -1685,14 +1716,25 @@ const RoutineDetail = (props) => {
       
       {/* Información básica de la rutina */}
       <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-3 gap-4 text-sm">
           <div>
-            <span className="font-semibold">Fecha de inicio:</span> {routine.startDate || 'No especificada'}
+            <span className="font-semibold">Fecha de inicio:</span> {formatDate(routine.startDate)}
           </div>
           <div>
-            <span className="font-semibold">Fecha de fin:</span> {routine.endDate || 'No especificada'}
+            <span className="font-semibold">Fecha de fin:</span> {formatDate(routine.endDate)}
           </div>
-          <div className="col-span-2">
+          <div>
+            <span className="font-semibold">Semanas restantes:</span> 
+            <span className={`ml-1 font-semibold ${
+              calculateRemainingWeeks() === 0 ? 'text-red-600' : 
+              calculateRemainingWeeks() <= 2 ? 'text-orange-600' : 
+              'text-gray-900'
+            }`}>
+              {calculateRemainingWeeks()}
+              {calculateRemainingWeeks() === 0 ? ' (Finalizada)' : ''}
+            </span>
+          </div>
+          <div className="col-span-3">
             <span className="font-semibold">Descripción:</span> {routine.description || 'Sin descripción'}
           </div>
         </div>
@@ -1764,21 +1806,21 @@ const RoutineDetail = (props) => {
       {/* Modal para seguimiento diario general */}
       {showDailyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-xl shadow-lg w-full max-w-md max-h-[80vh] overflow-y-auto text-xs" style={{ fontSize: '12px' }}>
-            <h3 className="text-base font-bold mb-4">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg mx-4 max-h-[85vh] overflow-y-auto">
+            <h3 className="text-lg font-bold mb-6">
               {isEditingDaily ? 'Editar PF/PE/Notas' : 'Registrar PF/PE/Notas'}
             </h3>
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Semana de entrenamiento
               </label>
               {getWeekOptionsForPFPE().length === 0 && !isEditingDaily ? (
-                <div className="w-full px-2 py-1 bg-yellow-50 border border-yellow-300 rounded-lg text-xs text-yellow-700">
+                <div className="w-full px-3 py-2 bg-yellow-50 border border-yellow-300 rounded-lg text-sm text-yellow-700">
                   No hay semanas disponibles. Ya se han registrado datos para todas las semanas.
                 </div>
               ) : (
                 <select
-                  className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   value={weekNumber}
                   onChange={e => setWeekNumber(e.target.value)}
                   disabled={isEditingDaily}
@@ -1790,51 +1832,51 @@ const RoutineDetail = (props) => {
                 </select>
               )}
             </div>
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Percepción de Fatiga (PF) - 1 a 5
               </label>
               <input
                 type="number"
                 min="1"
                 max="5"
-                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 placeholder="Ej: 3"
                 value={dailyPF}
                 onChange={e => setDailyPF(e.target.value)}
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Percepción de Esfuerzo (PE) - 1 a 5
               </label>
               <input
                 type="number"
                 min="1"
                 max="5"
-                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 placeholder="Ej: 4"
                 value={dailyPE}
                 onChange={e => setDailyPE(e.target.value)}
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Notas adicionales
               </label>
               <textarea
                 value={exerciseNotes}
                 onChange={(e) => setExerciseNotes(e.target.value)}
-                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
                 placeholder="Cualquier nota relevante sobre el ejercicio"
-                rows={3}
+                rows={4}
               />
             </div>
             <div className="flex gap-3">
               <button
                 onClick={handleSaveDaily}
                 disabled={!isEditingDaily && getWeekOptionsForPFPE().length === 0}
-                className={`flex-1 py-2 px-4 rounded-lg transition-colors text-xs ${
+                className={`flex-1 py-3 px-4 rounded-lg transition-colors text-sm font-medium ${
                   !isEditingDaily && getWeekOptionsForPFPE().length === 0
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -1844,7 +1886,7 @@ const RoutineDetail = (props) => {
               </button>
               <button
                 onClick={handleCloseDailyModal}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors text-xs"
+                className="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-400 transition-colors text-sm font-medium"
               >
                 Cancelar
               </button>
@@ -1856,22 +1898,22 @@ const RoutineDetail = (props) => {
       {/* Modal para seguimiento semanal */}
       {showWeeklyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-3 rounded-lg shadow-lg w-full max-w-[280px] text-xs" style={{ fontSize: '12px' }}>
-            <h3 className="text-base font-bold mb-2">{isEditingWeekly ? 'Editar seguimiento semanal' : 'Seguimiento Semanal'}</h3>
-            <p className="text-xs text-gray-600 mb-2">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg mx-4">
+            <h3 className="text-lg font-bold mb-4">{isEditingWeekly ? 'Editar seguimiento semanal' : 'Seguimiento Semanal'}</h3>
+            <p className="text-sm text-gray-600 mb-4">
               Ejercicio: <span className="font-semibold">{weeklyExercise?.name}</span>
             </p>
-            <div className="mb-2">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Semana</label>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Semana</label>
               {getWeekOptions().length === 0 && !isEditingWeekly ? (
-                <div className="w-full px-2 py-1 bg-yellow-50 border border-yellow-300 rounded-lg text-xs text-yellow-700">
+                <div className="w-full px-3 py-2 bg-yellow-50 border border-yellow-300 rounded-lg text-sm text-yellow-700">
                   No hay semanas disponibles. Ya se han registrado datos para todas las semanas.
                 </div>
               ) : (
                 <select
                   value={weekNumber}
                   onChange={(e) => setWeekNumber(e.target.value)}
-                  className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   disabled={isEditingWeekly}
                 >
                   <option value="">Selecciona una semana</option>
@@ -1881,42 +1923,42 @@ const RoutineDetail = (props) => {
                 </select>
               )}
             </div>
-            <div className="mb-2">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Series</label>
-              <div className="w-full px-2 py-1 bg-gray-100 border border-gray-300 rounded-lg text-xs text-gray-600">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Series</label>
+              <div className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-600">
                 {weekSeries} serie{weekSeries > 1 ? 's' : ''} (del ejercicio)
               </div>
             </div>
-            <div className="mb-2">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Peso por serie (kg)</label>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Peso por serie (kg)</label>
               {Array.from({ length: weekSeries }, (_, index) => (
-                <div key={index} className="mb-1">
+                <div key={index} className="mb-2">
                   <input
                     type="number"
                     step="0.1"
                     value={seriesWeights[index] || ""}
                     onChange={(e) => handleSeriesWeightChange(index, e.target.value)}
-                    className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     placeholder={`Serie ${index + 1} - Ej: 80.5`}
                   />
                 </div>
               ))}
             </div>
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Notas generales</label>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Notas generales</label>
               <textarea
                 value={weekNotes}
                 onChange={(e) => setWeekNotes(e.target.value)}
-                rows="2"
-                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
                 placeholder="Observaciones, sensaciones, etc."
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={handleSaveWeekly}
                 disabled={!isEditingWeekly && getWeekOptions().length === 0}
-                className={`flex-1 py-1 px-2 rounded-md transition-colors text-xs ${
+                className={`flex-1 py-3 px-4 rounded-lg transition-colors text-sm font-medium ${
                   !isEditingWeekly && getWeekOptions().length === 0
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -1924,7 +1966,7 @@ const RoutineDetail = (props) => {
               >{isEditingWeekly ? 'Actualizar' : 'Guardar'}</button>
               <button
                 onClick={handleCloseWeeklyModal}
-                className="flex-1 bg-gray-300 text-gray-700 py-1 px-2 rounded-md hover:bg-gray-400 transition-colors text-xs"
+                className="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-400 transition-colors text-sm font-medium"
               >Cancelar</button>
             </div>
           </div>
@@ -2169,6 +2211,35 @@ const RoutineDetail = (props) => {
           </div>
         </div>
       )}
+
+      {/* Footer Section */}
+      <div className="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div className="flex items-center justify-center gap-6">
+          {/* Logo DS Entrenamiento */}
+          <div className="flex items-center gap-2">
+            <img 
+              src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc03OCANFku0HlIPwSxAEOXk6nTjd9beaNftrh5" 
+              alt="DS Entrenamiento Logo" 
+              className="h-10 w-auto opacity-70 hover:opacity-100 transition-opacity duration-300"
+            />
+            <span className="text-gray-500 text-sm font-medium">DS Entrenamiento</span>
+          </div>
+
+          {/* WhatsApp */}
+          <a 
+            href="https://wa.me/5491135732817" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 p-2 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors duration-300 shadow-lg hover:shadow-xl"
+            title="Contactar por WhatsApp"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.886 3.488"/>
+            </svg>
+            <span className="hidden md:inline">WhatsApp</span>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

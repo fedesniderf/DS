@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Iconos Móviles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-section {
+            border: 2px solid #e5e7eb;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+        }
+        .icon-test {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+    <h1 class="text-2xl font-bold mb-6 text-center">Prueba de Iconos en Móvil</h1>
+    
+    <!-- Test de Wake Lock Button -->
+    <div class="test-section">
+        <h2 class="text-lg font-semibold mb-3">Botón Wake Lock</h2>
+        
+        <div class="icon-test">
+            <span class="text-sm font-medium">Icono Batería (SVG):</span>
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M4.5 9.75V6A1.5 1.5 0 016 4.5h12A1.5 1.5 0 0119.5 6v3.75M4.5 9.75H18a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5zm15 0V6a.75.75 0 00-.75-.75H6a.75.75 0 00-.75.75v3.75h14.25z" />
+            </svg>
+        </div>
+        
+        <div class="icon-test">
+            <span class="text-sm font-medium">Icono Sol (SVG):</span>
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+            </svg>
+        </div>
+        
+        <button class="inline-flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M4.5 9.75V6A1.5 1.5 0 016 4.5h12A1.5 1.5 0 0119.5 6v3.75M4.5 9.75H18a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5zm15 0V6a.75.75 0 00-.75-.75H6a.75.75 0 00-.75.75v3.75h14.25z" />
+            </svg>
+            <span class="hidden sm:inline">Mantener Encendida</span>
+            <span class="sm:hidden">OFF</span>
+        </button>
+    </div>
+
+    <!-- Test de Botón de Notificaciones -->
+    <div class="test-section">
+        <h2 class="text-lg font-semibold mb-3">Botón de Notificaciones</h2>
+        
+        <div class="icon-test">
+            <span class="text-sm font-medium">Icono Campana (SVG):</span>
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z" clipRule="evenodd" />
+            </svg>
+        </div>
+        
+        <button class="relative p-3 rounded-full transition-colors duration-200 text-blue-600 bg-blue-50 hover:bg-blue-100">
+            <svg class="w-6 h-6 transition-transform duration-200" fill="currentColor" viewBox="0 0 24 24">
+                <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z" clipRule="evenodd" />
+            </svg>
+            <span class="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold border-2 border-white shadow-lg">3</span>
+        </button>
+    </div>
+
+    <!-- Test de Botón de Logout -->
+    <div class="test-section">
+        <h2 class="text-lg font-semibold mb-3">Botón de Logout</h2>
+        
+        <div class="icon-test">
+            <span class="text-sm font-medium">Icono Logout (SVG):</span>
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 005.25 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"></path>
+            </svg>
+        </div>
+        
+        <button class="px-3 sm:px-6 py-2 sm:py-3 text-white text-sm sm:text-lg rounded-xl bg-red-600 hover:bg-red-700 transition-all duration-300 font-bold shadow-lg border-2 sm:border-4 border-yellow-400">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 005.25 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Test de Botón de Retroceso -->
+    <div class="test-section">
+        <h2 class="text-lg font-semibold mb-3">Botón de Retroceso</h2>
+        
+        <div class="icon-test">
+            <span class="text-sm font-medium">Icono Flecha (SVG):</span>
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+        </div>
+        
+        <button class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+            <svg class="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Comparación Emoji vs SVG -->
+    <div class="test-section">
+        <h2 class="text-lg font-semibold mb-3">Comparación: Emoji vs SVG</h2>
+        
+        <div class="icon-test">
+            <span class="text-sm font-medium">Emoji (antiguo):</span>
+            <span class="text-lg">🔋</span>
+            <span class="text-lg">🔆</span>
+        </div>
+        
+        <div class="icon-test">
+            <span class="text-sm font-medium">SVG (nuevo):</span>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M4.5 9.75V6A1.5 1.5 0 016 4.5h12A1.5 1.5 0 0119.5 6v3.75M4.5 9.75H18a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5zm15 0V6a.75.75 0 00-.75-.75H6a.75.75 0 00-.75.75v3.75h14.25z" />
+            </svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- Prueba de diferentes tamaños -->
+    <div class="test-section">
+        <h2 class="text-lg font-semibold mb-3">Prueba de Tamaños</h2>
+        
+        <div class="icon-test">
+            <span class="text-sm font-medium">Pequeño (w-4 h-4):</span>
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z" clipRule="evenodd" />
+            </svg>
+        </div>
+        
+        <div class="icon-test">
+            <span class="text-sm font-medium">Mediano (w-5 h-5):</span>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z" clipRule="evenodd" />
+            </svg>
+        </div>
+        
+        <div class="icon-test">
+            <span class="text-sm font-medium">Grande (w-6 h-6):</span>
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z" clipRule="evenodd" />
+            </svg>
+        </div>
+    </div>
+
+    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+        <h3 class="font-semibold text-blue-900 mb-2">Instrucciones de Prueba:</h3>
+        <ol class="text-sm text-blue-800 space-y-1">
+            <li>1. Abre esta página en un dispositivo móvil</li>
+            <li>2. Verifica que todos los iconos SVG se vean correctamente</li>
+            <li>3. Compara los emojis vs SVG para ver la diferencia</li>
+            <li>4. Prueba los botones para verificar que sean clickeables</li>
+            <li>5. Verifica que los tamaños sean apropiados para móvil</li>
+        </ol>
+    </div>
+
+    <script>
+        // Agregar funcionalidad de prueba
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', () => {
+                button.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    button.style.transform = '';
+                }, 150);
+            });
+        });
+    </script>
+</body>
+</html>

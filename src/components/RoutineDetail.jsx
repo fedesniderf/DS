@@ -233,10 +233,10 @@ const RoutineDetail = ({
       {/* Modal para agregar seguimiento semanal */}
       {showWeeklyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">Agregar seguimiento semanal</h3>
+          <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl mx-4">
+            <h3 className="text-xl font-bold mb-6">Agregar seguimiento semanal</h3>
             <select
-              className="w-full border rounded px-3 py-2 mb-4"
+              className="w-full border rounded px-4 py-3 mb-6 text-lg"
               value={weekNumber}
               onChange={e => setWeekNumber(e.target.value)}
             >
@@ -247,25 +247,25 @@ const RoutineDetail = ({
             </select>
             <input
               type="number"
-              className="w-full border rounded px-3 py-2 mb-4"
+              className="w-full border rounded px-4 py-3 mb-6 text-lg"
               placeholder="Peso (Kg)"
               value={weekWeight}
               onChange={e => setWeekWeight(e.target.value)}
             />
             <textarea
-              className="w-full border rounded px-3 py-2 mb-4"
+              className="w-full border rounded px-4 py-3 mb-6 text-lg h-32 resize-none"
               placeholder="Notas (máx 100 caracteres)"
               maxLength={100}
               value={weekNotes}
               onChange={e => setWeekNotes(e.target.value)}
             />
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-3">
               <button
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                className="px-6 py-3 bg-gray-300 rounded-lg hover:bg-gray-400 text-lg font-medium"
                 onClick={handleCloseWeeklyModal}
               >Cancelar</button>
               <button
-                className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-lg font-medium"
                 onClick={handleSaveWeekly}
                 disabled={!weekNumber}
               >Guardar</button>
