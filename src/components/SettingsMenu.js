@@ -265,11 +265,6 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate })
                   </div>
                 </button>
                 
-                {/* Advertencia de compatibilidad */}
-                <div className="mt-2 px-2 py-1 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
-                  ⚠️ Esta función puede no estar disponible en todos los navegadores y dispositivos
-                </div>
-                
                 {/* Opción de dimming de pantalla */}
                 {isSupported && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
@@ -306,11 +301,6 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate })
                         }`} />
                       </div>
                     </button>
-                    
-                    {/* Información adicional sobre dimming */}
-                    <div className="mt-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                      💡 Ayuda a ahorrar batería manteniendo la pantalla visible pero menos brillante
-                    </div>
                   </div>
                 )}
               </div>
