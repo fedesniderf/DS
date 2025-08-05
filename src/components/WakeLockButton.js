@@ -1,8 +1,8 @@
 import React from 'react';
-import { useWakeLock } from '../hooks/useWakeLock';
+import { useEnhancedWakeLock } from '../hooks/useEnhancedWakeLock';
 
 const WakeLockButton = ({ className = "" }) => {
-  const { isWakeLockActive, isSupported, toggleWakeLock } = useWakeLock();
+  const { isWakeLockActive, isSupported, toggleWakeLock, preferences, currentBrightness } = useEnhancedWakeLock();
 
   // No mostrar el botón si no es compatible
   if (!isSupported) {
@@ -16,6 +16,11 @@ const WakeLockButton = ({ className = "" }) => {
     }
   };
 
+  // Mostrar información adicional en el tooltip
+  const tooltipText = isWakeLockActive 
+    ? `Desactivar pantalla siempre encendida${preferences.dimScreenOnWakeLock ? ` (Brillo: ${Math.round(currentBrightness * 100)}%)` : ''}`
+    : 'Mantener pantalla encendida durante entrenamiento';
+
   return (
     <button
       onClick={handleClick}
@@ -24,7 +29,7 @@ const WakeLockButton = ({ className = "" }) => {
           ? 'bg-green-100 text-green-800 hover:bg-green-200 border border-green-300'
           : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
       } ${className}`}
-      title={isWakeLockActive ? 'Desactivar pantalla siempre encendida' : 'Mantener pantalla encendida durante entrenamiento'}
+      title={tooltipText}
     >
       {/* Icono SVG en lugar de emoji para mejor compatibilidad móvil */}
       <svg 
