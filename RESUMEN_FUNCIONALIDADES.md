@@ -54,11 +54,20 @@
 - **Integración con base de datos** - Almacenamiento y recuperación eficiente
 - **Manejo de errores robusto** - Fallbacks y logging detallado
 
+### 🔋 **Wake Lock (Pantalla Siempre Encendida)**
+- **Hook personalizado useWakeLock** - Manejo completo de la Wake Lock API
+- **Botón integrado en header** - Acceso rápido desde cualquier pantalla
+- **Estados visuales claros** - Indicadores de ON/OFF con iconos
+- **Auto-reactivación** - Se reactiva automáticamente al volver a la app
+- **Compatibilidad verificada** - Solo se muestra en navegadores compatibles
+- **Ideal para entrenamientos** - Evita que la pantalla se apague durante rutinas
+
 ### 📱 **Optimizaciones Móviles**
 - **Panel desde abajo** - UX nativa similar a apps móviles
 - **Áreas de toque ampliadas** - Botones optimizados para dedos
 - **Texto y elementos escalados** - Legibilidad mejorada en pantallas pequeñas
 - **Layout vertical en móvil** - Reorganización inteligente del contenido
+- **Wake Lock (Pantalla siempre encendida)** - Botón para mantener la pantalla activa durante entrenamientos
 
 ## 🔧 **Configuración y Control**
 
@@ -78,6 +87,8 @@
 
 ### **Nuevos archivos:**
 - `src/services/EmailService.js` - Servicio de emails con proxy
+- `src/hooks/useWakeLock.js` - Hook personalizado para Wake Lock API
+- `src/components/WakeLockButton.js` - Componente para mantener pantalla encendida
 - `email-server.js` - Servidor proxy para resolver CORS
 - `EMAIL_CONTROL.md` - Documentación de control de emails
 - `CONFIGURACION_EMAIL.md` - Guía de configuración completa
@@ -85,6 +96,7 @@
 
 ### **Archivos modificados:**
 - `src/components/NotificationCenter.js` - UI completa rediseñada
+- `src/components/LayoutHeader.jsx` - Integración del botón Wake Lock
 - `src/services/NotificationService.js` - Integración con emails y mejoras
 - `src/index.css` - Utilidades CSS para line-clamp
 

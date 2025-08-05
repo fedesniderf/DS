@@ -1,5 +1,6 @@
 import React from 'react';
 import NotificationCenter from './NotificationCenter';
+import SettingsMenu from './SettingsMenu';
 
 const LayoutHeader = ({ 
   title, 
@@ -10,7 +11,9 @@ const LayoutHeader = ({
   userId,
   currentUser, // Agregar currentUser como prop
   isAdmin = false,
-  showNotifications = true
+  showNotifications = true,
+  onChangePassword, // Nueva prop para cambiar contraseña
+  onUserUpdate // Nueva prop para actualizar usuario
 }) => {
   console.log('🎯 LayoutHeader - Props recibidos:', {
     userId, 
@@ -24,18 +27,18 @@ const LayoutHeader = ({
   
   return (
     <header className="bg-white shadow-md p-4 flex items-center justify-between sticky top-0 z-10">
-      {showBackButton ? (
-        <button onClick={onBackClick} className="p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6 text-gray-700">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
-        </button>
-      ) : (
-        <div className="w-6 h-6 flex-shrink-0"></div> // Placeholder para mantener el espacio
-      )}
-      
-      {/* Título responsive */}
-      <h1 className="text-xl md:text-2xl font-bold text-gray-800 text-center flex-1 mx-2 truncate">{title}</h1>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        {showBackButton && (
+          <button onClick={onBackClick} className="p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6 text-gray-700">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+          </button>
+        )}
+        
+        {/* Título a la izquierda */}
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800 truncate">{title}</h1>
+      </div>
       
       <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
         {/* Sistema de notificaciones */}
@@ -45,32 +48,39 @@ const LayoutHeader = ({
             isAdmin={isAdmin}
           />
         )}
-        {showLogoutButton && onLogout && (
-          <button
-            onClick={onLogout}
-            className="hidden sm:flex px-4 py-2 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors font-semibold shadow-sm items-center"
-            style={{ backgroundColor: '#183E0C' }}
-            title="Cerrar Sesión"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 005.25 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-            </svg>
-          </button>
+        
+        {/* Menú de configuración */}
+        <SettingsMenu 
+          onLogout={onLogout} 
+          currentUser={currentUser} 
+          onChangePassword={onChangePassword}
+          onUserUpdate={onUserUpdate}
+        />
+        
+        {/* Foto de perfil del usuario */}
+        {currentUser && currentUser.profilePhoto && (
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300 flex-shrink-0">
+            <img 
+              src={currentUser.profilePhoto} 
+              alt="Foto de perfil" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextElementSibling.style.display = 'flex';
+              }}
+            />
+            <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-semibold hidden">
+              {currentUser.fullName ? currentUser.fullName.charAt(0).toUpperCase() : '?'}
+            </div>
+          </div>
         )}
-        {/* Botón de logout solo ícono para móvil */}
-        {showLogoutButton && onLogout && (
-          <button
-            onClick={onLogout}
-            className="sm:hidden p-2 rounded-full text-white hover:bg-gray-800 transition-colors"
-            style={{ backgroundColor: '#183E0C' }}
-            title="Cerrar Sesión"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 005.25 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-            </svg>
-          </button>
+        
+        {/* Avatar con iniciales si no hay foto */}
+        {currentUser && !currentUser.profilePhoto && (
+          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+            {currentUser.fullName ? currentUser.fullName.charAt(0).toUpperCase() : currentUser.email ? currentUser.email.charAt(0).toUpperCase() : '?'}
+          </div>
         )}
-        <img src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc03OCANFku0HlIPwSxAEOXk6nTjd9beaNftrh5" alt="Nuevo Logo" className="h-12 md:h-14 w-auto" />
       </div>
     </header>
   );

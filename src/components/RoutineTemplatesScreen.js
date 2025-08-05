@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import TemplateRoutineDetail from './templates/TemplateRoutineDetail';
@@ -170,107 +169,145 @@ const RoutineTemplatesScreen = ({ clients = [], onAssignRoutine, fetchTemplates,
   }
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-md">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Templates de Rutinas</h2>
-        <button
-          className="p-2 rounded-full bg-green-100 hover:bg-green-200 text-green-700 transition-colors"
-          onClick={() => setShowAddTemplateScreen(true)}
-          title="Crear nueva plantilla"
-          disabled={loading || initialLoading}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-        </button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pt-2 px-2">
+      <div className="max-w-6xl mx-auto px-2 py-4">
+        {/* Indicador de carga para operaciones */}
+        {loading && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg flex flex-col items-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-4"></div>
+              <p className="text-gray-600">Procesando...</p>
+            </div>
+          </div>
+        )}
 
-      {/* Indicador de carga principal */}
-      {initialLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-4"></div>
-            <p className="text-gray-600">Cargando templates...</p>
+        {/* Header */}
+        <div className="text-center mb-4">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 mb-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Templates de Rutinas</h1>
+            <p className="text-gray-600 text-base md:text-lg">Crea y gestiona plantillas de rutinas para tus clientes</p>
           </div>
         </div>
-      ) : (
-        <>
-          {/* Indicador de carga para operaciones */}
-          {loading && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-lg flex flex-col items-center">
+
+        {/* Contenido principal */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3 md:p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Plantillas Disponibles</h2>
+            <button
+              className="p-2 rounded-full bg-green-100 hover:bg-green-200 text-green-700 transition-colors"
+              onClick={() => setShowAddTemplateScreen(true)}
+              title="Crear nueva plantilla"
+              disabled={loading || initialLoading}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Indicador de carga inicial */}
+          {initialLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="flex flex-col items-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-4"></div>
-                <p className="text-gray-600">Procesando...</p>
+                <p className="text-gray-600">Cargando templates...</p>
               </div>
             </div>
-          )}
-
-          {/* Sección para mostrar todas las rutinas templates creadas */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-4 text-green-700">Rutinas creadas como templates</h3>
-            {templates.length === 0 ? (
-              <p className="text-gray-500">No hay rutinas plantilla creadas aún.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {templates.map((template) => (
-                  <div key={template.id} className="border rounded-lg p-4 bg-gray-50 relative">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 pr-12">
-                        <div className="font-semibold text-lg mb-2">{template.name}</div>
-                        <div className="text-sm text-gray-600 mb-1">{template.description}</div>
-                        <div className="text-xs text-gray-500">{template.startDate} - {template.endDate}</div>
-                      </div>
-                      <div className="flex gap-1 absolute top-4 right-4">
-                        <button
-                          className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors disabled:opacity-50"
-                          title="Editar plantilla"
-                          onClick={() => setEditingTemplate(template)}
-                          disabled={loading}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                          </svg>
-                        </button>
-                        <button
-                          className="p-1 rounded-full bg-green-100 hover:bg-green-200 text-green-700 transition-colors disabled:opacity-50"
-                          title="Asignar a cliente"
-                          onClick={() => handleAssignTemplate(template)}
-                          disabled={loading}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
-                          </svg>
-                        </button>
-                        <button
-                          className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors disabled:opacity-50"
-                          title="Eliminar plantilla"
-                          onClick={() => handleDeleteTemplate(template.id)}
-                          disabled={loading}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                          </svg>
-                        </button>
+          ) : (
+            <div className="mb-8">
+              {templates.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No hay rutinas plantilla creadas aún.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {templates.map((template) => (
+                    <div key={template.id} className="border rounded-lg p-4 bg-gray-50 relative">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 pr-12">
+                          <div className="font-semibold text-lg mb-2">{template.name}</div>
+                          <div className="text-sm text-gray-600 mb-1">{template.description}</div>
+                          <div className="text-xs text-gray-500">{template.startDate} - {template.endDate}</div>
+                        </div>
+                        <div className="flex gap-1 absolute top-4 right-4">
+                          <button
+                            className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors disabled:opacity-50"
+                            title="Editar plantilla"
+                            onClick={() => setEditingTemplate(template)}
+                            disabled={loading}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                            </svg>
+                          </button>
+                          <button
+                            className="p-1 rounded-full bg-green-100 hover:bg-green-200 text-green-700 transition-colors disabled:opacity-50"
+                            title="Asignar a cliente"
+                            onClick={() => handleAssignTemplate(template)}
+                            disabled={loading}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                            </svg>
+                          </button>
+                          <button
+                            className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition-colors disabled:opacity-50"
+                            title="Eliminar plantilla"
+                            onClick={() => handleDeleteTemplate(template.id)}
+                            disabled={loading}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
-      )}
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-      {/* Modal de asignación */}
-      {showAssignModal && selectedTemplateForAssign && (
-        <NewAssignModal
-          onAssign={handleConfirmAssign}
-          onClose={() => {
-            setShowAssignModal(false);
-            setSelectedTemplateForAssign(null);
-          }}
-        />
-      )}
+        {/* Modal de asignación */}
+        {showAssignModal && selectedTemplateForAssign && (
+          <NewAssignModal
+            onAssign={handleConfirmAssign}
+            onClose={() => {
+              setShowAssignModal(false);
+              setSelectedTemplateForAssign(null);
+            }}
+          />
+        )}
+
+        {/* Footer Section */}
+        <div className="mt-8 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center justify-center gap-6">
+            {/* Logo DS Entrenamiento */}
+            <div className="flex items-center gap-2">
+              <img 
+                src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc03OCANFku0HlIPwSxAEOXk6nTjd9beaNftrh5" 
+                alt="DS Entrenamiento Logo" 
+                className="h-10 w-auto opacity-70 hover:opacity-100 transition-opacity duration-300"
+              />
+              <span className="text-gray-500 text-sm font-medium">DS Entrenamiento</span>
+            </div>
+
+            {/* WhatsApp */}
+            <a 
+              href="https://wa.me/5491135732817" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 p-2 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors duration-300 shadow-lg hover:shadow-xl"
+              title="Contactar por WhatsApp"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.886 3.488"/>
+              </svg>
+              <span className="hidden md:inline">WhatsApp</span>
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

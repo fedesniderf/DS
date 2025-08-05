@@ -11,6 +11,43 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
   const [goals, setGoals] = useState('');
   const [phone, setPhone] = useState('');
   const [medicalConditions, setMedicalConditions] = useState('');
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+
+  // Función para manejar la selección de foto
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    
+    if (file) {
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        alert('Por favor selecciona una imagen válida (JPG, PNG o GIF).');
+        return;
+      }
+      
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen debe ser menor a 5MB.');
+        return;
+      }
+      
+      setProfilePhoto(file);
+      
+      // Crear preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoPreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Función para remover la foto
+  const removePhoto = () => {
+    setProfilePhoto(null);
+    setPhotoPreview(null);
+  };
 
   const handleRegister = () => {
     // Validación de contraseña
@@ -73,7 +110,18 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
       return;
     }
 
-    onRegister({ fullName, email, password, age, weight, height, goals, phone, medicalConditions });
+    onRegister({ 
+      fullName, 
+      email, 
+      password, 
+      age, 
+      weight, 
+      height, 
+      goals, 
+      phone, 
+      medicalConditions,
+      profilePhoto 
+    });
   };
 
   return (
@@ -93,6 +141,63 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
           />
+        </div>
+
+        {/* Campo de foto de perfil */}
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-medium mb-2">
+            Foto de Perfil (Opcional)
+          </label>
+          {photoPreview ? (
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <img 
+                  src={photoPreview} 
+                  alt="Vista previa" 
+                  className="w-20 h-20 object-cover rounded-full border-2 border-gray-300"
+                />
+                <button
+                  type="button"
+                  onClick={removePhoto}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-600 mb-2">Foto seleccionada</p>
+                <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                  Cambiar foto
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                  />
+                </label>
+              </div>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+              <div className="mb-4">
+                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <label className="cursor-pointer">
+                <span className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                  Seleccionar foto
+                </span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                />
+              </label>
+              <p className="text-xs text-gray-500 mt-2">JPG, PNG o GIF (máx. 5MB)</p>
+            </div>
+          )}
         </div>
 
         <div className="mb-4">
@@ -121,7 +226,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <p className="text-xs text-gray-500 mt-2">
+          <div className="text-xs text-gray-500 mt-2">
             La contraseña debe tener al menos:
             <ul className="list-disc ml-5">
               <li>Una letra mayúscula</li>
@@ -129,7 +234,7 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
               <li>No debe contener tu nombre, email ni teléfono</li>
               <li>No debe contener números en escala (ej: 123, 456, 789, etc)</li>
             </ul>
-          </p>
+          </div>
         </div>
 
         <div className="mb-6">

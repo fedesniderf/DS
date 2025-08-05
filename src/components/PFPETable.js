@@ -175,12 +175,12 @@ const PFPETable = ({ data = [], day, onEditPFPE, onDeletePFPE }) => {
     {/* Modal para ver notas */}
     {showNotes.open && (
       <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-        <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-xs">
-          <h3 className="text-base font-bold mb-2">Notas</h3>
-          <div className="mb-4 text-sm text-gray-700 whitespace-pre-line">{showNotes.notes}</div>
+        <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md mx-4">
+          <h3 className="text-lg font-bold mb-4">Notas</h3>
+          <div className="mb-6 text-sm text-gray-700 whitespace-pre-line">{showNotes.notes}</div>
           <button
             onClick={() => setShowNotes({ open: false, notes: '' })}
-            className="w-full bg-blue-600 text-white py-1 px-2 rounded-md hover:bg-blue-700 transition-colors text-xs"
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >Cerrar</button>
         </div>
       </div>

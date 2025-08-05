@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔋 Test Wake Lock - DS Entrenamiento</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .status.inactive {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #ff6b6b;
+        }
+        .status.active {
+            background: rgba(76, 175, 80, 0.3);
+            border: 2px solid #4caf50;
+        }
+        .wake-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+        .wake-button.inactive {
+            background: #ff6b6b;
+            color: white;
+        }
+        .wake-button.active {
+            background: #4caf50;
+            color: white;
+        }
+        .wake-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #ffd700;
+        }
+        .logs {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        .timer {
+            text-align: center;
+            font-size: 2em;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔋 Test Wake Lock</h1>
+        <p>Esta página te permite probar la funcionalidad de Wake Lock (mantener pantalla encendida)</p>
+        
+        <div id="compatibility" class="info">
+            <strong>🔍 Verificando compatibilidad...</strong>
+        </div>
+
+        <div id="status" class="status inactive">
+            <div>📱 Estado: <span id="statusText">INACTIVO</span></div>
+            <div>🔋 Pantalla puede apagarse normalmente</div>
+        </div>
+
+        <button id="wakeButton" class="wake-button inactive" disabled>
+            🔋 Activar Pantalla Siempre Encendida
+        </button>
+
+        <div class="timer" id="timer">
+            <div>⏱️ Temporizador de Prueba</div>
+            <div id="timerDisplay">00:00</div>
+            <button onclick="startTimer()" style="margin-top: 10px; padding: 10px 20px; border: none; border-radius: 5px; background: #ffd700; color: #333; font-weight: bold; cursor: pointer;">
+                Iniciar Timer de 2 minutos
+            </button>
+        </div>
+
+        <div class="info">
+            <strong>💡 Cómo probar:</strong><br>
+            1. Activa Wake Lock con el botón<br>
+            2. Inicia el temporizador<br>
+            3. Deja el dispositivo sin tocar<br>
+            4. La pantalla NO debe apagarse durante los 2 minutos
+        </div>
+
+        <div class="logs" id="logs">
+            <div><strong>📋 Logs del Sistema:</strong></div>
+        </div>
+    </div>
+
+    <script>
+        let wakeLock = null;
+        let isWakeLockActive = false;
+        let timerInterval = null;
+        let seconds = 0;
+
+        // Elementos del DOM
+        const compatibilityDiv = document.getElementById('compatibility');
+        const statusDiv = document.getElementById('status');
+        const statusText = document.getElementById('statusText');
+        const wakeButton = document.getElementById('wakeButton');
+        const logsDiv = document.getElementById('logs');
+        const timerDisplay = document.getElementById('timerDisplay');
+
+        // Función para agregar logs
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        // Verificar compatibilidad
+        function checkCompatibility() {
+            if ('wakeLock' in navigator) {
+                compatibilityDiv.innerHTML = '<strong>✅ Wake Lock API soportado</strong>';
+                compatibilityDiv.style.borderColor = '#4caf50';
+                wakeButton.disabled = false;
+                addLog('✅ Wake Lock API detectado y disponible');
+            } else {
+                compatibilityDiv.innerHTML = '<strong>❌ Wake Lock API NO soportado en este navegador</strong><br>Prueba con Chrome, Safari o Edge móvil';
+                compatibilityDiv.style.borderColor = '#ff6b6b';
+                addLog('❌ Wake Lock API no disponible en este navegador');
+            }
+        }
+
+        // Activar Wake Lock
+        async function requestWakeLock() {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                isWakeLockActive = true;
+                updateUI();
+                addLog('🔆 Wake Lock activado exitosamente');
+
+                wakeLock.addEventListener('release', () => {
+                    isWakeLockActive = false;
+                    updateUI();
+                    addLog('🔋 Wake Lock liberado automáticamente');
+                });
+
+                return true;
+            } catch (error) {
+                addLog(`❌ Error activando Wake Lock: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Liberar Wake Lock
+        async function releaseWakeLock() {
+            try {
+                if (wakeLock) {
+                    await wakeLock.release();
+                    wakeLock = null;
+                    isWakeLockActive = false;
+                    updateUI();
+                    addLog('🔋 Wake Lock liberado manualmente');
+                    return true;
+                }
+            } catch (error) {
+                addLog(`❌ Error liberando Wake Lock: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Actualizar interfaz
+        function updateUI() {
+            if (isWakeLockActive) {
+                statusDiv.className = 'status active';
+                statusText.textContent = 'ACTIVO';
+                statusDiv.innerHTML = '<div>📱 Estado: <span id="statusText">ACTIVO</span></div><div>🔆 Pantalla permanecerá encendida</div>';
+                wakeButton.className = 'wake-button active';
+                wakeButton.textContent = '🔆 Desactivar Pantalla Siempre Encendida';
+            } else {
+                statusDiv.className = 'status inactive';
+                statusText.textContent = 'INACTIVO';
+                statusDiv.innerHTML = '<div>📱 Estado: <span id="statusText">INACTIVO</span></div><div>🔋 Pantalla puede apagarse normalmente</div>';
+                wakeButton.className = 'wake-button inactive';
+                wakeButton.textContent = '🔋 Activar Pantalla Siempre Encendida';
+            }
+        }
+
+        // Toggle Wake Lock
+        async function toggleWakeLock() {
+            if (isWakeLockActive) {
+                await releaseWakeLock();
+            } else {
+                await requestWakeLock();
+            }
+        }
+
+        // Timer de prueba
+        function startTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            seconds = 120; // 2 minutos
+            addLog('⏱️ Temporizador iniciado - 2 minutos de prueba');
+            
+            timerInterval = setInterval(() => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                if (seconds <= 0) {
+                    clearInterval(timerInterval);
+                    addLog('⏰ Temporizador completado - ¿La pantalla permaneció encendida?');
+                    alert('⏰ ¡Temporizador completado! ¿La pantalla permaneció encendida durante los 2 minutos?');
+                }
+                seconds--;
+            }, 1000);
+        }
+
+        // Re-activar Wake Lock cuando la página vuelve a estar visible
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && isWakeLockActive && !wakeLock) {
+                addLog('👁️ Página visible de nuevo - reactivando Wake Lock...');
+                await requestWakeLock();
+            }
+        });
+
+        // Event listeners
+        wakeButton.addEventListener('click', toggleWakeLock);
+
+        // Inicializar
+        checkCompatibility();
+        addLog('🚀 Página de testing Wake Lock inicializada');
+    </script>
+</body>
+</html>

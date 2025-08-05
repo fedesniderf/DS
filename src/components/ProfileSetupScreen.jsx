@@ -7,6 +7,40 @@ const ProfileSetupScreen = ({ user, onSaveProfile }) => {
   const [goals, setGoals] = useState([]);
   const [newGoal, setNewGoal] = useState('');
   const [error, setError] = useState('');
+  const [profilePhoto, setProfilePhoto] = useState('');
+  const [photoPreview, setPhotoPreview] = useState('');
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      setError('Por favor selecciona un archivo de imagen válido.');
+      return;
+    }
+
+    // Validar tamaño (5MB máximo)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('La imagen debe ser menor a 5MB.');
+      return;
+    }
+
+    // Crear preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      setProfilePhoto(base64);
+      setPhotoPreview(base64);
+      setError('');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = () => {
+    setProfilePhoto('');
+    setPhotoPreview('');
+  };
 
   const handleAddGoal = () => {
     if (newGoal.trim() && !goals.includes(newGoal.trim())) {
@@ -25,7 +59,7 @@ const ProfileSetupScreen = ({ user, onSaveProfile }) => {
       return;
     }
     setError('');
-    onSaveProfile({ name, dob, weight: parseFloat(weight), goals });
+    onSaveProfile({ name, dob, weight: parseFloat(weight), goals, profilePhoto });
   };
 
   return (
@@ -35,6 +69,49 @@ const ProfileSetupScreen = ({ user, onSaveProfile }) => {
         <p className="text-center text-gray-600 mb-8 text-lg">
           Cuéntanos un poco sobre ti para personalizar tu experiencia.
         </p>
+
+        {/* Sección de foto de perfil */}
+        <div className="mb-6">
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            Foto de Perfil (Opcional)
+          </label>
+          <div className="flex flex-col items-center">
+            {photoPreview ? (
+              <div className="relative mb-4">
+                <img 
+                  src={photoPreview} 
+                  alt="Vista previa" 
+                  className="w-24 h-24 rounded-full object-cover border-4 border-gray-300"
+                />
+                <button
+                  onClick={removePhoto}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gray-200 border-4 border-gray-300 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="hidden"
+              id="profilePhoto"
+            />
+            <label
+              htmlFor="profilePhoto"
+              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors text-sm font-medium"
+            >
+              {photoPreview ? 'Cambiar foto' : 'Seleccionar foto'}
+            </label>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>

@@ -444,6 +444,52 @@ export const NotificationService = {
       enabled: EMAIL_ENABLED,
       message: EMAIL_ENABLED ? 'Emails habilitados' : 'Emails pausados - solo notificaciones en app'
     };
+  },
+
+  // Eliminar una notificación
+  async deleteNotification(notificationId) {
+    try {
+      console.log('🗑️ Eliminando notificación:', notificationId);
+      
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('❌ Error eliminando notificación:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ Notificación eliminada exitosamente');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error eliminando notificación:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Eliminar todas las notificaciones de un usuario
+  async deleteAllNotifications(userId) {
+    try {
+      console.log('🗑️ Eliminando todas las notificaciones del usuario:', userId);
+      
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('❌ Error eliminando todas las notificaciones:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('✅ Todas las notificaciones eliminadas exitosamente');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error eliminando todas las notificaciones:', error);
+      return { success: false, error: error.message };
+    }
   }
 };
 
