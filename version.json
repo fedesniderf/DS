@@ -1,9 +1,23 @@
 {
-  "version": "3.0.0",
+  "version": "3.0.3",
   "name": "DS Training Management System",
   "description": "Sistema de gestión de entrenamiento con menú de configuración completo",
-  "release_date": "2025-08-08",
+  "release_date": "2025-08-09",
   "changelog": {
+    "3.0.1": {
+      "date": "2025-08-08",
+      "description": "Corrección en sistema de versionado",
+      "type": "patch",
+      "features": [],
+      "fixes": [
+        "Corregido script de gestión de versiones para compatibilidad con estructura actual",
+        "Sincronización correcta entre archivos de configuración"
+      ],
+      "technical_changes": [
+        "Actualizado version-manager.js para trabajar con estructura de version.json existente",
+        "Mejorada función updateVersion para evitar errores de estructura"
+      ]
+    },
     "3.0.0": {
       "date": "2025-08-08",
       "description": "Implementación completa del menú de configuración con foto de usuario",
@@ -46,6 +60,22 @@
           "SimpleSettingsMenu.js - Reemplazado por SettingsMenu"
         ]
       }
+    },
+    "3.0.2": {
+      "date": "2025-08-09",
+      "description": "Versión 3.0.2",
+      "type": "patch",
+      "features": [],
+      "fixes": [],
+      "technical_changes": []
+    },
+    "3.0.3": {
+      "date": "2025-08-09",
+      "description": "Versión 3.0.3",
+      "type": "patch",
+      "features": [],
+      "fixes": [],
+      "technical_changes": []
     }
   },
   "requirements": {

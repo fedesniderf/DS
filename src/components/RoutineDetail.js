@@ -1897,77 +1897,88 @@ const RoutineDetail = (props) => {
 
       {/* Modal para seguimiento semanal */}
       {showWeeklyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg mx-4">
-            <h3 className="text-lg font-bold mb-4">{isEditingWeekly ? 'Editar seguimiento semanal' : 'Seguimiento Semanal'}</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Ejercicio: <span className="font-semibold">{weeklyExercise?.name}</span>
-            </p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Semana</label>
-              {getWeekOptions().length === 0 && !isEditingWeekly ? (
-                <div className="w-full px-3 py-2 bg-yellow-50 border border-yellow-300 rounded-lg text-sm text-yellow-700">
-                  No hay semanas disponibles. Ya se han registrado datos para todas las semanas.
-                </div>
-              ) : (
-                <select
-                  value={weekNumber}
-                  onChange={(e) => setWeekNumber(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  disabled={isEditingWeekly}
-                >
-                  <option value="">Selecciona una semana</option>
-                  {getWeekOptions().map(week => (
-                    <option key={week.value} value={week.value}>{week.label}</option>
-                  ))}
-                </select>
-              )}
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 overflow-y-auto p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-lg my-4 max-h-[90vh] flex flex-col">
+            {/* Header fijo */}
+            <div className="p-6 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-lg font-bold">{isEditingWeekly ? 'Editar seguimiento semanal' : 'Seguimiento Semanal'}</h3>
+              <p className="text-sm text-gray-600">
+                Ejercicio: <span className="font-semibold">{weeklyExercise?.name}</span>
+              </p>
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Series</label>
-              <div className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-600">
-                {weekSeries} serie{weekSeries > 1 ? 's' : ''} (del ejercicio)
+            
+            {/* Contenido scrollable */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Semana</label>
+                {getWeekOptions().length === 0 && !isEditingWeekly ? (
+                  <div className="w-full px-3 py-2 bg-yellow-50 border border-yellow-300 rounded-lg text-sm text-yellow-700">
+                    No hay semanas disponibles. Ya se han registrado datos para todas las semanas.
+                  </div>
+                ) : (
+                  <select
+                    value={weekNumber}
+                    onChange={(e) => setWeekNumber(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    disabled={isEditingWeekly}
+                  >
+                    <option value="">Selecciona una semana</option>
+                    {getWeekOptions().map(week => (
+                      <option key={week.value} value={week.value}>{week.label}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Series</label>
+                <div className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-600">
+                  {weekSeries} serie{weekSeries > 1 ? 's' : ''} (del ejercicio)
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Peso por serie (kg)</label>
+                {Array.from({ length: weekSeries }, (_, index) => (
+                  <div key={index} className="mb-2">
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={seriesWeights[index] || ""}
+                      onChange={(e) => handleSeriesWeightChange(index, e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder={`Serie ${index + 1} - Ej: 80.5`}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notas generales</label>
+                <textarea
+                  value={weekNotes}
+                  onChange={(e) => setWeekNotes(e.target.value)}
+                  rows="3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                  placeholder="Observaciones, sensaciones, etc."
+                />
               </div>
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Peso por serie (kg)</label>
-              {Array.from({ length: weekSeries }, (_, index) => (
-                <div key={index} className="mb-2">
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={seriesWeights[index] || ""}
-                    onChange={(e) => handleSeriesWeightChange(index, e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder={`Serie ${index + 1} - Ej: 80.5`}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Notas generales</label>
-              <textarea
-                value={weekNotes}
-                onChange={(e) => setWeekNotes(e.target.value)}
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
-                placeholder="Observaciones, sensaciones, etc."
-              />
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleSaveWeekly}
-                disabled={!isEditingWeekly && getWeekOptions().length === 0}
-                className={`flex-1 py-3 px-4 rounded-lg transition-colors text-sm font-medium ${
-                  !isEditingWeekly && getWeekOptions().length === 0
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-              >{isEditingWeekly ? 'Actualizar' : 'Guardar'}</button>
-              <button
-                onClick={handleCloseWeeklyModal}
-                className="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-400 transition-colors text-sm font-medium"
-              >Cancelar</button>
+            
+            {/* Footer fijo con botones */}
+            <div className="p-6 border-t border-gray-200 flex-shrink-0">
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSaveWeekly}
+                  disabled={!isEditingWeekly && getWeekOptions().length === 0}
+                  className={`flex-1 py-3 px-4 rounded-lg transition-colors text-sm font-medium ${
+                    !isEditingWeekly && getWeekOptions().length === 0
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >{isEditingWeekly ? 'Actualizar' : 'Guardar'}</button>
+                <button
+                  onClick={handleCloseWeeklyModal}
+                  className="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-400 transition-colors text-sm font-medium"
+                >Cancelar</button>
+              </div>
             </div>
           </div>
         </div>

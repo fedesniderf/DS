@@ -1,6 +1,6 @@
 {
   "name": "ds-training-management",
-  "version": "3.0.0",
+  "version": "3.0.3",
   "description": "Sistema de gestión de entrenamiento con menú de configuración completo",
   "private": true,
   "scripts": {
@@ -12,7 +12,7 @@
     "eject": "react-scripts eject",
     "version:info": "node scripts/version-manager.js --info",
     "version:patch": "node scripts/version-manager.js patch",
-    "version:minor": "node scripts/version-manager.js minor", 
+    "version:minor": "node scripts/version-manager.js minor",
     "version:major": "node scripts/version-manager.js major",
     "version:help": "node scripts/version-manager.js --help"
   },
