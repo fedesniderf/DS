@@ -232,138 +232,160 @@ const RoutineDetail = ({
       </div>
       {/* Modal para agregar seguimiento semanal */}
       {showWeeklyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl mx-4">
-            <h3 className="text-xl font-bold mb-6">Agregar seguimiento semanal</h3>
-            <select
-              className="w-full border rounded px-4 py-3 mb-6 text-lg"
-              value={weekNumber}
-              onChange={e => setWeekNumber(e.target.value)}
-            >
-              <option value="">Selecciona la semana</option>
-              {getWeekOptions().map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <input
-              type="number"
-              className="w-full border rounded px-4 py-3 mb-6 text-lg"
-              placeholder="Peso (Kg)"
-              value={weekWeight}
-              onChange={e => setWeekWeight(e.target.value)}
-            />
-            <textarea
-              className="w-full border rounded px-4 py-3 mb-6 text-lg h-32 resize-none"
-              placeholder="Notas (máx 100 caracteres)"
-              maxLength={100}
-              value={weekNotes}
-              onChange={e => setWeekNotes(e.target.value)}
-            />
-            <div className="flex justify-end gap-3">
-              <button
-                className="px-6 py-3 bg-gray-300 rounded-lg hover:bg-gray-400 text-lg font-medium"
-                onClick={handleCloseWeeklyModal}
-              >Cancelar</button>
-              <button
-                className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-lg font-medium"
-                onClick={handleSaveWeekly}
-                disabled={!weekNumber}
-              >Guardar</button>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 overflow-y-auto p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl my-4 max-h-[90vh] flex flex-col">
+            {/* Header fijo */}
+            <div className="p-6 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-xl font-bold">Agregar seguimiento semanal</h3>
+            </div>
+            
+            {/* Contenido scrollable */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <select
+                className="w-full border rounded px-4 py-3 mb-6 text-lg"
+                value={weekNumber}
+                onChange={e => setWeekNumber(e.target.value)}
+              >
+                <option value="">Selecciona la semana</option>
+                {getWeekOptions().map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                className="w-full border rounded px-4 py-3 mb-6 text-lg"
+                placeholder="Peso (Kg)"
+                value={weekWeight}
+                onChange={e => setWeekWeight(e.target.value)}
+              />
+              <textarea
+                className="w-full border rounded px-4 py-3 mb-6 text-lg h-32 resize-none"
+                placeholder="Notas (máx 100 caracteres)"
+                maxLength={100}
+                value={weekNotes}
+                onChange={e => setWeekNotes(e.target.value)}
+              />
+            </div>
+            
+            {/* Footer fijo con botones */}
+            <div className="p-6 border-t border-gray-200 flex-shrink-0">
+              <div className="flex justify-end gap-3">
+                <button
+                  className="px-6 py-3 bg-gray-300 rounded-lg hover:bg-gray-400 text-lg font-medium"
+                  onClick={handleCloseWeeklyModal}
+                >Cancelar</button>
+                <button
+                  className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-lg font-medium"
+                  onClick={handleSaveWeekly}
+                  disabled={!weekNumber}
+                >Guardar</button>
+              </div>
             </div>
           </div>
         </div>
       )}
       {/* Modal para editar ejercicio */}
       {showExerciseModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">Editar ejercicio</h3>
-            <input
-              type="text"
-              className="w-full border rounded px-3 py-2 mb-4"
-              placeholder="Nombre del ejercicio"
-              value={exerciseName}
-              onChange={e => setExerciseName(e.target.value)}
-            />
-            <select
-              className="w-full border rounded px-3 py-2 mb-2"
-              value={exerciseDay}
-              onChange={e => setExerciseDay(e.target.value)}
-            >
-              {dayOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <input
-              type="number"
-              className="w-full border rounded px-3 py-2 mb-2"
-              placeholder="Series"
-              value={exerciseSets}
-              onChange={e => setExerciseSets(e.target.value)}
-            />
-            <input
-              type="number"
-              className="w-full border rounded px-3 py-2 mb-2"
-              placeholder="Repeticiones"
-              value={exerciseReps}
-              onChange={e => setExerciseReps(e.target.value)}
-            />
-            <input
-              type="number"
-              className="w-full border rounded px-3 py-2 mb-2"
-              placeholder="Peso (Kg)"
-              value={exerciseWeight}
-              onChange={e => setExerciseWeight(e.target.value)}
-            />
-            <input
-              type="number"
-              className="w-full border rounded px-3 py-2 mb-2"
-              placeholder="Tiempo (segundos)"
-              value={exerciseTime}
-              onChange={e => setExerciseTime(e.target.value)}
-            />
-            <input
-              type="number"
-              className="w-full border rounded px-3 py-2 mb-4"
-              placeholder="Descanso (segundos)"
-              value={exerciseRest}
-              onChange={e => setExerciseRest(e.target.value)}
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                onClick={() => {
-                  setShowExerciseModal(false);
-                  setEditExercise(null);
-                }}
-              >Cancelar</button>
-              <button
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                onClick={() => {
-                  // Guardar cambios (puedes personalizar la lógica)
-                  if (routine.id) {
-                    onUpdateRoutine({
-                      id: routine.id,
-                      action: 'editExercise',
-                      data: {
-                        ...editExercise,
-                        name: exerciseName,
-                        sets: exerciseSets,
-                        reps: exerciseReps,
-                        weight: exerciseWeight,
-                        time: exerciseTime,
-                        rest: exerciseRest,
-                        day: exerciseDay,
-                      }
-                    });
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 overflow-y-auto p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md my-4 max-h-[90vh] flex flex-col">
+            {/* Header fijo */}
+            <div className="p-6 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-lg font-bold">Editar ejercicio</h3>
+            </div>
+            
+            {/* Contenido scrollable */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <input
+                type="text"
+                className="w-full border rounded px-3 py-2 mb-4"
+                placeholder="Nombre del ejercicio"
+                value={exerciseName}
+                onChange={e => setExerciseName(e.target.value)}
+              />
+              <select
+                className="w-full border rounded px-3 py-2 mb-2"
+                value={exerciseDay}
+                onChange={e => setExerciseDay(e.target.value)}
+              >
+                {dayOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                className="w-full border rounded px-3 py-2 mb-2"
+                placeholder="Series"
+                value={exerciseSets}
+                onChange={e => setExerciseSets(e.target.value)}
+              />
+              <input
+                type="number"
+                className="w-full border rounded px-3 py-2 mb-2"
+                placeholder="Repeticiones"
+                value={exerciseReps}
+                onChange={e => setExerciseReps(e.target.value)}
+              />
+              <input
+                type="number"
+                className="w-full border rounded px-3 py-2 mb-2"
+                placeholder="Peso (Kg)"
+                value={exerciseWeight}
+                onChange={e => setExerciseWeight(e.target.value)}
+              />
+              <input
+                type="number"
+                className="w-full border rounded px-3 py-2 mb-2"
+                placeholder="Tiempo (segundos)"
+                value={exerciseTime}
+                onChange={e => setExerciseTime(e.target.value)}
+              />
+              <input
+                type="number"
+                className="w-full border rounded px-3 py-2 mb-4"
+                placeholder="Descanso (segundos)"
+                value={exerciseRest}
+                onChange={e => setExerciseRest(e.target.value)}
+              />
+            </div>
+            
+            {/* Footer fijo con botones */}
+            <div className="p-6 border-t border-gray-200 flex-shrink-0">
+              <div className="flex justify-end gap-2">
+                <button
+                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                  onClick={() => {
                     setShowExerciseModal(false);
                     setEditExercise(null);
-                  } else {
-                    alert('No se encontró el ID de la rutina.');
-                  }
-                }}
-                disabled={!exerciseName.trim()}
-              >Guardar</button>
+                  }}
+                >Cancelar</button>
+                <button
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  onClick={() => {
+                    // Guardar cambios (puedes personalizar la lógica)
+                    if (routine.id) {
+                      onUpdateRoutine({
+                        id: routine.id,
+                        action: 'editExercise',
+                        data: {
+                          ...editExercise,
+                          name: exerciseName,
+                          sets: exerciseSets,
+                          reps: exerciseReps,
+                          weight: exerciseWeight,
+                          time: exerciseTime,
+                          rest: exerciseRest,
+                          day: exerciseDay,
+                        }
+                      });
+                      setShowExerciseModal(false);
+                      setEditExercise(null);
+                    } else {
+                      alert('No se encontró el ID de la rutina.');
+                    }
+                  }}
+                  disabled={!exerciseName.trim()}
+                >Guardar</button>
+              </div>
             </div>
           </div>
         </div>

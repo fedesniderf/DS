@@ -70,16 +70,36 @@ function showVersionInfo() {
 
   console.log('\n=== DS Training Management System ===');
   console.log(`Versión actual: ${packageJson.version}`);
-  console.log(`Nombre: ${versionJson.current.name}`);
-  console.log(`Fecha de release: ${versionJson.current.release_date}`);
-  console.log(`Estabilidad: ${versionJson.current.stability}`);
-  console.log('\nFeatures activos:');
+  console.log(`Nombre: ${versionJson.name || 'DS Training Management System'}`);
+  console.log(`Descripción: ${versionJson.description || 'Sistema de gestión de entrenamiento'}`);
+  console.log(`Fecha de release: ${versionJson.release_date || 'No especificada'}`);
+  console.log(`Autor: ${versionJson.author || 'fedesniderf'}`);
+  console.log(`Repositorio: ${versionJson.repository || 'DS'}`);
   
-  Object.entries(versionJson.features).forEach(([feature, info]) => {
-    if (info.enabled) {
-      console.log(`  - ${feature}: v${info.version}`);
+  // Mostrar información del changelog actual
+  const currentChangelog = versionJson.changelog && versionJson.changelog[packageJson.version];
+  if (currentChangelog) {
+    console.log('\n🚀 Características de esta versión:');
+    if (currentChangelog.features) {
+      currentChangelog.features.forEach(feature => {
+        console.log(`  ✅ ${feature}`);
+      });
     }
-  });
+    
+    if (currentChangelog.components && currentChangelog.components.new) {
+      console.log('\n📦 Componentes nuevos:');
+      currentChangelog.components.new.forEach(component => {
+        console.log(`  + ${component}`);
+      });
+    }
+  }
+  
+  // Mostrar dependencias
+  if (versionJson.requirements) {
+    console.log('\n⚙️ Requisitos:');
+    console.log(`  Node.js: ${versionJson.requirements.node || '>=16.0.0'}`);
+    console.log(`  React: ${versionJson.requirements.react || '>=18.0.0'}`);
+  }
   
   console.log('\n');
 }
@@ -99,22 +119,24 @@ function updateVersion(newVersion, versionType, releaseName) {
   const versionJson = readJsonFile(VERSION_JSON_PATH);
   if (!versionJson) return false;
   
-  // Mover versión actual al historial
-  versionJson.history = versionJson.history || [];
-  versionJson.history.unshift({
-    version: versionJson.current.version,
-    name: versionJson.current.name,
-    release_date: versionJson.current.release_date,
-    stability: versionJson.current.stability
-  });
+  // Crear entrada en el changelog si no existe
+  if (!versionJson.changelog) {
+    versionJson.changelog = {};
+  }
   
-  // Actualizar versión actual
-  versionJson.current = {
-    version: newVersion,
-    name: releaseName || `Version ${newVersion}`,
-    release_date: getCurrentDate(),
-    stability: versionType === 'major' ? 'beta' : 'stable'
+  // Agregar nueva versión al changelog
+  versionJson.changelog[newVersion] = {
+    date: getCurrentDate(),
+    description: releaseName || `Versión ${newVersion}`,
+    type: versionType,
+    features: [],
+    fixes: [],
+    technical_changes: []
   };
+  
+  // Actualizar información principal
+  versionJson.version = newVersion;
+  versionJson.release_date = getCurrentDate();
   
   if (!writeJsonFile(VERSION_JSON_PATH, versionJson)) return false;
   
