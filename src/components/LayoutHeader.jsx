@@ -1,7 +1,11 @@
 import React from 'react';
 import SettingsMenu from './SettingsMenu';
+import SocialButtonSimple from './SocialButtonSimple';
 
-const LayoutHeader = ({ title, onBackClick, showBackButton, onLogout }) => {
+const LayoutHeader = ({ title, onBackClick, showBackButton, onLogout, currentUser }) => {
+  // Debug temporal
+  console.log('LayoutHeader - currentUser:', currentUser);
+  
   return (
     <header className="bg-white shadow-md p-4 flex items-center justify-between sticky top-0 z-10">
       {showBackButton ? (
@@ -14,12 +18,32 @@ const LayoutHeader = ({ title, onBackClick, showBackButton, onLogout }) => {
         <div className="w-6 h-6"></div> // Placeholder para mantener el espacio
       )}
       <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+      
+      {/* TEXTO DEBUG VISIBLE */}
+      <div className="bg-red-500 text-white px-4 py-2 font-bold">
+        DEBUG: HEADER FUNCIONANDO
+      </div>
+      
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Menú de configuración - NUEVO */}
-        <SettingsMenu onLogout={onLogout} />
+        {/* BOTÓN MEGA VISIBLE */}
+        <div className="bg-yellow-400 text-black px-4 py-2 font-bold border-2 border-black">
+          BOTÓN SOCIAL AQUÍ
+        </div>
         
-        {/* Botón de prueba para debug */}
-        <button className="p-2 bg-red-500 text-white rounded">TEST</button>
+        {/* BOTÓN SOCIAL - DIRECTO EN HEADER */}
+        <button
+          onClick={() => alert('¡Red Social DS funcionando!')}
+          className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm font-medium"
+          title="Red Social DS"
+        >
+          🌐 Social
+        </button>
+        
+        {/* Red Social - Test Simple */}
+        <SocialButtonSimple currentUser={currentUser || { id: 'test', name: 'Test User' }} />
+        
+        {/* Menú de configuración */}
+        <SettingsMenu onLogout={onLogout} currentUser={currentUser} />
         
         {/* Logo */}
         <img src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc03OCANFku0HlIPwSxAEOXk6nTjd9beaNftrh5" alt="Nuevo Logo" className="h-8 w-auto sm:h-10" />

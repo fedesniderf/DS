@@ -1,0 +1,63 @@
+{
+  "version": "3.0.0",
+  "name": "DS Training Management System",
+  "description": "Sistema de gestión de entrenamiento con menú de configuración completo",
+  "release_date": "2025-08-08",
+  "changelog": {
+    "3.0.0": {
+      "date": "2025-08-08",
+      "description": "Implementación completa del menú de configuración con foto de usuario",
+      "features": [
+        "Nuevo componente SettingsMenu completo con todas las funcionalidades",
+        "Botón de configuración reemplazado por foto miniatura del usuario",
+        "Sistema de Wake Lock avanzado con hook personalizado useEnhancedWakeLock",
+        "Modales completos para gestión de perfil (cambiar contraseña, foto, editar perfil)",
+        "Panel de información de seguridad y usuarios bloqueados (admin)",
+        "Diseño responsive optimizado para móvil y desktop",
+        "Integración completa con Supabase para todas las funcionalidades",
+        "Sistema de cierre automático de menús y navegación por teclado"
+      ],
+      "fixes": [
+        "Resuelto error 'Element type is invalid' del SimpleSettingsMenu anterior",
+        "Corregidos problemas de import/export de componentes",
+        "Optimizada estructura de componentes para mejor mantenimiento"
+      ],
+      "technical_changes": [
+        "Migrado de SimpleSettingsMenu a SettingsMenu con arquitectura mejorada",
+        "Implementado hook useEnhancedWakeLock para gestión avanzada de pantalla",
+        "Agregados componentes modulares: ChangePasswordModal, SecurityInfoModal, BlockedUsersPanel, PhotoUpdateModal, EditUserModal",
+        "Mejorado LayoutHeader con integración limpia del nuevo SettingsMenu",
+        "Implementado sistema de estados y persistencia en localStorage"
+      ],
+      "components": {
+        "new": [
+          "SettingsMenu.js - Menú principal de configuración",
+          "useEnhancedWakeLock.js - Hook para gestión de Wake Lock",
+          "ChangePasswordModal.jsx - Modal de cambio de contraseña",
+          "SecurityInfoModal.jsx - Modal de información de seguridad",
+          "BlockedUsersPanel.jsx - Panel de usuarios bloqueados",
+          "PhotoUpdateModal.jsx - Modal de actualización de foto",
+          "EditUserModal.jsx - Modal de edición de perfil"
+        ],
+        "modified": [
+          "LayoutHeader.js - Integración con SettingsMenu y eliminación de avatar duplicado"
+        ],
+        "deprecated": [
+          "SimpleSettingsMenu.js - Reemplazado por SettingsMenu"
+        ]
+      }
+    }
+  },
+  "requirements": {
+    "node": ">=16.0.0",
+    "react": ">=18.0.0",
+    "dependencies": [
+      "@supabase/supabase-js",
+      "tailwindcss",
+      "react-router-dom"
+    ]
+  },
+  "author": "fedesniderf",
+  "repository": "DS",
+  "license": "Private"
+}

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import NotificationCenter from './NotificationCenter';
 import SettingsMenu from './SettingsMenu';
+import SocialFeed from './SocialFeed.jsx';
 
 const LayoutHeader = ({ 
   title, 
@@ -15,13 +16,23 @@ const LayoutHeader = ({
   onChangePassword, // Nueva prop para cambiar contraseña
   onUserUpdate // Nueva prop para actualizar usuario
 }) => {
-  console.log('🎯 LayoutHeader - Props recibidos:', {
-    userId, 
-    currentUser,
-    showNotifications,
-    isAdmin,
-    'userId existe': !!userId,
+  const [showSocialFeed, setShowSocialFeed] = useState(false);
+
+  // Debug para verificar client_id del usuario
+  React.useEffect(() => {
+    if (currentUser) {
+      console.log('🔍 LayoutHeader - Debug usuario actual:', {
+        email: currentUser.email,
+        client_id: currentUser.client_id,
+        id: currentUser.id,
+        'Mostrar Social': currentUser.client_id === '8cb68a35-4f55-4636-a0fa-c146f2ac592f'
+      });
+    }
+  }, [currentUser]);
+
+  console.log('🔍 LayoutHeader Debug:', {
     'currentUser existe': !!currentUser,
+    'currentUser.client_id': currentUser?.client_id,
     'showNotifications && (userId || currentUser)': showNotifications && (userId || currentUser)
   });
   
@@ -41,6 +52,17 @@ const LayoutHeader = ({
       </div>
       
       <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+        {/* BOTÓN SOCIAL DS - Solo para usuario específico */}
+        {currentUser && currentUser.client_id === '8cb68a35-4f55-4636-a0fa-c146f2ac592f' && (
+          <button
+            onClick={() => setShowSocialFeed(true)}
+            className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm font-medium"
+            title="Red Social DS"
+          >
+            🌐 Social
+          </button>
+        )}
+        
         {/* Sistema de notificaciones */}
         {showNotifications && (userId || currentUser) && (
           <NotificationCenter 
@@ -49,39 +71,26 @@ const LayoutHeader = ({
           />
         )}
         
-        {/* Menú de configuración */}
-        <SettingsMenu 
-          onLogout={onLogout} 
-          currentUser={currentUser} 
-          onChangePassword={onChangePassword}
-          onUserUpdate={onUserUpdate}
-        />
+        {/* Menú de configuración - ELIMINADO, ahora está integrado en el avatar */}
         
-        {/* Foto de perfil del usuario */}
-        {currentUser && currentUser.profilePhoto && (
-          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300 flex-shrink-0">
-            <img 
-              src={currentUser.profilePhoto} 
-              alt="Foto de perfil" 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextElementSibling.style.display = 'flex';
-              }}
-            />
-            <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-semibold hidden">
-              {currentUser.fullName ? currentUser.fullName.charAt(0).toUpperCase() : '?'}
-            </div>
-          </div>
-        )}
-        
-        {/* Avatar con iniciales si no hay foto */}
-        {currentUser && !currentUser.profilePhoto && (
-          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-            {currentUser.fullName ? currentUser.fullName.charAt(0).toUpperCase() : currentUser.email ? currentUser.email.charAt(0).toUpperCase() : '?'}
-          </div>
+        {/* Menú de configuración - Componente independiente */}
+        {currentUser && (
+          <SettingsMenu 
+            onLogout={onLogout} 
+            currentUser={currentUser} 
+            onChangePassword={onChangePassword}
+            onUserUpdate={onUserUpdate}
+          />
         )}
       </div>
+      
+      {/* Modal de Red Social */}
+      {showSocialFeed && (
+        <SocialFeed 
+          currentUser={currentUser}
+          onClose={() => setShowSocialFeed(false)}
+        />
+      )}
     </header>
   );
 };

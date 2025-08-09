@@ -8,7 +8,7 @@ import RoutineTemplatesScreen from './components/RoutineTemplatesScreen';
 import { NotificationService } from './services/NotificationService';
 import { NotificationProvider } from './hooks/useNotifications';
 import { useInactivityTimeout } from './hooks/useInactivityTimeout';
-import { LoginSecurityService } from './services/LoginSecurityService';
+import { LoginSecurityService } from './services/LoginSecurityServiceSimple';
 
 const ClientRoutineList = lazy(() => import('./components/ClientRoutineList'));
 const RoutineDetail = lazy(() => import('./components/RoutineDetail'));

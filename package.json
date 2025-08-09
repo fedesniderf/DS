@@ -1,11 +1,20 @@
 {
+  "name": "ds-training-management",
+  "version": "3.0.0",
+  "description": "Sistema de gestión de entrenamiento con menú de configuración completo",
+  "private": true,
   "scripts": {
     "start": "react-scripts start",
     "start:email": "node email-server.js",
     "start:all": "start \"Email Server\" cmd /c \"npm run start:email\" && npm start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "version:info": "node scripts/version-manager.js --info",
+    "version:patch": "node scripts/version-manager.js patch",
+    "version:minor": "node scripts/version-manager.js minor", 
+    "version:major": "node scripts/version-manager.js major",
+    "version:help": "node scripts/version-manager.js --help"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.51.0",
