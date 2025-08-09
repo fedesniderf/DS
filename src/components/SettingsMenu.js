@@ -146,25 +146,17 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate })
 
   return (
     <div className="relative" ref={menuRef}>
-      {/* Botón de configuración */}
+      {/* Botón con foto del usuario */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 sm:p-3 rounded-full transition-colors duration-200 text-gray-600 hover:text-gray-800 hover:bg-gray-100 border-2 border-red-500"
+        className="flex-shrink-0 border-2 border-gray-300 hover:border-blue-500 transition-colors rounded-full p-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         title="Configuración"
       >
-        <svg 
-          className="w-5 h-5 sm:w-6 sm:h-6" 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-          strokeWidth="2"
-        >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m0 6h9.75m-9.75 0a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0m-3.75 0H3.75m0 6h9.75M10.5 18a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0m-3.75 0H7.5" 
-          />
-        </svg>
+        <img
+          src={currentUser?.profile_image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.first_name || currentUser?.email || 'Usuario')}&background=3b82f6&color=fff&size=200`}
+          alt={`${currentUser?.first_name || 'Usuario'}`}
+          className="w-10 h-10 rounded-full object-cover"
+        />
       </button>
 
       {/* Menú desplegable responsivo */}

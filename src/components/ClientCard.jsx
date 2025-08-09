@@ -1,33 +1,28 @@
 import React from 'react';
+import { useProfileImageModal } from '../hooks/useProfileImageModal';
+import ClickableAvatar from './ClickableAvatar';
+import ProfileImageModal from './ProfileImageModal';
 
 const ClientCard = ({ client, onClick, onDeleteClient }) => {
+  // Hook para el modal de imagen de perfil
+  const { showProfileImageModal, selectedProfileImage, handleProfileImageClick, closeModal } = useProfileImageModal();
+
   return (
-    <div
-      className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative"
-    >
-      {/* Foto de perfil y datos del cliente */}
-      <div className="flex items-center mb-4">
-        {/* Foto de perfil */}
-        {client.profilePhoto ? (
-          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300 flex-shrink-0 mr-3">
-            <img 
-              src={client.profilePhoto} 
-              alt="Foto de perfil" 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextElementSibling.style.display = 'flex';
-              }}
+    <>
+      <div
+        className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1 relative"
+      >
+        {/* Foto de perfil y datos del cliente */}
+        <div className="flex items-center mb-4">
+          {/* Avatar con modal - MEJORADO */}
+          <div onClick={(e) => e.stopPropagation()}>
+            <ClickableAvatar 
+              user={client}
+              size="lg"
+              onProfileImageClick={handleProfileImageClick}
+              className="flex-shrink-0 mr-3 border-2 border-gray-300"
             />
-            <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-semibold hidden">
-              {client.name ? client.name.charAt(0).toUpperCase() : '?'}
-            </div>
           </div>
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 mr-3">
-            {client.name ? client.name.charAt(0).toUpperCase() : client.email ? client.email.charAt(0).toUpperCase() : '?'}
-          </div>
-        )}
         
         {/* Información del cliente */}
         <div className="flex-1">
@@ -62,6 +57,15 @@ const ClientCard = ({ client, onClick, onDeleteClient }) => {
       </div>
       <div className="absolute inset-0" onClick={() => onClick(client)}></div> {/* Overlay para el click del card */}
     </div>
+
+    {/* Modal de Imagen de Perfil */}
+    {showProfileImageModal && selectedProfileImage && (
+      <ProfileImageModal 
+        imageData={selectedProfileImage}
+        onClose={closeModal} 
+      />
+    )}
+  </>
   );
 };
 

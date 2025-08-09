@@ -465,6 +465,7 @@ const App = () => {
         onBackClick={handleBack}
         showBackButton={currentPage !== 'adminClientDashboard' && currentPage !== 'clientDashboard' && currentPage !== 'auth' && currentPage !== 'register'}
         onLogout={handleLogout}
+        currentUser={currentUser}
       />
 
       <main className="p-6 max-w-4xl mx-auto">

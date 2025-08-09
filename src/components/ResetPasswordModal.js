@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LoginSecurityService } from '../services/LoginSecurityService';
+import { LoginSecurityService } from '../services/LoginSecurityServiceSimple';
 
 const roles = ['admin', 'client', 'coach'];
 const ResetPasswordModal = ({ user, onResetPassword, onClose }) => {

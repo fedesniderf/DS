@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
+import { useProfileImageModal } from '../hooks/useProfileImageModal';
+import ClickableAvatar from './ClickableAvatar';
+import ProfileImageModal from './ProfileImageModal';
 import ResetPasswordModal from './ResetPasswordModal';
 
 const roles = ['admin', 'client', 'coach']; // Agrega los roles que necesites
 
-const UserManagementScreen = ({ users, onDeleteUser, onResetPassword, onRoleChange }) => {
-  const [showResetModal, setShowResetModal] = useState(false);
+const UserManagementScreen = ({ users, onDeleteUser, onResetPassword, onRoleChange, onViewProfile, isAdmin = false, onBack = null }) => {
+  const [showDropdown, setShowDropdown] = useState(null);
+  
+  // Hook para el modal de imagen de perfil
+  const { showProfileImageModal, selectedProfileImage, handleProfileImageClick, closeModal } = useProfileImageModal();
   const [userToReset, setUserToReset] = useState(null);
 
   const handleResetClick = (user) => {
@@ -35,27 +41,13 @@ const UserManagementScreen = ({ users, onDeleteUser, onResetPassword, onRoleChan
                 <tr key={user.client_id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      {/* Foto de perfil */}
-                      {user.profilePhoto ? (
-                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300 flex-shrink-0 mr-3">
-                          <img 
-                            src={user.profilePhoto} 
-                            alt="Foto de perfil" 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextElementSibling.style.display = 'flex';
-                            }}
-                          />
-                          <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-semibold hidden">
-                            {(user.fullName || user.name) ? (user.fullName || user.name).charAt(0).toUpperCase() : '?'}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 mr-3">
-                          {(user.fullName || user.name) ? (user.fullName || user.name).charAt(0).toUpperCase() : user.email ? user.email.charAt(0).toUpperCase() : '?'}
-                        </div>
-                      )}
+                      {/* Avatar con modal - MEJORADO */}
+                      <ClickableAvatar 
+                        user={user}
+                        size="md"
+                        onProfileImageClick={handleProfileImageClick}
+                        className="flex-shrink-0 mr-3 border-2 border-gray-300"
+                      />
                       <div className="text-sm font-medium text-gray-900">{user.fullName || user.name}</div>
                     </div>
                   </td>
@@ -137,6 +129,14 @@ const UserManagementScreen = ({ users, onDeleteUser, onResetPassword, onRoleChan
           </div>
         </div>
       </div>
+
+      {/* Modal de Imagen de Perfil */}
+      {showProfileImageModal && selectedProfileImage && (
+        <ProfileImageModal 
+          imageData={selectedProfileImage}
+          onClose={closeModal} 
+        />
+      )}
     </div>
   );
 };

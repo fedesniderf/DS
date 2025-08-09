@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { generateUniqueId } from '../utils/helpers';
+import { useProfileImageModal } from '../hooks/useProfileImageModal';
+import ClickableAvatar from './ClickableAvatar';
+import ProfileImageModal from './ProfileImageModal';
 
 const ClientRoutineList = ({
   client,
@@ -22,6 +25,9 @@ const ClientRoutineList = ({
   // Estado para edición de usuario (debe estar antes del return)
   const [showEditUser, setShowEditUser] = useState(false);
   const [editFullName, setEditFullName] = useState(client?.full_name || client?.fullName || client?.name || '');
+  
+  // Hook para el modal de imagen de perfil
+  const { showProfileImageModal, selectedProfileImage, handleProfileImageClick, closeModal } = useProfileImageModal();
   const [editEmail, setEditEmail] = useState(client?.email || '');
   const [editPhone, setEditPhone] = useState(client?.phone || '');
   const [editAge, setEditAge] = useState(client?.age || '');
@@ -192,27 +198,13 @@ const ClientRoutineList = ({
         <div className="mb-8 p-4 rounded-xl bg-gray-100 border border-gray-200 relative">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-3">
-              {/* Foto de perfil del usuario */}
-              {client.profilePhoto ? (
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300 flex-shrink-0">
-                  <img 
-                    src={client.profilePhoto} 
-                    alt="Foto de perfil" 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextElementSibling.style.display = 'flex';
-                    }}
-                  />
-                  <div className="w-full h-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-semibold hidden">
-                    {client.full_name ? client.full_name.charAt(0).toUpperCase() : '?'}
-                  </div>
-                </div>
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                  {client.full_name ? client.full_name.charAt(0).toUpperCase() : client.email ? client.email.charAt(0).toUpperCase() : '?'}
-                </div>
-              )}
+              {/* Avatar con modal - MEJORADO */}
+              <ClickableAvatar 
+                user={client}
+                size="lg"
+                onProfileImageClick={handleProfileImageClick}
+                className="flex-shrink-0 border-2 border-gray-300"
+              />
               <h2 className="text-xl font-bold text-gray-800">{client.full_name || client.fullName || client.name || client.email}</h2>
             </div>
             {/* Botón editar solo visible para admin */}
@@ -622,6 +614,14 @@ const ClientRoutineList = ({
           </a>
         </div>
       </div>
+
+      {/* Modal de Imagen de Perfil */}
+      {showProfileImageModal && selectedProfileImage && (
+        <ProfileImageModal 
+          imageData={selectedProfileImage}
+          onClose={closeModal} 
+        />
+      )}
     </div>
   );
 };

@@ -1,13 +1,220 @@
-# Changelog
+# Changelog - DS Training Management System
 
-Todos los cambios notables de este proyecto serán documentados en este archivo.
+Todas las modificaciones importantes de este proyecto se documentarán en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
-y este proyecto adhiere al [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
-## [Sin versionar] - 2025-08-05
+## [3.0.0] - 2025-08-08
+
+### ⭐ Características Principales
+- **Sistema de configuración completo**: Implementación del `SettingsMenu` con todas las funcionalidades
+- **Activación por foto de usuario**: Reemplazo del ícono de configuración por la foto del usuario como activador
+- **Gestión de versiones**: Sistema completo de versionado automático con scripts de gestión
+- **Configuración de desarrollo**: Utilidades avanzadas para debugging y testing
+
+### ✅ Agregado
+- `SettingsMenu.js` - Menú completo de configuración del usuario
+- `ChangePasswordModal.js` - Modal para cambio de contraseña
+- `SecurityInfoModal.js` - Panel de información de seguridad
+- `BlockedUsersPanel.js` - Gestión de usuarios bloqueados
+- `PhotoUpdateModal.js` - Modal para actualización de foto de perfil
+- `EditUserModal.js` - Modal de edición de perfil de usuario
+- `useEnhancedWakeLock.js` - Hook avanzado para Wake Lock con control de brillo
+- `version.js` - Configuración centralizada de versiones
+- `development.js` - Utilidades de desarrollo y debugging
+- `version-manager.js` - Script automatizado de gestión de versiones
+- Scripts npm para gestión de versiones (`npm run version:patch`, etc.)
+
+### 🔄 Modificado
+- `LayoutHeader.js` - Integración limpia con `SettingsMenu`, eliminación de lógica duplicada de avatar
+- `package.json` - Actualización a versión 3.0.0 y agregado de scripts de versioning
+- Estructura de imports/exports mejorada para evitar errores de tipo "Element type is invalid"
+
+### 🗑️ Eliminado
+- `SimpleSettingsMenu.js` - Reemplazado por `SettingsMenu` completo (archivo respaldado como .backup)
+- Lógica duplicada de botón de avatar en `LayoutHeader.js`
+- Imports/exports problemáticos que causaban errores de runtime
+
+### 🐛 Corregido
+- **Errores de runtime**: Resolución completa de "Element type is invalid" 
+- **Problemas de imports**: Limpieza de la estructura de importación de componentes
+- **Corrupción de archivos**: Prevención mediante sistema de respaldos
+- **Inconsistencias de UI**: Estandarización del trigger de configuración
+
+### 🔧 Técnico
+- **Arquitectura**: Migración a componentes modulares con mejor separación de responsabilidades
+- **Estado**: Gestión mejorada del estado de modales y configuraciones
+- **Rendimiento**: Optimización de renders y gestión de memoria
+- **Debugging**: Sistema completo de logs y utilidades de desarrollo
+- **Versionado**: Implementación de semantic versioning con automatización
+
+### 📚 Documentación
+- `README.md` - Documentación completa del proyecto
+- `version.json` - Changelog detallado con metadatos técnicos
+- Comentarios de código mejorados en todos los componentes
+- Guías de instalación y desarrollo
+
+### 🔐 Seguridad
+- Validación mejorada en modales de cambio de contraseña
+- Panel de información de seguridad para usuarios
+- Gestión segura de archivos de foto de perfil
+
+---
+
+## [2.1.0] - 2025-08-05
 
 ### ✨ Agregado
+- **Panel de Administrador Rediseñado**: Dashboard profesional completo con diseño moderno
+  - Fondo gradiente elegante (gris a azul suave)
+  - Header mejorado con título y descripción
+  - Iconos SVG profesionales en todas las secciones
+  - Animaciones suaves y efectos hover
+  - Diseño responsive (mobile-first)
+
+- **Estadísticas en Tiempo Real**: Métricas dinámicas en el panel de administrador
+  - **Clientes Activos**: Count automático de usuarios con role 'client'
+  - **Rutinas Activas**: Count de rutinas vigentes (endDate >= fecha actual)
+  - **Templates**: Count total de plantillas en rutinas_templates
+  - Loading states con animación de pulso
+  - Error handling independiente por consulta
+
+### 🔧 Cambiado
+- **Tabla de Clientes** (`UserManagementScreen.js`):
+  - Eliminada columna "Email" para simplificar la vista
+  - Centrados los títulos "Usuario" y "Acciones" 
+  - Centrado el contenido de la columna "Acciones"
+  - Resultado: Tabla más limpia con solo 2 columnas
+
+### 🐛 Corregido
+- **Bug Crítico en Rutinas Activas**: 
+  - **Problema**: La métrica mostraba 0 cuando había rutinas vigentes
+  - **Causa**: Query usaba `end_date` en lugar de `endDate` 
+  - **Solución**: Corregido nombre de columna para usar camelCase
+  - **Resultado**: Conteo correcto de rutinas activas
+
+---
+
+## [2.0.0] - 2025-08-04
+
+### 🔒 Agregado - Sistema de Seguridad Completo
+- **Cierre Automático por Inactividad**: 
+  - Sesión se cierra automáticamente después de 2 horas de inactividad
+  - Advertencia 5 minutos antes del cierre automático
+  - Detección de actividad: mouse, clics, teclado, scroll y toques
+  - Reset automático del timer con operaciones importantes
+
+- **Bloqueo por Intentos Fallidos**:
+  - Bloqueo automático después de 10 intentos fallidos
+  - Bloqueo temporal de 30 minutos
+  - Advertencias cuando quedan 3 intentos o menos
+  - Registro completo en tabla `login_attempts`
+  - Auto-desbloqueo después de 30 minutos
+
+- **Panel de Administración de Usuarios Bloqueados**:
+  - Vista completa de usuarios bloqueados para administradores
+  - Información detallada: motivo, intentos fallidos, tiempo restante
+  - Opción de desbloqueo manual para administradores
+  - Integrado en la sección "Clientes"
+
+- **Menú de Configuración**: Nuevo componente `SettingsMenu.js`
+  - Botón de configuración con icono de ajustes
+  - Menú desplegable responsive
+  - Integración completa del Wake Lock con toggle visual
+  - Opción de cerrar sesión integrada
+  - Cierre automático al hacer clic fuera del menú
+  - Estados visuales claros para cada opción
+
+- **Fotos de Perfil de Usuario**:
+  - Subida y almacenamiento de imágenes de perfil
+  - Integración con Supabase Storage
+  - Visualización en header y listas de usuarios
+  - Fallback a iniciales cuando no hay foto
+  - Auto-refresh al cambiar foto de perfil
+
+### 🎨 Agregado - Mejoras de Interfaz Móvil
+- **Iconos SVG Responsivos**: 
+  - Reemplazo completo de emojis por iconos SVG profesionales
+  - Iconos consistentes entre dispositivos
+  - Tamaños optimizados para móvil (`w-4 h-4 sm:w-5 sm:h-5`)
+  - Mejor rendimiento y legibilidad
+
+---
+
+## [1.0.0] - 2025-08-03
+
+### ⭐ Lanzamiento Inicial
+- Proyecto creado con Create React App
+- Sistema de autenticación con Supabase
+- Gestión básica de usuarios
+- Configuración de Tailwind CSS
+- Estructura básica de componentes
+
+---
+
+## Próximas Versiones
+
+### [3.1.0] - Planificado
+- **Temas personalizables**: Sistema de temas claro/oscuro
+- **Configuración de notificaciones**: Panel avanzado de preferencias
+- **Atajos de teclado**: Sistema de shortcuts personalizables
+- **Backup/Restauración**: Funcionalidad de respaldo de configuración
+
+### [3.2.0] - Planificado
+- **Dashboard Analytics**: Métricas y estadísticas avanzadas
+- **Integración de APIs**: Conectores con servicios externos
+- **Sistema de plugins**: Arquitectura extensible
+- **PWA**: Funcionalidades de Progressive Web App
+
+### [4.0.0] - Futuro
+- **Arquitectura de microservicios**: Migración a arquitectura distribuida
+- **Sistema de tiempo real**: WebSockets y actualizaciones en vivo
+- **Móvil nativo**: Aplicación móvil complementaria
+- **IA/ML**: Integración de funcionalidades de inteligencia artificial
+
+---
+
+## Convenciones de Versionado
+
+Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/):
+
+- **MAJOR** (X.y.z): Cambios incompatibles en la API
+- **MINOR** (x.Y.z): Funcionalidades agregadas de manera compatible
+- **PATCH** (x.y.Z): Correcciones de errores compatibles
+
+### Tipos de Cambios
+
+- ⭐ **Características Principales**: Funcionalidades importantes nuevas
+- ✅ **Agregado**: Nuevas funcionalidades
+- 🔄 **Modificado**: Cambios en funcionalidades existentes
+- 🗑️ **Eliminado**: Funcionalidades removidas
+- 🐛 **Corregido**: Corrección de errores
+- 🔧 **Técnico**: Cambios internos, refactoring, optimizaciones
+- 📚 **Documentación**: Cambios solo en documentación
+- 🔐 **Seguridad**: Vulnerabilidades corregidas
+
+---
+
+## Mantenimiento
+
+Para gestionar versiones:
+
+```bash
+# Información actual
+npm run version:info
+
+# Actualizar versiones
+npm run version:patch    # 3.0.0 -> 3.0.1
+npm run version:minor    # 3.0.0 -> 3.1.0
+npm run version:major    # 3.0.0 -> 4.0.0
+
+# Con nombre personalizado
+node scripts/version-manager.js minor --name "Nueva funcionalidad"
+```
+
+---
+
+Generado automáticamente por DS Training Management System v3.0.0
 - **Panel de Administrador Rediseñado**: Dashboard profesional completo con diseño moderno
   - Fondo gradiente elegante (gris a azul suave)
   - Header mejorado con título y descripción
