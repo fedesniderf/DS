@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import NotificationCenter from './NotificationCenter';
 import SettingsMenu from './SettingsMenu';
 import SocialFeed from './SocialFeed.jsx';
+import UserGuide from './UserGuide.jsx';
+import { useUserGuide } from '../hooks/useUserGuide.js';
 
 const LayoutHeader = ({ 
   title, 
@@ -17,6 +19,16 @@ const LayoutHeader = ({
   onUserUpdate // Nueva prop para actualizar usuario
 }) => {
   const [showSocialFeed, setShowSocialFeed] = useState(false);
+  
+  // Hook para la guía del usuario
+  const {
+    showGuide,
+    currentStep,
+    handleGuideComplete,
+    handleGuideSkip,
+    startGuideManually,
+    restartGuide
+  } = useUserGuide(currentUser);
 
   // Debug para verificar client_id del usuario
   React.useEffect(() => {
@@ -37,7 +49,7 @@ const LayoutHeader = ({
   });
   
   return (
-    <header className="bg-white shadow-md p-4 flex items-center justify-between sticky top-0 z-10">
+    <header className="bg-white shadow-md p-4 flex items-center justify-between sticky top-0 z-10" data-guide="navigation">
       <div className="flex items-center gap-3 flex-shrink-0">
         {showBackButton && (
           <button onClick={onBackClick} className="p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0">
@@ -76,10 +88,13 @@ const LayoutHeader = ({
         {/* Menú de configuración - Componente independiente */}
         {currentUser && (
           <SettingsMenu 
+            data-guide="user-settings"
             onLogout={onLogout} 
             currentUser={currentUser} 
             onChangePassword={onChangePassword}
             onUserUpdate={onUserUpdate}
+            onStartGuide={startGuideManually}
+            onRestartGuide={restartGuide}
           />
         )}
       </div>
@@ -91,6 +106,15 @@ const LayoutHeader = ({
           onClose={() => setShowSocialFeed(false)}
         />
       )}
+      
+      {/* Guía del Usuario */}
+      <UserGuide 
+        isVisible={showGuide}
+        onComplete={handleGuideComplete}
+        onSkip={handleGuideSkip}
+        userRole={currentUser?.role}
+        currentStep={currentStep}
+      />
     </header>
   );
 };

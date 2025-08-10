@@ -1,6 +1,7 @@
 import React from "react";
 import PFPETable from "./PFPETable";
 import { supabase } from "../supabaseClient";
+import ExerciseTimer from "./ExerciseTimer.jsx";
 
 // Utilidad para limpiar datos antiguos de dailyTracking
 function cleanOldDailyTracking(dailyTracking) {
@@ -315,11 +316,28 @@ const RoutineDetail = (props) => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     const numWeeks = Math.max(1, Math.ceil(diffDays / 7));
     
-    // Si estamos creando un nuevo registro (no editando), filtrar semanas ya utilizadas
+    // Si estamos creando un nuevo registro (no editando)
     if (!isEditingWeekly && weeklyExercise) {
       const existingWeeks = weeklyExercise.weeklyData ? Object.keys(weeklyExercise.weeklyData) : [];
-      return Array.from({ length: numWeeks }, (_, i) => ({ value: `S${i + 1}`, label: `S${i + 1}` }))
-        .filter(week => !existingWeeks.includes(week.value));
+      
+      // Si viene del cronómetro, filtrar solo semanas que NO tienen tiempos registrados
+      if (timerData) {
+        const weeksWithTimes = existingWeeks.filter(week => {
+          const weekData = weeklyExercise.weeklyData[week];
+          // Verificar si tiene tiempos registrados (formattedTotalTime, totalTime o seriesTimes)
+          return weekData && (
+            weekData.formattedTotalTime || 
+            weekData.totalTime || 
+            (weekData.seriesTimes && weekData.seriesTimes.length > 0 && weekData.seriesTimes.some(time => time && time.trim() !== ""))
+          );
+        });
+        return Array.from({ length: numWeeks }, (_, i) => ({ value: `S${i + 1}`, label: `S${i + 1}` }))
+          .filter(week => !weeksWithTimes.includes(week.value));
+      } else {
+        // Para registro manual, filtrar todas las semanas ya utilizadas
+        return Array.from({ length: numWeeks }, (_, i) => ({ value: `S${i + 1}`, label: `S${i + 1}` }))
+          .filter(week => !existingWeeks.includes(week.value));
+      }
     }
     
     return Array.from({ length: numWeeks }, (_, i) => ({ value: `S${i + 1}`, label: `S${i + 1}` }));
@@ -378,7 +396,7 @@ const RoutineDetail = (props) => {
 
   // Función para renderizar detalles del ejercicio
   const renderExerciseDetails = (ex) => (
-    <div className="grid grid-cols-2 gap-2 mb-2 text-sm text-gray-700">
+    <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
       {/* Orden fijo: Series, Dropset, Repeticiones */}
       {ex.sets && <div><span className="font-semibold">Series:</span> {ex.sets}</div>}
       {ex.dropset && <div><span className="font-semibold">Dropset:</span> {ex.dropset}</div>}
@@ -434,7 +452,9 @@ const RoutineDetail = (props) => {
   const [weekWeight, setWeekWeight] = React.useState("");
   const [weekSeries, setWeekSeries] = React.useState(1);
   const [seriesWeights, setSeriesWeights] = React.useState([""]);
+  const [seriesTimes, setSeriesTimes] = React.useState([""]);
   const [weekNotes, setWeekNotes] = React.useState("");
+  const [weekTotalTime, setWeekTotalTime] = React.useState("");
   const [isEditingWeekly, setIsEditingWeekly] = React.useState(false);
   const [editingWeeklyData, setEditingWeeklyData] = React.useState(null);
   
@@ -466,6 +486,11 @@ const RoutineDetail = (props) => {
   const [routineStartDate, setRoutineStartDate] = React.useState("");
   const [routineEndDate, setRoutineEndDate] = React.useState("");
   const [routineDescription, setRoutineDescription] = React.useState("");
+
+  // Estados para el cronómetro
+  const [showTimer, setShowTimer] = React.useState(false);
+  const [timerExercise, setTimerExercise] = React.useState(null);
+  const [timerData, setTimerData] = React.useState(null); // Datos del cronómetro
 
   // Estados para sectionOrder - Movidos fuera del bloque condicional
   const routineId = routine?.id || routine?.routine_id || routine?.client_id || 'default';
@@ -619,7 +644,7 @@ const RoutineDetail = (props) => {
     const averageWeight = allWeights.length > 0 ? (allWeights.reduce((a, b) => a + b, 0) / allWeights.length).toFixed(2) : '0.00';
     const tonelaje = allWeights.length > 0 ? allWeights.reduce((a, b) => a + b, 0).toFixed(2) : '0.00';
     return (
-      <div className="mt-2">
+      <div className="mt-1">
         <div
           className="flex items-center justify-between mb-1 cursor-pointer select-none w-full"
           onClick={() => toggleWeeklyTracking(exercise.id)}
@@ -648,6 +673,7 @@ const RoutineDetail = (props) => {
                   <th className="px-2 py-1">Semana</th>
                   <th className="px-2 py-1">Series</th>
                   <th className="px-2 py-1">Pesos (kg)</th>
+                  <th className="px-2 py-1">Tiempo</th>
                   <th className="px-2 py-1">Acciones</th>
                 </tr>
               </thead>
@@ -664,6 +690,13 @@ const RoutineDetail = (props) => {
                       <td className="px-2 py-1 text-center">{week}</td>
                       <td className="px-2 py-1 text-center">{seriesCount}</td>
                       <td className="px-2 py-1 text-center">{displayWeights}</td>
+                      <td className="px-2 py-1 text-center">
+                        {weekData.formattedTotalTime ? (
+                          <span className="text-green-600 font-semibold">{weekData.formattedTotalTime}</span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
                       <td className="px-2 py-1 flex gap-2 justify-center">
                         <button
                           className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
@@ -699,7 +732,7 @@ const RoutineDetail = (props) => {
                 })}
               </tbody>
             </table>
-            <div className="flex justify-center gap-2 mt-2">
+            <div className="flex justify-center gap-2 mt-2" data-guide="progress-stats">
               <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg font-semibold shadow w-[100px] text-[10px] flex items-center justify-center whitespace-nowrap">
                 <span className="font-bold">Máx:</span>&nbsp;<span>{allWeights.length > 0 ? Math.max(...allWeights).toFixed(2) : '0.00'} kg</span>
               </div>
@@ -725,8 +758,10 @@ const RoutineDetail = (props) => {
     const exerciseSeries = parseInt(exercise.sets) || 1;
     setWeekSeries(exerciseSeries);
     setSeriesWeights(Array(exerciseSeries).fill(""));
+    setSeriesTimes(Array(exerciseSeries).fill(""));
     
     setWeekNotes("");
+    setWeekTotalTime("");
     setIsEditingWeekly(false);
     setEditingWeeklyData(null);
     setShowWeeklyModal(true);
@@ -764,7 +799,24 @@ const RoutineDetail = (props) => {
         setWeekWeight("");
       }
       
+      // Handle series times - similar to weights
+      if (weekData.seriesTimes && Array.isArray(weekData.seriesTimes)) {
+        // Use existing series times, but adjust to match current exercise series count
+        const existingTimes = [...weekData.seriesTimes];
+        while (existingTimes.length < exerciseSeries) {
+          existingTimes.push("");
+        }
+        if (existingTimes.length > exerciseSeries) {
+          existingTimes.splice(exerciseSeries);
+        }
+        setSeriesTimes(existingTimes);
+      } else {
+        // Initialize empty times for all series
+        setSeriesTimes(Array(exerciseSeries).fill(""));
+      }
+      
       setWeekNotes(weekData.generalNotes || "");
+      setWeekTotalTime(weekData.formattedTotalTime || "");
       setIsEditingWeekly(true);
       setEditingWeeklyData(weekData);
       setShowWeeklyModal(true);
@@ -808,9 +860,13 @@ const RoutineDetail = (props) => {
     setWeekWeight("");
     setWeekSeries(1);
     setSeriesWeights([""]);
+    setSeriesTimes([""]);
     setWeekNotes("");
+    setWeekTotalTime("");
     setIsEditingWeekly(false);
     setEditingWeeklyData(null);
+    // Limpiar datos del cronómetro al cerrar el modal
+    setTimerData(null);
   };
 
   // Function to handle weight change for a specific series
@@ -818,6 +874,124 @@ const RoutineDetail = (props) => {
     const newSeriesWeights = [...seriesWeights];
     newSeriesWeights[seriesIndex] = weight;
     setSeriesWeights(newSeriesWeights);
+  };
+
+  // Function to handle time change for a specific series
+  const handleSeriesTimeChange = (seriesIndex, time) => {
+    const newSeriesTimes = [...seriesTimes];
+    newSeriesTimes[seriesIndex] = time;
+    setSeriesTimes(newSeriesTimes);
+  };
+
+  // Funciones para manejar el cronómetro
+  const handleOpenTimer = (exercise) => {
+    setTimerExercise(exercise);
+    setShowTimer(true);
+  };
+
+  const handleCloseTimer = () => {
+    setShowTimer(false);
+    setTimerExercise(null);
+  };
+
+  // Función para guardar tiempo del cronómetro en seguimiento semanal
+  const handleSaveTimeFromTimer = (timeData) => {
+    console.log('=== CRONÓMETRO: Iniciando guardado ===');
+    console.log('1. Datos del cronómetro recibidos:', timeData);
+    console.log('2. Ejercicio del cronómetro:', timerExercise);
+    
+    // Guardar los datos del cronómetro y abrir el modal de seguimiento semanal
+    setTimerData(timeData);
+    setWeeklyExercise(timerExercise);
+    setWeekNumber("");
+    setWeekWeight("");
+    setWeekNotes(""); // Limpiar notas para que el usuario las complete
+    setWeekTotalTime(""); // Se usará el tiempo del cronómetro automáticamente
+    
+    // Configurar el número de series basado en el ejercicio del cronómetro
+    const exerciseSeries = parseInt(timerExercise?.sets) || timeData.seriesTimes.length || 1;
+    setWeekSeries(exerciseSeries);
+    
+    // Configurar pesos de las series desde el cronómetro si están disponibles
+    if (timeData.seriesWeights && timeData.seriesWeights.length > 0) {
+      console.log('5. Aplicando pesos del cronómetro:', timeData.seriesWeights);
+      setSeriesWeights(timeData.seriesWeights);
+    } else {
+      setSeriesWeights(Array(exerciseSeries).fill(""));
+    }
+    // Los tiempos de series se obtienen del cronómetro, no necesitan inicialización manual
+    setSeriesTimes(Array(exerciseSeries).fill(""));
+    
+    console.log('3. Series configuradas:', exerciseSeries);
+    console.log('4. Abriendo modal de seguimiento semanal...');
+    
+    setShowWeeklyModal(true);
+    console.log('=== CRONÓMETRO: Configuración completada ===');
+  };
+
+  // Función para manejar cambio de semana y cargar datos existentes
+  const handleWeekNumberChange = (selectedWeek) => {
+    setWeekNumber(selectedWeek);
+    
+    // Si hay datos existentes para esta semana, cargarlos cuando corresponda
+    if (selectedWeek && weeklyExercise && weeklyExercise.weeklyData && weeklyExercise.weeklyData[selectedWeek]) {
+      const existingData = weeklyExercise.weeklyData[selectedWeek];
+      
+      // Si viene del cronómetro, solo cargar datos si la semana NO tiene tiempos registrados
+      if (timerData) {
+        const hasExistingTimes = existingData.formattedTotalTime || 
+                               existingData.totalTime || 
+                               (existingData.seriesTimes && existingData.seriesTimes.length > 0 && 
+                                existingData.seriesTimes.some(time => time && time.trim() !== ""));
+        
+        if (!hasExistingTimes) {
+          // Combinar pesos del cronómetro con datos existentes
+          if (timerData.seriesWeights && timerData.seriesWeights.length > 0) {
+            // Priorizar pesos del cronómetro, completar con existentes si es necesario
+            const finalWeights = [...timerData.seriesWeights];
+            if (existingData.seriesWeights && existingData.seriesWeights.length > 0) {
+              // Rellenar posiciones vacías del cronómetro con datos existentes
+              existingData.seriesWeights.forEach((weight, index) => {
+                if (index < finalWeights.length && (!finalWeights[index] || finalWeights[index].trim() === "")) {
+                  finalWeights[index] = weight;
+                }
+              });
+            }
+            setSeriesWeights(finalWeights);
+          } else if (existingData.seriesWeights && existingData.seriesWeights.length > 0) {
+            setSeriesWeights(existingData.seriesWeights);
+          }
+          
+          if (existingData.generalNotes && (!weekNotes || weekNotes.trim() === "")) {
+            setWeekNotes(existingData.generalNotes);
+          }
+          if (existingData.series) {
+            setWeekSeries(existingData.series);
+          }
+          console.log('Cronómetro: Cargando datos combinados para semana sin tiempos:', selectedWeek);
+        }
+      } else {
+        // Para registro manual normal, cargar todos los datos
+        console.log('Cargando datos existentes para semana', selectedWeek, ':', existingData);
+        
+        if (existingData.seriesWeights && existingData.seriesWeights.length > 0) {
+          setSeriesWeights(existingData.seriesWeights);
+        }
+        if (existingData.generalNotes && (!weekNotes || weekNotes.trim() === "")) {
+          setWeekNotes(existingData.generalNotes);
+        }
+        if (existingData.series) {
+          setWeekSeries(existingData.series);
+        }
+      }
+    }
+  };
+
+  // Función auxiliar para formatear tiempo
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Handlers para seguimiento diario general
@@ -1050,17 +1224,25 @@ const RoutineDetail = (props) => {
     
     // Validar que no se dupliquen datos para la misma semana (solo para nuevos registros)
     if (!isEditingWeekly && weeklyExercise.weeklyData && weeklyExercise.weeklyData[weekNumber]) {
-      alert(`Ya existen datos para la semana ${weekNumber}. Puedes editarlos desde el botón "Editar" en la tabla de seguimiento.`);
-      return;
+      // Si viene del cronómetro, verificar que no tenga tiempos registrados
+      if (timerData) {
+        const existingData = weeklyExercise.weeklyData[weekNumber];
+        const hasExistingTimes = existingData.formattedTotalTime || 
+                               existingData.totalTime || 
+                               (existingData.seriesTimes && existingData.seriesTimes.length > 0 && 
+                                existingData.seriesTimes.some(time => time && time.trim() !== ""));
+        
+        if (hasExistingTimes) {
+          alert(`La semana ${weekNumber} ya tiene tiempos registrados. Solo se pueden agregar tiempos a semanas sin registros de tiempo.`);
+          return;
+        }
+        console.log('Cronómetro: Agregando tiempo a semana con datos de peso únicamente');
+      } else {
+        alert(`Ya existen datos para la semana ${weekNumber}. Puedes editarlos desde el botón "Editar" en la tabla de seguimiento.`);
+        return;
+      }
     }
-    
-    // Validate that at least one series weight is provided
-    const hasValidWeights = seriesWeights.some(weight => weight && weight.trim() !== "");
-    if (!hasValidWeights) {
-      alert('Por favor ingresa al menos un peso para las series');
-      return;
-    }
-    
+
     try {
       const routineId = routine?.id || routine?.routine_id || routine?.client_id;
       if (!routineId) {
@@ -1069,17 +1251,32 @@ const RoutineDetail = (props) => {
         return;
       }
       
-      // Calculate average weight for backward compatibility
+      // Calcular peso promedio para compatibilidad
       const validWeights = seriesWeights.filter(weight => weight && weight.trim() !== "").map(weight => parseFloat(weight));
       const averageWeight = validWeights.length > 0 ? validWeights.reduce((sum, weight) => sum + weight, 0) / validWeights.length : 0;
+      
+      // Preparar tiempos por serie si están disponibles
+      const seriesTimesData = timerData && timerData.formattedSeriesTimes ? 
+        timerData.formattedSeriesTimes.map(serieTime => serieTime.time) : 
+        seriesTimes.filter(time => time && time.trim() !== ""); // Usar tiempos manuales si no hay cronómetro
       
       const weeklyData = {
         week: weekNumber,
         weight: averageWeight.toFixed(2), // Keep for backward compatibility
         seriesWeights: seriesWeights,
+        seriesTimes: seriesTimesData, // Tiempos por serie
         series: weekSeries,
         generalNotes: weekNotes,
-        date: isEditingWeekly ? editingWeeklyData?.date : new Date().toISOString().split('T')[0]
+        date: isEditingWeekly ? editingWeeklyData?.date : new Date().toISOString().split('T')[0],
+        // Incluir tiempo total del cronómetro si está disponible, o el tiempo manual
+        ...(timerData && {
+          totalTime: timerData.totalTime,
+          formattedTotalTime: timerData.formattedTotalTime
+        }),
+        // Si no hay datos del cronómetro pero sí tiempo manual, usarlo
+        ...(!timerData && weekTotalTime && {
+          formattedTotalTime: weekTotalTime
+        })
       };
       const updateData = {
         id: routineId,
@@ -1441,63 +1638,82 @@ const RoutineDetail = (props) => {
                                   {!isCollapsed && (
                                     <div>
                                       {Array.isArray(group.exercises) && (
-                                        <div className="p-4 bg-gray-50 rounded-xl shadow flex flex-col gap-4">
+                                        <div className="p-2 bg-gray-50 rounded-xl shadow flex flex-col gap-2">
                                           {group.exercises.map((ex) => (
-                                            <div key={ex.id} className="flex flex-col gap-2 border-b last:border-b-0 pb-2 last:pb-0">
-                                              <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2 w-full">
-                                                  <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
-                                                  {ex.media && (
-                                                    <button
-                                                      className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-                                                      title="Ver video del ejercicio"
-                                                      onClick={() => window.open(ex.media, '_blank')}
-                                                    >
-                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                                                      </svg>
-                                                    </button>
-                                                  )}
-                                                  <div className="flex gap-2 items-center ml-auto">
-                                                    {canAddDailyTracking && (
+                                            <div key={ex.id} className="flex flex-col gap-1 border-b last:border-b-0 pb-1 last:pb-0">
+                                              <div className="flex justify-between items-start gap-4">
+                                                {/* Columna izquierda: título y detalles del ejercicio */}
+                                                <div className="flex-1">
+                                                  <div className="flex items-center gap-2 mb-2">
+                                                    <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                                                    {ex.media && (
                                                       <button
-                                                        className="p-1 rounded-full bg-black hover:bg-gray-800 text-white"
-                                                        title="Agregar seguimiento semanal"
-                                                        onClick={() => handleOpenWeeklyModal(ex)}
+                                                        className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                                                        title="Ver video del ejercicio"
+                                                        onClick={() => window.open(ex.media, '_blank')}
                                                       >
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                                                        </svg>
-                                                      </button>
-                                                    )}
-                                                    {isEditable && (
-                                                      <button
-                                                        className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
-                                                        title="Editar ejercicio"
-                                                        onClick={() => handleEditExerciseClick(ex)}
-                                                      >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                                        </svg>
-                                                      </button>
-                                                    )}
-                                                    {isEditable && (
-                                                      <button
-                                                        className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
-                                                        title="Eliminar ejercicio"
-                                                        onClick={() => handleDeleteExercise(ex.id)}
-                                                      >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
                                                         </svg>
                                                       </button>
                                                     )}
                                                   </div>
+                                                  {renderExerciseDetails({ ...ex, hideRest: true })}
+                                                  {renderWeeklyTracking(ex)}
+                                                </div>
+                                                
+                                                {/* Columna derecha: botones de acción en vertical */}
+                                                <div className="flex flex-col gap-2">
+                                                  <button
+                                                    data-guide="timer-button"
+                                                    className="p-1 rounded-full bg-slate-800 hover:bg-slate-900 text-white transition-colors"
+                                                    title="Cronómetro del ejercicio"
+                                                    onClick={() => handleOpenTimer(ex)}
+                                                  >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                    </svg>
+                                                  </button>
+                                                  
+                                                  {canAddDailyTracking && (
+                                                    <button
+                                                      data-guide="weekly-tracking"
+                                                      className="p-1 rounded-full bg-black hover:bg-gray-800 text-white"
+                                                      title="Agregar seguimiento semanal"
+                                                      onClick={() => handleOpenWeeklyModal(ex)}
+                                                    >
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                                      </svg>
+                                                    </button>
+                                                  )}
+                                                  
+                                                  {isEditable && (
+                                                    <button
+                                                      className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
+                                                      title="Editar ejercicio"
+                                                      onClick={() => handleEditExerciseClick(ex)}
+                                                    >
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.287 4.287 0 0 1-1.897 1.13L6 18l.8-2.685a4.287 4.287 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                                      </svg>
+                                                    </button>
+                                                  )}
+                                                  
+                                                  {isEditable && (
+                                                    <button
+                                                      className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
+                                                      title="Eliminar ejercicio"
+                                                      onClick={() => handleDeleteExercise(ex.id)}
+                                                    >
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                      </svg>
+                                                    </button>
+                                                  )}
                                                 </div>
                                               </div>
-                                              {renderExerciseDetails({ ...ex, hideRest: true })}
-                                              {renderWeeklyTracking(ex)}
                                             </div>
                                           ))}
                                         </div>
@@ -1510,24 +1726,45 @@ const RoutineDetail = (props) => {
                               // Renderizar ejercicio individual sin round
                               const ex = group.exercise;
                               return (
-                                <div key={ex.id} className="p-4 bg-gray-50 rounded-xl shadow mb-2">
-                                  <div className="flex items-center gap-2 w-full mb-2">
-                                    <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
-                                    {ex.media && (
+                                <div key={ex.id} className="p-2 bg-gray-50 rounded-xl shadow mb-1">
+                                  <div className="flex justify-between items-start gap-4">
+                                    {/* Columna izquierda: título y detalles del ejercicio */}
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                                        {ex.media && (
+                                          <button
+                                            className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                                            title="Ver video del ejercicio"
+                                            onClick={() => window.open(ex.media, '_blank')}
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                            </svg>
+                                          </button>
+                                        )}
+                                      </div>
+                                      {renderExerciseDetails(ex)}
+                                      {renderWeeklyTracking(ex)}
+                                    </div>
+                                    
+                                    {/* Columna derecha: botones de acción en vertical */}
+                                    <div className="flex flex-col gap-2">
                                       <button
-                                        className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
-                                        title="Ver video del ejercicio"
-                                        onClick={() => window.open(ex.media, '_blank')}
+                                        data-guide="timer-button"
+                                        className="p-1 rounded-full bg-slate-800 hover:bg-slate-900 text-white transition-colors"
+                                        title="Cronómetro del ejercicio"
+                                        onClick={() => handleOpenTimer(ex)}
                                       >
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                         </svg>
                                       </button>
-                                    )}
-                                    <div className="flex gap-2 items-center ml-auto">
+                                      
                                       {canAddDailyTracking && (
                                         <button
+                                          data-guide="weekly-tracking"
                                           className="p-1 rounded-full bg-black hover:bg-gray-800 text-white"
                                           title="Agregar seguimiento semanal"
                                           onClick={() => handleOpenWeeklyModal(ex)}
@@ -1537,6 +1774,7 @@ const RoutineDetail = (props) => {
                                           </svg>
                                         </button>
                                       )}
+                                      
                                       {isEditable && (
                                         <button
                                           className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700"
@@ -1544,10 +1782,11 @@ const RoutineDetail = (props) => {
                                           onClick={() => handleEditExerciseClick(ex)}
                                         >
                                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.287 4.287 0 0 1-1.897 1.13L6 18l.8-2.685a4.287 4.287 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                                           </svg>
                                         </button>
                                       )}
+                                      
                                       {isEditable && (
                                         <button
                                           className="p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-700"
@@ -1561,8 +1800,6 @@ const RoutineDetail = (props) => {
                                       )}
                                     </div>
                                   </div>
-                                  {renderExerciseDetails(ex)}
-                                  {renderWeeklyTracking(ex)}
                                 </div>
                               );
                             }
@@ -1602,6 +1839,7 @@ const RoutineDetail = (props) => {
                     </svg>
                   </div>
                   <button
+                    data-guide="pfpe-button"
                     className="p-1 rounded-full bg-green-100 hover:bg-green-200 text-green-700 transition-colors"
                     title="Registrar PF/PE/Notas"
                     onClick={() => handleOpenDailyModal(day)}
@@ -1681,7 +1919,7 @@ const RoutineDetail = (props) => {
   };
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 bg-white rounded-2xl shadow-md w-full max-w-none mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 bg-white rounded-2xl shadow-md w-full max-w-none mx-auto" data-guide="routine-exercises">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800">
           {routine.name || 'Rutina sin nombre'}
@@ -1780,23 +2018,32 @@ const RoutineDetail = (props) => {
 
       {/* Modal para ver notas y fecha de seguimiento semanal */}
       {showWeeklyNotesModal.open && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-3 rounded-lg shadow-lg w-full max-w-[280px] text-xs" style={{ fontSize: '12px' }}>
-            <h3 className="text-base font-bold mb-2">Notas y Fecha</h3>
-            <div className="mb-1">
-              <span className="font-semibold">Semana:</span> {showWeeklyNotesModal.week}
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Detalle del Seguimiento</h3>
+            <div className="space-y-3">
+              <div className="flex flex-col">
+                <span className="font-semibold text-gray-700 mb-1">Semana:</span>
+                <span className="text-lg">{showWeeklyNotesModal.week}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-semibold text-gray-700 mb-1">Fecha:</span>
+                <span className="text-lg">{showWeeklyNotesModal.date || 'Sin fecha'}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-semibold text-gray-700 mb-1">Notas:</span>
+                <div className="bg-gray-50 p-3 rounded-lg border min-h-[80px]">
+                  <span className="text-gray-800">{showWeeklyNotesModal.notes || 'Sin notas'}</span>
+                </div>
+              </div>
             </div>
-            <div className="mb-1">
-              <span className="font-semibold">Notas:</span> {showWeeklyNotesModal.notes || 'Sin notas'}
-            </div>
-            <div className="mb-2">
-              <span className="font-semibold">Fecha:</span> {showWeeklyNotesModal.date || 'Sin fecha'}
-            </div>
-            <div className="flex gap-2">
+            <div className="flex justify-end mt-6">
               <button
                 onClick={() => setShowWeeklyNotesModal({ open: false, notes: '', date: '', week: '' })}
-                className="flex-1 bg-blue-600 text-white py-1 px-2 rounded-md hover:bg-blue-700 transition-colors text-xs"
-              >Cerrar</button>
+                className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
@@ -1822,7 +2069,7 @@ const RoutineDetail = (props) => {
                 <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   value={weekNumber}
-                  onChange={e => setWeekNumber(e.target.value)}
+                  onChange={e => handleWeekNumberChange(e.target.value)}
                   disabled={isEditingDaily}
                 >
                   <option value="">Selecciona una semana</option>
@@ -1905,20 +2152,30 @@ const RoutineDetail = (props) => {
               <p className="text-sm text-gray-600">
                 Ejercicio: <span className="font-semibold">{weeklyExercise?.name}</span>
               </p>
+              {timerData && (
+                <div className="mt-2 px-3 py-2 bg-green-50 border border-green-300 rounded-lg text-sm text-green-700">
+                  ⏱️ Datos del cronómetro guardados. Solo se muestran semanas sin registros de tiempo existentes.
+                </div>
+              )}
+              {timerData && weekNumber && weeklyExercise?.weeklyData?.[weekNumber] && !weeklyExercise.weeklyData[weekNumber].formattedTotalTime && !weeklyExercise.weeklyData[weekNumber].totalTime && (
+                <div className="mt-2 px-3 py-2 bg-blue-50 border border-blue-300 rounded-lg text-sm text-blue-700">
+                  📋 Datos de peso cargados para la semana {weekNumber}. Se agregará el tiempo del cronómetro.
+                </div>
+              )}
             </div>
             
             {/* Contenido scrollable */}
             <div className="flex-1 overflow-y-auto p-6">
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Semana</label>
-                {getWeekOptions().length === 0 && !isEditingWeekly ? (
+                {getWeekOptions().length === 0 && !isEditingWeekly && !timerData ? (
                   <div className="w-full px-3 py-2 bg-yellow-50 border border-yellow-300 rounded-lg text-sm text-yellow-700">
                     No hay semanas disponibles. Ya se han registrado datos para todas las semanas.
                   </div>
                 ) : (
                   <select
                     value={weekNumber}
-                    onChange={(e) => setWeekNumber(e.target.value)}
+                    onChange={(e) => handleWeekNumberChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     disabled={isEditingWeekly}
                   >
@@ -1936,20 +2193,70 @@ const RoutineDetail = (props) => {
                 </div>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Peso por serie (kg)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Datos por serie</label>
                 {Array.from({ length: weekSeries }, (_, index) => (
-                  <div key={index} className="mb-2">
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={seriesWeights[index] || ""}
-                      onChange={(e) => handleSeriesWeightChange(index, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      placeholder={`Serie ${index + 1} - Ej: 80.5`}
-                    />
+                  <div key={index} className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Serie {index + 1}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Campo de peso */}
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Peso (kg)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={seriesWeights[index] || ""}
+                          onChange={(e) => handleSeriesWeightChange(index, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          placeholder="Ej: 80.5"
+                        />
+                      </div>
+                      {/* Campo de tiempo */}
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Tiempo</label>
+                        {timerData && timerData.formattedSeriesTimes && timerData.formattedSeriesTimes[index] ? (
+                          <div className="w-full px-3 py-2 bg-green-50 border border-green-300 rounded-lg text-sm text-green-700 font-semibold">
+                            {timerData.formattedSeriesTimes[index].time}
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            value={seriesTimes[index] || ""}
+                            onChange={(e) => handleSeriesTimeChange(index, e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            placeholder="mm:ss"
+                          />
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
+                
+                {/* Tiempo total */}
+                {timerData && timerData.formattedTotalTime ? (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-700">Tiempo Total del Ejercicio:</span>
+                      <span className="font-bold text-blue-600">{timerData.formattedTotalTime}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="mb-2">
+                      <label className="block text-sm font-medium text-gray-700">Tiempo Total (mm:ss)</label>
+                    </div>
+                    <input
+                      type="text"
+                      value={weekTotalTime || ""}
+                      onChange={(e) => setWeekTotalTime(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="Ej: 02:30"
+                    />
+                  </div>
+                )}
               </div>
+              
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Notas generales</label>
                 <textarea
@@ -1967,9 +2274,9 @@ const RoutineDetail = (props) => {
               <div className="flex gap-3">
                 <button
                   onClick={handleSaveWeekly}
-                  disabled={!isEditingWeekly && getWeekOptions().length === 0}
+                  disabled={!isEditingWeekly && getWeekOptions().length === 0 && !timerData}
                   className={`flex-1 py-3 px-4 rounded-lg transition-colors text-sm font-medium ${
-                    !isEditingWeekly && getWeekOptions().length === 0
+                    !isEditingWeekly && getWeekOptions().length === 0 && !timerData
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
@@ -2251,6 +2558,21 @@ const RoutineDetail = (props) => {
           </a>
         </div>
       </div>
+
+      {/* Cronómetro del ejercicio */}
+      {showTimer && timerExercise && (
+        <ExerciseTimer 
+          exercise={{
+            name: timerExercise.name,
+            series: timerExercise.sets,
+            repetitions: timerExercise.reps,
+            weight: timerExercise.weight,
+            rest: timerExercise.rest
+          }}
+          onClose={handleCloseTimer}
+          onSaveTime={handleSaveTimeFromTimer}
+        />
+      )}
     </div>
   );
 }

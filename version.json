@@ -1,5 +1,5 @@
 {
-  "version": "3.0.3",
+  "version": "3.0.4",
   "name": "DS Training Management System",
   "description": "Sistema de gestión de entrenamiento con menú de configuración completo",
   "release_date": "2025-08-09",
@@ -72,6 +72,14 @@
     "3.0.3": {
       "date": "2025-08-09",
       "description": "Versión 3.0.3",
+      "type": "patch",
+      "features": [],
+      "fixes": [],
+      "technical_changes": []
+    },
+    "3.0.4": {
+      "date": "2025-08-09",
+      "description": "Versión 3.0.4",
       "type": "patch",
       "features": [],
       "fixes": [],

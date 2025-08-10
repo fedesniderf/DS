@@ -52,6 +52,14 @@ const ExerciseTrackingModal = ({
                 />
                 <input
                   type="text"
+                  placeholder="mm:ss"
+                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+                  value={localTracking[week]?.formattedTotalTime || ''}
+                  onChange={e => handleChange(week, 'formattedTotalTime', e.target.value)}
+                  style={{ minWidth: 0 }}
+                />
+                <input
+                  type="text"
                   placeholder="Notas"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition"
                   value={localTracking[week]?.notes || ''}
