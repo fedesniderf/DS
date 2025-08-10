@@ -105,10 +105,13 @@ const UserGuide = ({
     if (element) {
       setIsHighlighting(true);
       element.style.position = 'relative';
-      element.style.zIndex = '10001';
+      element.style.zIndex = '999998';
       element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.5), 0 0 0 8px rgba(59, 130, 246, 0.3)';
       element.style.borderRadius = '8px';
       element.style.pointerEvents = 'auto';
+      element.style.isolation = 'isolate';
+      element.style.WebkitTransform = 'translate3d(0, 0, 0)';
+      element.style.transform = 'translate3d(0, 0, 0)';
       
       // Scroll suave hacia el elemento
       setTimeout(() => {
@@ -128,6 +131,9 @@ const UserGuide = ({
       el.style.boxShadow = '';
       el.style.zIndex = '';
       el.style.pointerEvents = '';
+      el.style.isolation = '';
+      el.style.WebkitTransform = '';
+      el.style.transform = '';
     });
     setIsHighlighting(false);
   };
@@ -299,9 +305,10 @@ const UserGuide = ({
       {/* Overlay oscuro */}
       <div 
         ref={overlayRef}
-        className="fixed inset-0 bg-black bg-opacity-60 z-[10000]"
+        className="fixed inset-0 bg-black bg-opacity-60"
         style={{ 
-          pointerEvents: 'none', // Cambiar a none para permitir clics en elementos resaltados
+          zIndex: 999999,
+          pointerEvents: 'none',
           cursor: 'default'
         }}
       />
@@ -311,8 +318,13 @@ const UserGuide = ({
         className="fixed bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-sm min-h-[250px]"
         style={{
           ...tooltipStyle,
+          zIndex: 1000000,
           pointerEvents: 'auto',
-          userSelect: 'none'
+          userSelect: 'none',
+          position: 'fixed',
+          isolation: 'isolate',
+          WebkitTransform: 'translate3d(0, 0, 0)',
+          transform: 'translate3d(0, 0, 0)'
         }}
         onClick={(e) => {
           e.stopPropagation();
