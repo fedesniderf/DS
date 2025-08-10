@@ -44,7 +44,7 @@ const CalendarView = ({ routines, onSelectRoutine }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-md">
+    <div className="bg-white p-6 rounded-2xl shadow-md" data-guide="calendar-view">
       <div className="flex justify-between items-center mb-6">
         <button onClick={prevMonth} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6 text-gray-600">

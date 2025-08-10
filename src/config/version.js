@@ -8,8 +8,8 @@
 export const VERSION_CONFIG = {
   // Información actual de la versión
   current: {
-    version: '3.0.3',
-    name: 'Version 3.0.3',
+    version: '3.0.4',
+    name: 'Version 3.0.4',
     release_date: '2025-08-09',
     stability: 'stable'
   },

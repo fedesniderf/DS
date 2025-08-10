@@ -1,6 +1,6 @@
 {
   "name": "ds-training-management",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Sistema de gestión de entrenamiento con menú de configuración completo",
   "private": true,
   "scripts": {
