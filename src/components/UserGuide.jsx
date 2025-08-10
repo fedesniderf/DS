@@ -11,6 +11,57 @@ const UserGuide = ({
   const [isHighlighting, setIsHighlighting] = useState(false);
   const overlayRef = useRef(null);
 
+  // Añadir estilos CSS específicos para móvil cuando el componente se monta
+  useEffect(() => {
+    if (isVisible) {
+      // Crear y añadir estilos CSS específicos para la guía
+      const style = document.createElement('style');
+      style.id = 'user-guide-mobile-styles';
+      style.textContent = `
+        @media (max-width: 768px) {
+          .user-guide-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 2147483646 !important;
+            background: rgba(0, 0, 0, 0.8) !important;
+            pointer-events: none !important;
+          }
+          
+          .user-guide-tooltip {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            -webkit-transform: translate(-50%, -50%) translate3d(0, 0, 0) !important;
+            z-index: 2147483647 !important;
+            width: 90vw !important;
+            max-width: 90vw !important;
+            max-height: 80vh !important;
+            pointer-events: auto !important;
+            isolation: isolate !important;
+          }
+          
+          .user-guide-tooltip * {
+            pointer-events: auto !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        const existingStyle = document.getElementById('user-guide-mobile-styles');
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+      };
+    }
+  }, [isVisible]);
+
   // Pasos de la guía para usuarios client
   const guideSteps = [
     {
@@ -109,10 +160,10 @@ const UserGuide = ({
       console.log(`Resaltando elemento: ${selector}`, element);
       setIsHighlighting(true);
       
-      // Aplicar estilos de resaltado
+      // Aplicar estilos de resaltado con z-index más alto para móvil
       element.style.position = 'relative';
-      element.style.zIndex = '999998';
-      element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.6), 0 0 0 8px rgba(59, 130, 246, 0.3)';
+      element.style.zIndex = window.innerWidth <= 768 ? '2147483645' : '999998'; // Máximo z-index para móvil
+      element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.8), 0 0 0 8px rgba(59, 130, 246, 0.4)';
       element.style.borderRadius = '8px';
       element.style.pointerEvents = 'auto';
       element.style.isolation = 'isolate';
@@ -122,7 +173,7 @@ const UserGuide = ({
       // Marcar el elemento para identificarlo después
       element.setAttribute('data-guide-highlighted', 'true');
       
-      // Scroll suave hacia el elemento con mejor configuración
+      // Scroll suave hacia el elemento con mejor configuración para móvil
       setTimeout(() => {
         element.scrollIntoView({ 
           behavior: 'smooth', 
@@ -130,7 +181,7 @@ const UserGuide = ({
           inline: 'center'
         });
         
-        // Segundo scroll para asegurar que esté en vista
+        // Segundo scroll para asegurar que esté en vista (especialmente importante en móvil)
         setTimeout(() => {
           const rect = element.getBoundingClientRect();
           const isInViewport = (
@@ -147,8 +198,8 @@ const UserGuide = ({
               inline: 'center'
             });
           }
-        }, 300);
-      }, 200);
+        }, 500); // Más tiempo para móvil
+      }, window.innerWidth <= 768 ? 500 : 200); // Más delay en móvil
     } else {
       console.warn(`Elemento no encontrado para el selector: ${selector}`);
       // Intentar con selectores alternativos comunes
@@ -242,6 +293,32 @@ const UserGuide = ({
     onSkip();
   };
 
+  // Efecto para bloquear scroll de fondo en móvil cuando la guía está visible
+  useEffect(() => {
+    if (isVisible && window.innerWidth <= 768) {
+      // Bloquear scroll del body
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      const originalPosition = window.getComputedStyle(document.body).position;
+      
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${window.scrollY}px`;
+      document.body.style.width = '100%';
+      
+      return () => {
+        // Restaurar scroll
+        document.body.style.overflow = originalStyle;
+        document.body.style.position = originalPosition;
+        document.body.style.top = '';
+        document.body.style.width = '';
+        
+        // Restaurar posición de scroll
+        const scrollY = document.body.style.top;
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      };
+    }
+  }, [isVisible]);
+
   // Efecto para resaltar elementos cuando cambia el paso
   useEffect(() => {
     if (isVisible && currentStepData.target) {
@@ -302,7 +379,10 @@ const UserGuide = ({
 
   // Función para obtener la posición del tooltip
   const getTooltipPosition = () => {
-    if (!currentStepData.target) {
+    const isMobile = window.innerWidth <= 768;
+    
+    if (!currentStepData.target || isMobile) {
+      // En móvil, siempre centrar el tooltip
       return {
         position: 'fixed',
         top: '50%',
@@ -326,7 +406,7 @@ const UserGuide = ({
 
     const rect = element.getBoundingClientRect();
     const tooltipWidth = 320;
-    const tooltipHeight = 280; // Aumentado para mejor espacio
+    const tooltipHeight = 280;
 
     let position = {};
     let transformOrigin = 'center';
@@ -375,29 +455,26 @@ const UserGuide = ({
         transformOrigin = 'top center';
     }
 
-    // Ajustes más inteligentes para mantener el tooltip en pantalla
+    // En desktop, ajustar para mantener en pantalla
     const margin = 15;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    // Ajustar horizontalmente con prioridad a mantener cerca del elemento
+    // Ajustar horizontalmente
     if (position.left < margin) {
       position.left = margin;
     } else if (position.left + tooltipWidth > viewportWidth - margin) {
       position.left = viewportWidth - tooltipWidth - margin;
     }
     
-    // Ajustar verticalmente de forma más inteligente
+    // Ajustar verticalmente
     if (position.top < margin) {
-      // Si no cabe arriba, moverlo abajo del elemento
       position.top = rect.bottom + 15;
       transformOrigin = 'top center';
     } else if (position.top + tooltipHeight > viewportHeight - margin) {
-      // Si no cabe abajo, moverlo arriba del elemento
       position.top = rect.top - tooltipHeight - 15;
       transformOrigin = 'bottom center';
       
-      // Si aún no cabe arriba, centrarlo en la ventana
       if (position.top < margin) {
         position.top = Math.max(margin, (viewportHeight - tooltipHeight) / 2);
         transformOrigin = 'center';
@@ -420,73 +497,89 @@ const UserGuide = ({
 
   return (
     <>
-      {/* Overlay oscuro */}
+      {/* Overlay oscuro con mejor z-index para móvil */}
       <div 
         ref={overlayRef}
-        className="fixed inset-0 bg-black bg-opacity-60"
+        className={`fixed inset-0 bg-black bg-opacity-70 ${window.innerWidth <= 768 ? 'user-guide-overlay' : ''}`}
         style={{ 
-          zIndex: 999999,
+          zIndex: 2147483646,
           pointerEvents: 'none',
-          cursor: 'default'
+          cursor: 'default',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          isolation: 'isolate',
+          WebkitTransform: 'translate3d(0, 0, 0)',
+          transform: 'translate3d(0, 0, 0)'
         }}
       />
       
       {/* Tooltip de la guía */}
       <div 
-        className="fixed bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-sm"
+        className={`fixed bg-white rounded-xl shadow-2xl border border-gray-200 p-4 ${window.innerWidth <= 768 ? 'user-guide-tooltip' : ''}`}
         style={{
-          ...tooltipStyle,
-          zIndex: 1000000,
+          ...(window.innerWidth <= 768 ? {} : tooltipStyle),
+          zIndex: 2147483647,
           pointerEvents: 'auto',
           userSelect: 'none',
           position: 'fixed',
           isolation: 'isolate',
           WebkitTransform: 'translate3d(0, 0, 0)',
           transform: 'translate3d(0, 0, 0)',
-          minHeight: '280px',
-          width: '320px',
-          maxWidth: '90vw', // Asegurar que no se salga en pantallas pequeñas
-          maxHeight: '90vh', // Asegurar que no se salga verticalmente
-          overflow: 'auto' // Permitir scroll si el contenido es muy largo
+          width: window.innerWidth <= 768 ? '90vw' : '320px',
+          maxWidth: window.innerWidth <= 768 ? '90vw' : '320px',
+          maxHeight: window.innerWidth <= 768 ? '80vh' : '90vh',
+          overflow: 'auto',
+          // Forzar posición central en móvil
+          ...(window.innerWidth <= 768 && {
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            WebkitTransform: 'translate(-50%, -50%) translate3d(0, 0, 0)'
+          })
         }}
         onClick={(e) => {
           e.stopPropagation();
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div>
-              <h3 className="font-bold text-gray-800">{currentStepData.title}</h3>
+              <h3 className="font-bold text-gray-800 text-sm">{currentStepData.title}</h3>
               <p className="text-xs text-gray-500">Paso {step + 1} de {guideSteps.length}</p>
             </div>
           </div>
           <button
             onClick={handleSkip}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1"
             title="Saltar guía"
             style={{ pointerEvents: 'auto' }}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Contenido */}
-        <div className="mb-6">
+        <div className="mb-4">
           <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
             {currentStepData.description}
           </p>
         </div>
 
         {/* Barra de progreso */}
-        <div className="mb-4">
+        <div className="mb-3">
           <div className="flex justify-between text-xs text-gray-500 mb-1">
             <span>Progreso</span>
             <span>{Math.round(((step + 1) / guideSteps.length) * 100)}%</span>
@@ -500,7 +593,7 @@ const UserGuide = ({
         </div>
 
         {/* Botones de navegación */}
-        <div className="flex justify-between gap-3">
+        <div className="flex justify-between gap-2">
           <div className="flex gap-2">
             {step > 0 && (
               <button
