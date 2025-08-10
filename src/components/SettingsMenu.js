@@ -148,6 +148,7 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
     <div className="relative" ref={menuRef}>
       {/* Botón con foto del usuario */}
       <button
+        data-guide="user-settings"
         onClick={() => setIsOpen(!isOpen)}
         className="flex-shrink-0 border-2 border-gray-300 hover:border-blue-500 transition-colors rounded-full p-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         title="Configuración"

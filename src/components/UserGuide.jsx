@@ -101,32 +101,78 @@ const UserGuide = ({
   const highlightElement = (selector) => {
     if (!selector) return;
     
+    // Limpiar resaltados anteriores
+    removeHighlight();
+    
     const element = document.querySelector(selector);
     if (element) {
+      console.log(`Resaltando elemento: ${selector}`, element);
       setIsHighlighting(true);
+      
+      // Aplicar estilos de resaltado
       element.style.position = 'relative';
       element.style.zIndex = '999998';
-      element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.5), 0 0 0 8px rgba(59, 130, 246, 0.3)';
+      element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.6), 0 0 0 8px rgba(59, 130, 246, 0.3)';
       element.style.borderRadius = '8px';
       element.style.pointerEvents = 'auto';
       element.style.isolation = 'isolate';
       element.style.WebkitTransform = 'translate3d(0, 0, 0)';
       element.style.transform = 'translate3d(0, 0, 0)';
       
-      // Scroll suave hacia el elemento
+      // Marcar el elemento para identificarlo después
+      element.setAttribute('data-guide-highlighted', 'true');
+      
+      // Scroll suave hacia el elemento con mejor configuración
       setTimeout(() => {
         element.scrollIntoView({ 
           behavior: 'smooth', 
           block: 'center',
           inline: 'center'
         });
-      }, 100);
+        
+        // Segundo scroll para asegurar que esté en vista
+        setTimeout(() => {
+          const rect = element.getBoundingClientRect();
+          const isInViewport = (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= window.innerHeight &&
+            rect.right <= window.innerWidth
+          );
+          
+          if (!isInViewport) {
+            element.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center',
+              inline: 'center'
+            });
+          }
+        }, 300);
+      }, 200);
+    } else {
+      console.warn(`Elemento no encontrado para el selector: ${selector}`);
+      // Intentar con selectores alternativos comunes
+      const alternativeSelectors = [
+        selector.replace('[data-guide="', '[data-guide*="'),
+        selector.replace('"', ''),
+        `*${selector}*`
+      ];
+      
+      for (const altSelector of alternativeSelectors) {
+        const altElement = document.querySelector(altSelector);
+        if (altElement) {
+          console.log(`Elemento encontrado con selector alternativo: ${altSelector}`, altElement);
+          highlightElement(altSelector);
+          break;
+        }
+      }
     }
   };
 
   // Función para quitar resaltado
   const removeHighlight = () => {
-    const highlightedElements = document.querySelectorAll('[style*="box-shadow"]');
+    // Buscar elementos por el atributo personalizado que agregamos
+    const highlightedElements = document.querySelectorAll('[data-guide-highlighted="true"]');
     highlightedElements.forEach(el => {
       el.style.boxShadow = '';
       el.style.zIndex = '';
@@ -134,15 +180,34 @@ const UserGuide = ({
       el.style.isolation = '';
       el.style.WebkitTransform = '';
       el.style.transform = '';
+      el.removeAttribute('data-guide-highlighted');
     });
+    
+    // Método de respaldo por si acaso
+    const elementsWithBoxShadow = document.querySelectorAll('[style*="box-shadow"]');
+    elementsWithBoxShadow.forEach(el => {
+      if (el.style.boxShadow.includes('rgba(59, 130, 246')) {
+        el.style.boxShadow = '';
+        el.style.zIndex = '';
+        el.style.pointerEvents = '';
+        el.style.isolation = '';
+        el.style.WebkitTransform = '';
+        el.style.transform = '';
+      }
+    });
+    
     setIsHighlighting(false);
   };
 
   // Función para avanzar al siguiente paso
   const nextStep = () => {
     removeHighlight();
+    
     if (step < guideSteps.length - 1) {
-      setStep(step + 1);
+      // Pequeño delay para limpiar el estado anterior antes de avanzar
+      setTimeout(() => {
+        setStep(step + 1);
+      }, 100);
     } else {
       handleComplete();
     }
@@ -151,8 +216,12 @@ const UserGuide = ({
   // Función para retroceder
   const prevStep = () => {
     removeHighlight();
+    
     if (step > 0) {
-      setStep(step - 1);
+      // Pequeño delay para limpiar el estado anterior antes de retroceder
+      setTimeout(() => {
+        setStep(step - 1);
+      }, 100);
     }
   };
 
@@ -179,7 +248,7 @@ const UserGuide = ({
       // Delay más largo para asegurar que la página esté lista
       const timer = setTimeout(() => {
         highlightElement(currentStepData.target);
-      }, 500);
+      }, 800); // Aumentado de 500 a 800ms
       
       return () => clearTimeout(timer);
     }
@@ -190,6 +259,39 @@ const UserGuide = ({
       }
     };
   }, [step, isVisible, currentStepData.target]);
+
+  // Efecto adicional para manejar cambios de paso y reposicionamiento
+  useEffect(() => {
+    if (isVisible) {
+      // Pequeño delay para reposicionar el tooltip después de cambios
+      const repositionTimer = setTimeout(() => {
+        // Forzar un re-render del tooltip si hay un elemento target
+        if (currentStepData.target) {
+          const element = document.querySelector(currentStepData.target);
+          if (element) {
+            // Verificar si el elemento está en vista y reposicionar si es necesario
+            const rect = element.getBoundingClientRect();
+            const isInViewport = (
+              rect.top >= 0 &&
+              rect.left >= 0 &&
+              rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+              rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+            
+            if (!isInViewport) {
+              element.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center',
+                inline: 'center'
+              });
+            }
+          }
+        }
+      }, 100);
+      
+      return () => clearTimeout(repositionTimer);
+    }
+  }, [step, isVisible, currentStepData]);
 
   // Efecto para limpiar al desmontar el componente
   useEffect(() => {
@@ -206,90 +308,106 @@ const UserGuide = ({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        zIndex: 10002
+        zIndex: 1000000
       };
     }
 
     const element = document.querySelector(currentStepData.target);
     if (!element) {
+      console.warn(`Elemento no encontrado para selector: ${currentStepData.target}`);
       return {
         position: 'fixed',
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        zIndex: 10002
+        zIndex: 1000000
       };
     }
 
     const rect = element.getBoundingClientRect();
     const tooltipWidth = 320;
-    const tooltipHeight = 250; // Aumentado para mejor espacio
+    const tooltipHeight = 280; // Aumentado para mejor espacio
 
     let position = {};
+    let transformOrigin = 'center';
 
     switch (currentStepData.position) {
       case 'top':
         position = {
-          top: rect.top - tooltipHeight - 20,
+          top: rect.top - tooltipHeight - 15,
           left: rect.left + (rect.width / 2) - (tooltipWidth / 2)
         };
+        transformOrigin = 'bottom center';
         break;
       case 'bottom':
         position = {
-          top: rect.bottom + 20,
+          top: rect.bottom + 15,
           left: rect.left + (rect.width / 2) - (tooltipWidth / 2)
         };
+        transformOrigin = 'top center';
         break;
       case 'left':
         position = {
           top: rect.top + (rect.height / 2) - (tooltipHeight / 2),
-          left: rect.left - tooltipWidth - 20
+          left: rect.left - tooltipWidth - 15
         };
+        transformOrigin = 'right center';
         break;
       case 'right':
         position = {
           top: rect.top + (rect.height / 2) - (tooltipHeight / 2),
-          left: rect.right + 20
+          left: rect.right + 15
         };
+        transformOrigin = 'left center';
         break;
       case 'bottom-left':
         position = {
-          top: rect.bottom + 20,
+          top: rect.bottom + 15,
           left: rect.left
         };
+        transformOrigin = 'top left';
         break;
       default:
         position = {
-          top: rect.bottom + 20,
+          top: rect.bottom + 15,
           left: rect.left + (rect.width / 2) - (tooltipWidth / 2)
         };
+        transformOrigin = 'top center';
     }
 
-    // Asegurar que el tooltip esté dentro de la ventana con mejor lógica
-    const margin = 20;
+    // Ajustes más inteligentes para mantener el tooltip en pantalla
+    const margin = 15;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    // Ajustar horizontalmente
+    // Ajustar horizontalmente con prioridad a mantener cerca del elemento
     if (position.left < margin) {
       position.left = margin;
     } else if (position.left + tooltipWidth > viewportWidth - margin) {
       position.left = viewportWidth - tooltipWidth - margin;
     }
     
-    // Ajustar verticalmente - si no cabe arriba, ponerlo abajo
+    // Ajustar verticalmente de forma más inteligente
     if (position.top < margin) {
-      position.top = rect.bottom + 20;
+      // Si no cabe arriba, moverlo abajo del elemento
+      position.top = rect.bottom + 15;
+      transformOrigin = 'top center';
     } else if (position.top + tooltipHeight > viewportHeight - margin) {
-      position.top = rect.top - tooltipHeight - 20;
+      // Si no cabe abajo, moverlo arriba del elemento
+      position.top = rect.top - tooltipHeight - 15;
+      transformOrigin = 'bottom center';
+      
+      // Si aún no cabe arriba, centrarlo en la ventana
       if (position.top < margin) {
-        position.top = margin;
+        position.top = Math.max(margin, (viewportHeight - tooltipHeight) / 2);
+        transformOrigin = 'center';
       }
     }
 
     return {
       position: 'fixed',
-      zIndex: 10002,
+      zIndex: 1000000,
+      transformOrigin,
       ...position
     };
   };
@@ -315,7 +433,7 @@ const UserGuide = ({
       
       {/* Tooltip de la guía */}
       <div 
-        className="fixed bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-sm min-h-[250px]"
+        className="fixed bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-sm"
         style={{
           ...tooltipStyle,
           zIndex: 1000000,
@@ -324,7 +442,12 @@ const UserGuide = ({
           position: 'fixed',
           isolation: 'isolate',
           WebkitTransform: 'translate3d(0, 0, 0)',
-          transform: 'translate3d(0, 0, 0)'
+          transform: 'translate3d(0, 0, 0)',
+          minHeight: '280px',
+          width: '320px',
+          maxWidth: '90vw', // Asegurar que no se salga en pantallas pequeñas
+          maxHeight: '90vh', // Asegurar que no se salga verticalmente
+          overflow: 'auto' // Permitir scroll si el contenido es muy largo
         }}
         onClick={(e) => {
           e.stopPropagation();
