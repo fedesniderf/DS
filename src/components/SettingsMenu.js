@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useEnhancedWakeLock } from '../hooks/useEnhancedWakeLock';
+import { USER_GUIDE_CONFIG } from '../config/userGuideConfig';
 import ChangePasswordModal from './ChangePasswordModal';
 import SecurityInfoModal from './SecurityInfoModal';
 import BlockedUsersPanel from './BlockedUsersPanel';
@@ -444,7 +445,7 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
               <div className="border-t border-gray-100 my-1" />
 
               {/* Sección Ayuda - Solo para usuarios client */}
-              {currentUser?.role === 'client' && (
+              {currentUser?.role === 'client' && USER_GUIDE_CONFIG.ENABLED && (
                 <div className="px-4 py-2">
                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                     Ayuda

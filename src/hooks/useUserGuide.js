@@ -1,4 +1,12 @@
 import { useState, useEffect } from 'react';
+import { 
+  USER_GUIDE_CONFIG, 
+  shouldShowGuide, 
+  getTimeouts,
+  markGuideAsCompleted,
+  markGuideAsSkipped,
+  resetGuideState
+} from '../config/userGuideConfig';
 
 export const useUserGuide = (user) => {
   const [showGuide, setShowGuide] = useState(false);
@@ -6,42 +14,22 @@ export const useUserGuide = (user) => {
 
   // Verificar si debe mostrarse la guía
   useEffect(() => {
+    // Si la guía está deshabilitada globalmente, no hacer nada
+    if (!USER_GUIDE_CONFIG.ENABLED) {
+      setShowGuide(false);
+      return;
+    }
+
     if (!user || user.role !== 'client') {
       return;
     }
 
-    const checkShouldShowGuide = () => {
-      const guideCompleted = localStorage.getItem('ds-guide-completed');
-      const guideSkipped = localStorage.getItem('ds-guide-skipped');
-      const guideVersion = localStorage.getItem('ds-guide-version');
-      const currentVersion = '3.0.4';
-
-      // Mostrar guía si:
-      // 1. Es un usuario nuevo (nunca completó ni saltó la guía)
-      // 2. Hay una nueva versión con funcionalidades nuevas
-      // 3. El usuario solicita ver la guía manualmente
-
-      if (!guideCompleted && !guideSkipped) {
-        // Usuario nuevo
-        return true;
-      }
-
-      if (guideVersion !== currentVersion) {
-        // Nueva versión - resetear estados para mostrar nuevas funciones
-        localStorage.removeItem('ds-guide-completed');
-        localStorage.removeItem('ds-guide-skipped');
-        return true;
-      }
-
-      return false;
-    };
-
     // Esperar un poco para que la página se cargue completamente
     const timer = setTimeout(() => {
-      if (checkShouldShowGuide()) {
+      if (shouldShowGuide(user)) {
         setShowGuide(true);
       }
-    }, 1000); // Reducido de 2000 a 1000ms
+    }, getTimeouts().INITIAL_DELAY);
 
     return () => clearTimeout(timer);
   }, [user]);
@@ -49,33 +37,45 @@ export const useUserGuide = (user) => {
   const handleGuideComplete = () => {
     setShowGuide(false);
     setCurrentStep(0);
-    // El localStorage se actualiza en el componente UserGuide
+    markGuideAsCompleted();
   };
 
   const handleGuideSkip = () => {
     setShowGuide(false);
     setCurrentStep(0);
-    // El localStorage se actualiza en el componente UserGuide
+    markGuideAsSkipped();
   };
 
   const startGuideManually = () => {
+    // Solo permitir inicio manual si la guía está habilitada
+    if (!USER_GUIDE_CONFIG.ENABLED) {
+      console.warn('La guía de usuario está deshabilitada en la configuración');
+      return;
+    }
+    
     setCurrentStep(0);
     setShowGuide(true);
   };
 
   const restartGuide = () => {
-    localStorage.removeItem('ds-guide-completed');
-    localStorage.removeItem('ds-guide-skipped');
+    // Solo permitir reinicio si la guía está habilitada
+    if (!USER_GUIDE_CONFIG.ENABLED) {
+      console.warn('La guía de usuario está deshabilitada en la configuración');
+      return;
+    }
+    
+    resetGuideState();
     setCurrentStep(0);
     setShowGuide(true);
   };
 
   return {
-    showGuide,
+    showGuide: USER_GUIDE_CONFIG.ENABLED ? showGuide : false, // Forzar false si está deshabilitada
     currentStep,
     handleGuideComplete,
     handleGuideSkip,
     startGuideManually,
-    restartGuide
+    restartGuide,
+    isEnabled: USER_GUIDE_CONFIG.ENABLED // Exponer el estado de habilitación
   };
 };

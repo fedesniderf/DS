@@ -1,4 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { 
+  USER_GUIDE_CONFIG, 
+  isMobileDevice, 
+  getTimeouts,
+  markGuideAsCompleted,
+  markGuideAsSkipped
+} from '../config/userGuideConfig';
 
 const UserGuide = ({ 
   isVisible, 
@@ -10,6 +17,11 @@ const UserGuide = ({
   const [step, setStep] = useState(currentStep);
   const [isHighlighting, setIsHighlighting] = useState(false);
   const overlayRef = useRef(null);
+
+  // Si la guía está deshabilitada, no renderizar nada
+  if (!USER_GUIDE_CONFIG.ENABLED) {
+    return null;
+  }
 
   // Añadir estilos CSS específicos para móvil cuando el componente se monta
   useEffect(() => {
@@ -161,8 +173,13 @@ const UserGuide = ({
       setIsHighlighting(true);
       
       // Aplicar estilos de resaltado con z-index más alto para móvil
+      const isMobile = isMobileDevice();
+      const zIndex = isMobile ? 
+        USER_GUIDE_CONFIG.Z_INDEX.HIGHLIGHTED_ELEMENT_MOBILE : 
+        USER_GUIDE_CONFIG.Z_INDEX.HIGHLIGHTED_ELEMENT;
+      
       element.style.position = 'relative';
-      element.style.zIndex = window.innerWidth <= 768 ? '2147483645' : '999998'; // Máximo z-index para móvil
+      element.style.zIndex = zIndex.toString();
       element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.8), 0 0 0 8px rgba(59, 130, 246, 0.4)';
       element.style.borderRadius = '8px';
       element.style.pointerEvents = 'auto';
@@ -174,6 +191,9 @@ const UserGuide = ({
       element.setAttribute('data-guide-highlighted', 'true');
       
       // Scroll suave hacia el elemento con mejor configuración para móvil
+      const timeouts = getTimeouts();
+      const scrollDelay = isMobile ? 500 : 200;
+      
       setTimeout(() => {
         element.scrollIntoView({ 
           behavior: 'smooth', 
@@ -198,8 +218,8 @@ const UserGuide = ({
               inline: 'center'
             });
           }
-        }, 500); // Más tiempo para móvil
-      }, window.innerWidth <= 768 ? 500 : 200); // Más delay en móvil
+        }, isMobile ? 500 : 300);
+      }, scrollDelay);
     } else {
       console.warn(`Elemento no encontrado para el selector: ${selector}`);
       // Intentar con selectores alternativos comunes
@@ -279,23 +299,22 @@ const UserGuide = ({
   // Función para completar la guía
   const handleComplete = () => {
     removeHighlight();
-    // Marcar la guía como completada en localStorage
-    localStorage.setItem('ds-guide-completed', 'true');
-    localStorage.setItem('ds-guide-version', '3.0.4');
+    markGuideAsCompleted();
     onComplete();
   };
 
   // Función para saltar la guía
   const handleSkip = () => {
     removeHighlight();
-    localStorage.setItem('ds-guide-skipped', 'true');
-    localStorage.setItem('ds-guide-version', '3.0.4');
+    markGuideAsSkipped();
     onSkip();
   };
 
   // Efecto para bloquear scroll de fondo en móvil cuando la guía está visible
   useEffect(() => {
-    if (isVisible && window.innerWidth <= 768) {
+    const isMobile = isMobileDevice();
+    
+    if (isVisible && isMobile) {
       // Bloquear scroll del body
       const originalStyle = window.getComputedStyle(document.body).overflow;
       const originalPosition = window.getComputedStyle(document.body).position;
@@ -323,9 +342,10 @@ const UserGuide = ({
   useEffect(() => {
     if (isVisible && currentStepData.target) {
       // Delay más largo para asegurar que la página esté lista
+      const timeouts = getTimeouts();
       const timer = setTimeout(() => {
         highlightElement(currentStepData.target);
-      }, 800); // Aumentado de 500 a 800ms
+      }, timeouts.HIGHLIGHT_DELAY);
       
       return () => clearTimeout(timer);
     }
@@ -379,7 +399,7 @@ const UserGuide = ({
 
   // Función para obtener la posición del tooltip
   const getTooltipPosition = () => {
-    const isMobile = window.innerWidth <= 768;
+    const isMobile = isMobileDevice();
     
     if (!currentStepData.target || isMobile) {
       // En móvil, siempre centrar el tooltip
@@ -388,7 +408,7 @@ const UserGuide = ({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        zIndex: 1000000
+        zIndex: USER_GUIDE_CONFIG.Z_INDEX.TOOLTIP
       };
     }
 
@@ -400,13 +420,12 @@ const UserGuide = ({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        zIndex: 1000000
+        zIndex: USER_GUIDE_CONFIG.Z_INDEX.TOOLTIP
       };
     }
 
     const rect = element.getBoundingClientRect();
-    const tooltipWidth = 320;
-    const tooltipHeight = 280;
+    const { TOOLTIP_WIDTH, TOOLTIP_HEIGHT } = USER_GUIDE_CONFIG.DIMENSIONS.DESKTOP;
 
     let position = {};
     let transformOrigin = 'center';
@@ -414,28 +433,28 @@ const UserGuide = ({
     switch (currentStepData.position) {
       case 'top':
         position = {
-          top: rect.top - tooltipHeight - 15,
-          left: rect.left + (rect.width / 2) - (tooltipWidth / 2)
+          top: rect.top - TOOLTIP_HEIGHT - 15,
+          left: rect.left + (rect.width / 2) - (TOOLTIP_WIDTH / 2)
         };
         transformOrigin = 'bottom center';
         break;
       case 'bottom':
         position = {
           top: rect.bottom + 15,
-          left: rect.left + (rect.width / 2) - (tooltipWidth / 2)
+          left: rect.left + (rect.width / 2) - (TOOLTIP_WIDTH / 2)
         };
         transformOrigin = 'top center';
         break;
       case 'left':
         position = {
-          top: rect.top + (rect.height / 2) - (tooltipHeight / 2),
-          left: rect.left - tooltipWidth - 15
+          top: rect.top + (rect.height / 2) - (TOOLTIP_HEIGHT / 2),
+          left: rect.left - TOOLTIP_WIDTH - 15
         };
         transformOrigin = 'right center';
         break;
       case 'right':
         position = {
-          top: rect.top + (rect.height / 2) - (tooltipHeight / 2),
+          top: rect.top + (rect.height / 2) - (TOOLTIP_HEIGHT / 2),
           left: rect.right + 15
         };
         transformOrigin = 'left center';
@@ -450,7 +469,7 @@ const UserGuide = ({
       default:
         position = {
           top: rect.bottom + 15,
-          left: rect.left + (rect.width / 2) - (tooltipWidth / 2)
+          left: rect.left + (rect.width / 2) - (TOOLTIP_WIDTH / 2)
         };
         transformOrigin = 'top center';
     }
@@ -463,27 +482,27 @@ const UserGuide = ({
     // Ajustar horizontalmente
     if (position.left < margin) {
       position.left = margin;
-    } else if (position.left + tooltipWidth > viewportWidth - margin) {
-      position.left = viewportWidth - tooltipWidth - margin;
+    } else if (position.left + TOOLTIP_WIDTH > viewportWidth - margin) {
+      position.left = viewportWidth - TOOLTIP_WIDTH - margin;
     }
     
     // Ajustar verticalmente
     if (position.top < margin) {
       position.top = rect.bottom + 15;
       transformOrigin = 'top center';
-    } else if (position.top + tooltipHeight > viewportHeight - margin) {
-      position.top = rect.top - tooltipHeight - 15;
+    } else if (position.top + TOOLTIP_HEIGHT > viewportHeight - margin) {
+      position.top = rect.top - TOOLTIP_HEIGHT - 15;
       transformOrigin = 'bottom center';
       
       if (position.top < margin) {
-        position.top = Math.max(margin, (viewportHeight - tooltipHeight) / 2);
+        position.top = Math.max(margin, (viewportHeight - TOOLTIP_HEIGHT) / 2);
         transformOrigin = 'center';
       }
     }
 
     return {
       position: 'fixed',
-      zIndex: 1000000,
+      zIndex: USER_GUIDE_CONFIG.Z_INDEX.TOOLTIP,
       transformOrigin,
       ...position
     };
@@ -500,9 +519,9 @@ const UserGuide = ({
       {/* Overlay oscuro con mejor z-index para móvil */}
       <div 
         ref={overlayRef}
-        className={`fixed inset-0 bg-black bg-opacity-70 ${window.innerWidth <= 768 ? 'user-guide-overlay' : ''}`}
+        className={`fixed inset-0 bg-black bg-opacity-70 ${isMobileDevice() ? 'user-guide-overlay' : ''}`}
         style={{ 
-          zIndex: 2147483646,
+          zIndex: USER_GUIDE_CONFIG.Z_INDEX.OVERLAY,
           pointerEvents: 'none',
           cursor: 'default',
           position: 'fixed',
@@ -520,22 +539,22 @@ const UserGuide = ({
       
       {/* Tooltip de la guía */}
       <div 
-        className={`fixed bg-white rounded-xl shadow-2xl border border-gray-200 p-4 ${window.innerWidth <= 768 ? 'user-guide-tooltip' : ''}`}
+        className={`fixed bg-white rounded-xl shadow-2xl border border-gray-200 p-4 ${isMobileDevice() ? 'user-guide-tooltip' : ''}`}
         style={{
-          ...(window.innerWidth <= 768 ? {} : tooltipStyle),
-          zIndex: 2147483647,
+          ...(isMobileDevice() ? {} : tooltipStyle),
+          zIndex: USER_GUIDE_CONFIG.Z_INDEX.TOOLTIP,
           pointerEvents: 'auto',
           userSelect: 'none',
           position: 'fixed',
           isolation: 'isolate',
           WebkitTransform: 'translate3d(0, 0, 0)',
           transform: 'translate3d(0, 0, 0)',
-          width: window.innerWidth <= 768 ? '90vw' : '320px',
-          maxWidth: window.innerWidth <= 768 ? '90vw' : '320px',
-          maxHeight: window.innerWidth <= 768 ? '80vh' : '90vh',
+          width: isMobileDevice() ? USER_GUIDE_CONFIG.DIMENSIONS.MOBILE.TOOLTIP_WIDTH : USER_GUIDE_CONFIG.DIMENSIONS.DESKTOP.TOOLTIP_WIDTH,
+          maxWidth: isMobileDevice() ? USER_GUIDE_CONFIG.DIMENSIONS.MOBILE.TOOLTIP_WIDTH : USER_GUIDE_CONFIG.DIMENSIONS.DESKTOP.TOOLTIP_WIDTH,
+          maxHeight: isMobileDevice() ? USER_GUIDE_CONFIG.DIMENSIONS.MOBILE.TOOLTIP_HEIGHT : '90vh',
           overflow: 'auto',
           // Forzar posición central en móvil
-          ...(window.innerWidth <= 768 && {
+          ...(isMobileDevice() && {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
