@@ -105,10 +105,19 @@ const UserGuide = ({
     if (element) {
       setIsHighlighting(true);
       element.style.position = 'relative';
-      element.style.zIndex = '9999';
+      element.style.zIndex = '10001';
       element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.5), 0 0 0 8px rgba(59, 130, 246, 0.3)';
       element.style.borderRadius = '8px';
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.style.pointerEvents = 'auto';
+      
+      // Scroll suave hacia el elemento
+      setTimeout(() => {
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'center'
+        });
+      }, 100);
     }
   };
 
@@ -118,6 +127,7 @@ const UserGuide = ({
     highlightedElements.forEach(el => {
       el.style.boxShadow = '';
       el.style.zIndex = '';
+      el.style.pointerEvents = '';
     });
     setIsHighlighting(false);
   };
@@ -160,9 +170,12 @@ const UserGuide = ({
   // Efecto para resaltar elementos cuando cambia el paso
   useEffect(() => {
     if (isVisible && currentStepData.target) {
-      setTimeout(() => {
+      // Delay más largo para asegurar que la página esté lista
+      const timer = setTimeout(() => {
         highlightElement(currentStepData.target);
-      }, 300);
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
     
     return () => {
@@ -172,6 +185,13 @@ const UserGuide = ({
     };
   }, [step, isVisible, currentStepData.target]);
 
+  // Efecto para limpiar al desmontar el componente
+  useEffect(() => {
+    return () => {
+      removeHighlight();
+    };
+  }, []);
+
   // Función para obtener la posición del tooltip
   const getTooltipPosition = () => {
     if (!currentStepData.target) {
@@ -179,7 +199,8 @@ const UserGuide = ({
         position: 'fixed',
         top: '50%',
         left: '50%',
-        transform: 'translate(-50%, -50%)'
+        transform: 'translate(-50%, -50%)',
+        zIndex: 10002
       };
     }
 
@@ -189,13 +210,14 @@ const UserGuide = ({
         position: 'fixed',
         top: '50%',
         left: '50%',
-        transform: 'translate(-50%, -50%)'
+        transform: 'translate(-50%, -50%)',
+        zIndex: 10002
       };
     }
 
     const rect = element.getBoundingClientRect();
     const tooltipWidth = 320;
-    const tooltipHeight = 200;
+    const tooltipHeight = 250; // Aumentado para mejor espacio
 
     let position = {};
 
@@ -237,13 +259,31 @@ const UserGuide = ({
         };
     }
 
-    // Asegurar que el tooltip esté dentro de la ventana
+    // Asegurar que el tooltip esté dentro de la ventana con mejor lógica
     const margin = 20;
-    position.left = Math.max(margin, Math.min(position.left, window.innerWidth - tooltipWidth - margin));
-    position.top = Math.max(margin, Math.min(position.top, window.innerHeight - tooltipHeight - margin));
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Ajustar horizontalmente
+    if (position.left < margin) {
+      position.left = margin;
+    } else if (position.left + tooltipWidth > viewportWidth - margin) {
+      position.left = viewportWidth - tooltipWidth - margin;
+    }
+    
+    // Ajustar verticalmente - si no cabe arriba, ponerlo abajo
+    if (position.top < margin) {
+      position.top = rect.bottom + 20;
+    } else if (position.top + tooltipHeight > viewportHeight - margin) {
+      position.top = rect.top - tooltipHeight - 20;
+      if (position.top < margin) {
+        position.top = margin;
+      }
+    }
 
     return {
       position: 'fixed',
+      zIndex: 10002,
       ...position
     };
   };
@@ -259,14 +299,24 @@ const UserGuide = ({
       {/* Overlay oscuro */}
       <div 
         ref={overlayRef}
-        className="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
-        style={{ pointerEvents: isHighlighting ? 'none' : 'auto' }}
+        className="fixed inset-0 bg-black bg-opacity-60 z-[10000]"
+        style={{ 
+          pointerEvents: 'none', // Cambiar a none para permitir clics en elementos resaltados
+          cursor: 'default'
+        }}
       />
       
       {/* Tooltip de la guía */}
       <div 
-        className="fixed z-[9999] bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-sm"
-        style={tooltipStyle}
+        className="fixed bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-w-sm min-h-[250px]"
+        style={{
+          ...tooltipStyle,
+          pointerEvents: 'auto',
+          userSelect: 'none'
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -285,6 +335,7 @@ const UserGuide = ({
             onClick={handleSkip}
             className="text-gray-400 hover:text-gray-600 transition-colors"
             title="Saltar guía"
+            style={{ pointerEvents: 'auto' }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -320,6 +371,7 @@ const UserGuide = ({
               <button
                 onClick={prevStep}
                 className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                style={{ pointerEvents: 'auto' }}
               >
                 Anterior
               </button>
@@ -327,6 +379,7 @@ const UserGuide = ({
             <button
               onClick={handleSkip}
               className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              style={{ pointerEvents: 'auto' }}
             >
               Saltar
             </button>
@@ -335,6 +388,7 @@ const UserGuide = ({
           <button
             onClick={nextStep}
             className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            style={{ pointerEvents: 'auto' }}
           >
             {step === guideSteps.length - 1 ? 'Finalizar' : 'Siguiente'}
           </button>

@@ -41,7 +41,7 @@ export const useUserGuide = (user) => {
       if (checkShouldShowGuide()) {
         setShowGuide(true);
       }
-    }, 2000);
+    }, 1000); // Reducido de 2000 a 1000ms
 
     return () => clearTimeout(timer);
   }, [user]);
