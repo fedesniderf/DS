@@ -889,6 +889,23 @@ const RoutineDetail = (props) => {
     setShowTimer(true);
   };
 
+  // Función específica para manejar el timer de rounds
+  const handleOpenTimerForRound = (roundExercises, roundNumber, cantidadRounds) => {
+    // Crear un objeto especial que representa el round completo
+    const roundTimer = {
+      id: `round-${roundNumber}`,
+      name: `Round ${roundNumber}`,
+      isRound: true,
+      roundNumber: roundNumber,
+      exercises: roundExercises,
+      sets: cantidadRounds || 1, // Usar cantidadRounds como número de series
+      cantidadRounds: cantidadRounds
+    };
+    
+    setTimerExercise(roundTimer);
+    setShowTimer(true);
+  };
+
   const handleCloseTimer = () => {
     setShowTimer(false);
     setTimerExercise(null);
@@ -1639,7 +1656,10 @@ const RoutineDetail = (props) => {
                                     <div>
                                       {Array.isArray(group.exercises) && (
                                         <div className="p-2 bg-gray-50 rounded-xl shadow flex flex-col gap-2">
-                                          {group.exercises.map((ex) => (
+                                          {group.exercises.map((ex, exerciseIndex) => {
+                                            const isFirstExerciseInRound = exerciseIndex === 0; // Solo el primer ejercicio del round tendrá timer
+                                            
+                                            return (
                                             <div key={ex.id} className="flex flex-col gap-1 border-b last:border-b-0 pb-1 last:pb-0">
                                               <div className="flex justify-between items-start gap-4">
                                                 {/* Columna izquierda: título y detalles del ejercicio */}
@@ -1660,22 +1680,27 @@ const RoutineDetail = (props) => {
                                                     )}
                                                   </div>
                                                   {renderExerciseDetails({ ...ex, hideRest: true })}
-                                                  {renderWeeklyTracking(ex)}
+                                                  {/* Seguimiento semanal solo en el primer ejercicio del round */}
+                                                  {isFirstExerciseInRound && renderWeeklyTracking(ex)}
                                                 </div>
                                                 
                                                 {/* Columna derecha: botones de acción en vertical */}
                                                 <div className="flex flex-col gap-2">
-                                                  <button
-                                                    data-guide="timer-button"
-                                                    className="p-1 rounded-full bg-slate-800 hover:bg-slate-900 text-white transition-colors"
-                                                    title="Cronómetro del ejercicio"
-                                                    onClick={() => handleOpenTimer(ex)}
-                                                  >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                                    </svg>
-                                                  </button>
+                                                  {/* Timer solo en el primer ejercicio del round */}
+                                                  {isFirstExerciseInRound && (
+                                                    <button
+                                                      data-guide="timer-button"
+                                                      className="p-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                                                      title="Cronómetro del round"
+                                                      onClick={() => handleOpenTimerForRound(group.exercises, ex.round, cantidadRounds)}
+                                                    >
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                      </svg>
+                                                    </button>
+                                                  )}
                                                   
+                                                  {/* Seguimiento semanal para cada ejercicio */}
                                                   {canAddDailyTracking && (
                                                     <button
                                                       data-guide="weekly-tracking"
@@ -1715,7 +1740,8 @@ const RoutineDetail = (props) => {
                                                 </div>
                                               </div>
                                             </div>
-                                          ))}
+                                            );
+                                          })}
                                         </div>
                                       )}
                                     </div>
@@ -1753,7 +1779,7 @@ const RoutineDetail = (props) => {
                                     <div className="flex flex-col gap-2">
                                       <button
                                         data-guide="timer-button"
-                                        className="p-1 rounded-full bg-slate-800 hover:bg-slate-900 text-white transition-colors"
+                                        className="p-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white transition-colors"
                                         title="Cronómetro del ejercicio"
                                         onClick={() => handleOpenTimer(ex)}
                                       >

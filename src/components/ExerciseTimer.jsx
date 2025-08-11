@@ -13,7 +13,11 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
   const [isMinimized, setIsMinimized] = useState(false); // Estado minimizado
   const intervalRef = useRef(null);
 
-  const totalSeries = parseInt(exercise?.series) || 1;
+  // Detectar si es un round o ejercicio individual
+  const isRound = exercise?.isRound || false;
+  const totalSeries = isRound ? 
+    parseInt(exercise?.cantidadRounds) || 1 : 
+    parseInt(exercise?.series) || 1;
 
   // Formatear tiempo en MM:SS
   const formatTime = (seconds) => {
@@ -59,9 +63,9 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
     setIsPaused(false);
   };
 
-  // Pasar a la siguiente serie (botón "Vuelta")
+  // Pasar a la siguiente serie/round (botón "Descanso"/"Siguiente Round")
   const handleNextSeries = () => {
-    // Guardar tiempo de la serie actual
+    // Guardar tiempo de la serie/round actual
     const newSeriesTimes = [...seriesTimes, time];
     setSeriesTimes(newSeriesTimes);
     
@@ -178,7 +182,12 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
             </div>
             
             {/* Estado del ejercicio minimizado */}
-            <div className="text-xs text-gray-600 mb-2">{exercise?.name}</div>
+            <div className="text-xs text-gray-600 mb-2">
+              {isRound ? 
+                `${exercise?.name} (${exercise?.exercises?.length || 0} ejercicios)` : 
+                exercise?.name
+              }
+            </div>
             
             {/* Tiempo actual y serie */}
             <div className="flex justify-between items-center mb-2">
@@ -187,7 +196,9 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
                   (isResting ? 'text-blue-600' : 'text-red-600') : 
                   'text-gray-600'
               }`}>{formatTime(time)}</span>
-              <span className="text-xs text-gray-500">Serie {currentSeries}/{totalSeries}</span>
+              <span className="text-xs text-gray-500">
+                {isRound ? `Round ${currentSeries}/${totalSeries}` : `Serie ${currentSeries}/${totalSeries}`}
+              </span>
             </div>
             
             {/* Estado actual */}
@@ -243,46 +254,74 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
       ) : (
         // Versión completa
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-sm max-h-[80vh] flex flex-col">
             {/* Header fijo */}
-            <div className="p-6 border-b border-gray-200 flex-shrink-0">
+            <div className="p-4 border-b border-gray-200 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-800">Cronómetro</h3>
-                <div className="flex gap-2">
+                <h3 className="text-base font-bold text-gray-800">Cronómetro</h3>
+                <div className="flex gap-1">
                   {/* Botón minimizar */}
                   <button
                     onClick={() => setIsMinimized(true)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                     title="Minimizar"
                   >
-                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                     </svg>
                   </button>
                   {/* Botón cerrar */}
                   <button
                     onClick={onClose}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                     title="Cerrar"
                   >
-                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 mt-1">{exercise?.name}</p>
+              <p className="text-xs text-gray-600 mt-1">
+                {isRound ? 
+                  `${exercise?.name} (${exercise?.exercises?.length || 0} ejercicios)` : 
+                  exercise?.name
+                }
+              </p>
+              
+              {/* Mostrar ejercicios del round */}
+              {isRound && exercise?.exercises && (
+                <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                  <h4 className="text-xs font-semibold text-gray-600 mb-1">Ejercicios en este round:</h4>
+                  <div className="space-y-1">
+                    {exercise.exercises.map((ex, index) => (
+                      <div key={index} className="text-xs text-gray-600 flex justify-between">
+                        <span>{ex.name}</span>
+                        <span className="text-gray-500">
+                          {ex.reps && `${ex.reps} reps`}
+                          {ex.reps && ex.weight && ' | '}
+                          {ex.weight && `${ex.weight} kg`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
           {/* Contenido scrollable */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4">
             {/* Estado actual */}
-            <div className="text-center mb-4">
-              <div className="text-sm font-medium text-gray-600 mb-2">
+            <div className="text-center mb-3">
+              <div className="text-sm font-medium text-gray-600 mb-1">
                 {isResting ? (
-                  <span className="text-orange-600">Descanso - Serie {currentSeries}</span>
+                  <span className="text-orange-600">
+                    Descanso - {isRound ? `Round ${currentSeries}` : `Serie ${currentSeries}`}
+                  </span>
                 ) : (
-                  <span className="text-blue-600">Serie {currentSeries} de {totalSeries}</span>
+                  <span className="text-blue-600">
+                    {isRound ? `Round ${currentSeries} de ${totalSeries}` : `Serie ${currentSeries} de ${totalSeries}`}
+                  </span>
                 )}
               </div>
               <div className="text-xs text-gray-500">
@@ -291,32 +330,32 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
             </div>
 
             {/* Cronómetro principal */}
-            <div className="text-center mb-8">
-              <div className="bg-gray-100 rounded-2xl p-8 mb-6">
-                <div className={`text-6xl font-mono font-bold mb-2 ${
+            <div className="text-center mb-4">
+              <div className="bg-gray-100 rounded-xl p-4 mb-3">
+                <div className={`text-4xl font-mono font-bold mb-1 ${
                   isRunning && !isPaused ? 
                     (isResting ? 'text-blue-600' : 'text-red-600') : 
                     'text-gray-800'
                 }`}>
                   {formatTime(time)}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-xs text-gray-500">
                   {isRunning ? (isPaused ? 'En pausa' : (isResting ? 'Descansando' : 'Ejecutando')) : 'Detenido'}
                 </div>
               </div>
 
-              {/* Campo de peso para la serie actual - Disponible cuando no está ejecutando */}
+              {/* Campo de peso para la serie/round actual - Disponible cuando no está ejecutando */}
               {(!isRunning || (isRunning && isResting)) && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Peso Serie {currentSeries} (kg)
+                <div className="mb-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Peso {isRound ? `Round ${currentSeries}` : `Serie ${currentSeries}`} (kg)
                   </label>
                   <input
                     type="number"
                     step="0.5"
                     value={currentWeight}
                     onChange={(e) => setCurrentWeight(e.target.value)}
-                    className="w-32 mx-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                    className="w-24 mx-auto px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm"
                     placeholder="Ej: 80"
                   />
                 </div>
@@ -328,9 +367,9 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
                   <>
                     <button
                       onClick={handleStart}
-                      className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium text-sm"
+                      className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-md hover:bg-green-600 transition-colors font-medium text-sm"
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                       </svg>
                       Iniciar
@@ -338,9 +377,9 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
                     {(totalTime > 0 || seriesTimes.length > 0) && (
                       <button
                         onClick={handleReset}
-                        className="flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm"
+                        className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-md hover:bg-gray-600 transition-colors font-medium text-sm"
                       >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
                         </svg>
                         Reset
@@ -351,18 +390,18 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
                   <>
                     <button
                       onClick={handleResume}
-                      className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+                      className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600 transition-colors font-medium text-sm"
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                       </svg>
                       Reanudar
                     </button>
                     <button
                       onClick={handleStop}
-                      className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium text-sm"
+                      className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition-colors font-medium text-sm"
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v6a1 1 0 11-2 0V7zM12 7a1 1 0 012 0v6a1 1 0 11-2 0V7z" clipRule="evenodd" />
                       </svg>
                       Parar
@@ -372,24 +411,27 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
                   <>
                     <button
                       onClick={handlePause}
-                      className="flex items-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors font-medium text-sm"
+                      className="flex items-center gap-1 bg-yellow-500 text-white px-3 py-2 rounded-md hover:bg-yellow-600 transition-colors font-medium text-sm"
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zM12 8a1 1 0 012 0v4a1 1 0 11-2 0V8z" clipRule="evenodd" />
                       </svg>
                       Pausar
                     </button>
                     
-                    {/* Botón Vuelta */}
+                    {/* Botón Descanso */}
                     {!isResting && time > 0 && (
                       <button
                         onClick={handleNextSeries}
-                        className="flex items-center gap-2 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium text-sm"
+                        className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600 transition-colors font-medium text-sm"
                       >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
                         </svg>
-                        {currentSeries < totalSeries ? 'Vuelta' : 'Finalizar'}
+                        {currentSeries < totalSeries ? 
+                          (isRound ? 'Siguiente Round' : 'Descanso') : 
+                          'Finalizar'
+                        }
                       </button>
                     )}
 
@@ -397,18 +439,18 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
                     {isResting && (
                       <button
                         onClick={handleEndRest}
-                        className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium text-sm"
+                        className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-md hover:bg-green-600 transition-colors font-medium text-sm"
                       >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                         </svg>
-                        Empezar Serie
+                        {isRound ? 'Empezar Round' : 'Empezar Serie'}
                       </button>
                     )}
                     
                     <button
                       onClick={handleStop}
-                      className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium text-sm"
+                      className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition-colors font-medium text-sm"
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v6a1 1 0 11-2 0V7zM12 7a1 1 0 012 0v6a1 1 0 11-2 0V7z" clipRule="evenodd" />
@@ -422,13 +464,17 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
 
             {/* Historial de series */}
             {seriesTimes.length > 0 && (
-              <div className="bg-green-50 rounded-lg p-4 mb-4">
-                <h4 className="font-semibold text-gray-800 mb-3">Series Completadas</h4>
-                <div className="space-y-2">
+              <div className="bg-green-50 rounded-md p-3 mb-3">
+                <h4 className="font-semibold text-gray-800 mb-2 text-sm">
+                  {isRound ? 'Rounds Completados' : 'Series Completadas'}
+                </h4>
+                <div className="space-y-1">
                   {seriesTimes.map((serieTime, index) => (
-                    <div key={index} className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Serie {index + 1}:</span>
-                      <div className="flex gap-4">
+                    <div key={index} className="flex justify-between items-center text-xs">
+                      <span className="text-gray-600">
+                        {isRound ? `Round ${index + 1}:` : `Serie ${index + 1}:`}
+                      </span>
+                      <div className="flex gap-2">
                         <span className="font-semibold text-green-600">{formatTime(serieTime)}</span>
                         {seriesWeights[index] && (
                           <span className="font-semibold text-blue-600">{seriesWeights[index]} kg</span>
@@ -441,25 +487,25 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
             )}
 
             {/* Información del ejercicio */}
-            <div className="bg-blue-50 rounded-lg p-4">
-              <h4 className="font-semibold text-gray-800 mb-3">Información del Ejercicio</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="bg-blue-50 rounded-md p-3">
+              <h4 className="font-semibold text-gray-800 mb-2 text-sm">Información del Ejercicio</h4>
+              <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
                   <span className="text-gray-600">Series:</span>
-                  <div className="font-semibold text-lg text-blue-600">
+                  <div className="font-semibold text-sm text-blue-600">
                     {exercise?.series || 'N/A'}
                   </div>
                 </div>
                 <div>
                   <span className="text-gray-600">Repeticiones:</span>
-                  <div className="font-semibold text-lg text-blue-600">
+                  <div className="font-semibold text-sm text-blue-600">
                     {exercise?.repetitions || 'N/A'}
                   </div>
                 </div>
                 {exercise?.rest && (
                   <div className="col-span-2">
                     <span className="text-gray-600">Descanso:</span>
-                    <div className="font-semibold text-lg text-green-600">
+                    <div className="font-semibold text-sm text-green-600">
                       {exercise.rest}
                     </div>
                   </div>
@@ -467,7 +513,7 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
                 {exercise?.weight && (
                   <div className="col-span-2">
                     <span className="text-gray-600">Peso:</span>
-                    <div className="font-semibold text-lg text-purple-600">
+                    <div className="font-semibold text-sm text-purple-600">
                       {exercise.weight}
                     </div>
                   </div>
