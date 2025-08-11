@@ -42,8 +42,8 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
 
   // Iniciar cronómetro
   const handleStart = () => {
-    // Guardar peso de la serie actual antes de iniciar
-    if (currentWeight) {
+    // Guardar peso de la serie actual antes de iniciar (solo para ejercicios individuales)
+    if (!isRound && currentWeight) {
       const newSeriesWeights = [...seriesWeights];
       newSeriesWeights[currentSeries - 1] = currentWeight;
       setSeriesWeights(newSeriesWeights);
@@ -83,8 +83,8 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
 
   // Finalizar descanso y empezar siguiente serie
   const handleEndRest = () => {
-    // Guardar peso de la serie actual antes de iniciar
-    if (currentWeight) {
+    // Guardar peso de la serie actual antes de iniciar (solo para ejercicios individuales)
+    if (!isRound && currentWeight) {
       const newSeriesWeights = [...seriesWeights];
       newSeriesWeights[currentSeries - 1] = currentWeight;
       setSeriesWeights(newSeriesWeights);
@@ -104,9 +104,11 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
     let finalSeriesWeights = [...seriesWeights];
     if (time > 0 && !isResting) {
       finalSeriesTimes = [...seriesTimes, time];
-      finalSeriesWeights = [...seriesWeights, currentWeight || ''];
+      if (!isRound) {
+        finalSeriesWeights = [...seriesWeights, currentWeight || ''];
+        setSeriesWeights(finalSeriesWeights);
+      }
       setSeriesTimes(finalSeriesTimes);
-      setSeriesWeights(finalSeriesWeights);
     }
     
     // Automáticamente enviar datos al modal de seguimiento semanal si hay tiempo registrado
@@ -114,7 +116,7 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
       const timerData = {
         totalTime: totalTime,
         seriesTimes: finalSeriesTimes,
-        seriesWeights: finalSeriesWeights, // Incluir pesos por serie
+        seriesWeights: isRound ? [] : finalSeriesWeights, // Solo incluir pesos para ejercicios individuales
         formattedTotalTime: formatTime(totalTime),
         formattedSeriesTimes: finalSeriesTimes.map((serieTime, index) => ({
           serie: index + 1,
@@ -191,7 +193,7 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
             
             {/* Tiempo actual y serie */}
             <div className="flex justify-between items-center mb-2">
-              <span className={`text-lg font-bold ${
+              <span className={`text-xl font-bold font-mono ${
                 isRunning && !isPaused ? 
                   (isResting ? 'text-blue-600' : 'text-red-600') : 
                   'text-gray-600'
@@ -238,12 +240,31 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
                   >
                     ⏸️
                   </button>
-                  {!isResting && (
+                  {!isResting && time > 0 && (
                     <button
                       onClick={handleNextSeries}
-                      className="flex items-center gap-1 bg-purple-500 text-white px-2 py-1 rounded text-xs hover:bg-purple-600 transition-colors"
+                      className="flex items-center gap-1 bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors"
+                      title={currentSeries < totalSeries ? 
+                        (isRound ? 'Siguiente Round' : 'Iniciar descanso') : 
+                        'Finalizar ejercicio'
+                      }
                     >
-                      ↻
+                      {currentSeries < totalSeries ? '💤' : '🏁'}
+                      <span className="ml-1 text-xs">
+                        {currentSeries < totalSeries ? 
+                          (isRound ? 'Round' : 'Descanso') : 
+                          'Finalizar'
+                        }
+                      </span>
+                    </button>
+                  )}
+                  {isResting && (
+                    <button
+                      onClick={handleEndRest}
+                      className="flex items-center gap-1 bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600 transition-colors"
+                      title="Terminar descanso"
+                    >
+                      ▶️
                     </button>
                   )}
                 </>
@@ -332,7 +353,7 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
             {/* Cronómetro principal */}
             <div className="text-center mb-4">
               <div className="bg-gray-100 rounded-xl p-4 mb-3">
-                <div className={`text-4xl font-mono font-bold mb-1 ${
+                <div className={`text-6xl font-mono font-bold mb-1 ${
                   isRunning && !isPaused ? 
                     (isResting ? 'text-blue-600' : 'text-red-600') : 
                     'text-gray-800'
@@ -344,11 +365,11 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
                 </div>
               </div>
 
-              {/* Campo de peso para la serie/round actual - Disponible cuando no está ejecutando */}
-              {(!isRunning || (isRunning && isResting)) && (
+              {/* Campo de peso para la serie actual - Solo para ejercicios individuales */}
+              {!isRound && (!isRunning || (isRunning && isResting)) && (
                 <div className="mb-3">
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Peso {isRound ? `Round ${currentSeries}` : `Serie ${currentSeries}`} (kg)
+                    Peso Serie {currentSeries} (kg)
                   </label>
                   <input
                     type="number"
@@ -476,7 +497,7 @@ const ExerciseTimer = ({ exercise, onClose, onSaveTime }) => {
                       </span>
                       <div className="flex gap-2">
                         <span className="font-semibold text-green-600">{formatTime(serieTime)}</span>
-                        {seriesWeights[index] && (
+                        {!isRound && seriesWeights[index] && (
                           <span className="font-semibold text-blue-600">{seriesWeights[index]} kg</span>
                         )}
                       </div>

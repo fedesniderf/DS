@@ -133,6 +133,41 @@ const RoutineDetail = (props) => {
     return `${day}/${month}/${year}`;
   };
 
+  // Función para calcular el total de tiempo entrenado por semana
+  const calculateWeeklyTrainingTotals = () => {
+    const weeklyTotals = {};
+    
+    // Recorrer todos los ejercicios
+    exercises.forEach(exercise => {
+      if (exercise.weeklyData) {
+        Object.entries(exercise.weeklyData).forEach(([week, weekData]) => {
+          if (weekData.totalTime && weekData.totalTime > 0) {
+            if (!weeklyTotals[week]) {
+              weeklyTotals[week] = 0;
+            }
+            weeklyTotals[week] += weekData.totalTime;
+          }
+        });
+      }
+    });
+    
+    // Convertir a formato legible
+    const formattedTotals = {};
+    Object.entries(weeklyTotals).forEach(([week, totalSeconds]) => {
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      
+      if (hours > 0) {
+        formattedTotals[week] = `${hours}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+      } else {
+        formattedTotals[week] = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+    });
+    
+    return formattedTotals;
+  };
+
   // Helper to render PFPE tables
   const [showPFPENotesModal, setShowPFPENotesModal] = React.useState({ open: false, notes: '' });
   const renderPFPETables = (cleanedDailyTracking) => {
@@ -453,6 +488,7 @@ const RoutineDetail = (props) => {
   const [weekSeries, setWeekSeries] = React.useState(1);
   const [seriesWeights, setSeriesWeights] = React.useState([""]);
   const [seriesTimes, setSeriesTimes] = React.useState([""]);
+  const [roundExerciseWeights, setRoundExerciseWeights] = React.useState({}); // Para pesos de ejercicios en rounds
   const [weekNotes, setWeekNotes] = React.useState("");
   const [weekTotalTime, setWeekTotalTime] = React.useState("");
   const [isEditingWeekly, setIsEditingWeekly] = React.useState(false);
@@ -644,7 +680,7 @@ const RoutineDetail = (props) => {
     const averageWeight = allWeights.length > 0 ? (allWeights.reduce((a, b) => a + b, 0) / allWeights.length).toFixed(2) : '0.00';
     const tonelaje = allWeights.length > 0 ? allWeights.reduce((a, b) => a + b, 0).toFixed(2) : '0.00';
     return (
-      <div className="mt-1">
+      <div className="mt-1 max-w-full overflow-hidden">
         <div
           className="flex items-center justify-between mb-1 cursor-pointer select-none w-full"
           onClick={() => toggleWeeklyTracking(exercise.id)}
@@ -666,38 +702,90 @@ const RoutineDetail = (props) => {
           </button>
         </div>
         {!collapsedWeeklyTracking.has(exercise.id) && (
-          <>
-            <table className="w-full text-xs border border-gray-300 rounded-lg overflow-hidden mb-2">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-2 py-1">Semana</th>
-                  <th className="px-2 py-1">Series</th>
-                  <th className="px-2 py-1">Pesos (kg)</th>
-                  <th className="px-2 py-1">Tiempo</th>
-                  <th className="px-2 py-1">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {weeks.map(week => {
-                  const weekData = weeklyData[week];
-                  const displayWeights = weekData.seriesWeights && Array.isArray(weekData.seriesWeights) 
-                    ? weekData.seriesWeights.filter(w => w && w.trim() !== "").join(", ") 
-                    : weekData.weight || "0";
-                  const seriesCount = weekData.series || (weekData.seriesWeights ? weekData.seriesWeights.length : 1);
-                  
-                  return (
-                    <tr key={week}>
-                      <td className="px-2 py-1 text-center">{week}</td>
-                      <td className="px-2 py-1 text-center">{seriesCount}</td>
-                      <td className="px-2 py-1 text-center">{displayWeights}</td>
-                      <td className="px-2 py-1 text-center">
-                        {weekData.formattedTotalTime ? (
-                          <span className="text-green-600 font-semibold">{weekData.formattedTotalTime}</span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-1 flex gap-2 justify-center">
+          <div className="max-w-full overflow-hidden">
+            {/* Vista de escritorio */}
+            <div className="hidden sm:block overflow-x-auto max-w-full">
+              <table className="w-full text-xs border border-gray-300 rounded-lg overflow-hidden mb-2 min-w-0">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-2 py-1 whitespace-nowrap">Semana</th>
+                    <th className="px-2 py-1 whitespace-nowrap">Pesos (kg)</th>
+                    <th className="px-2 py-1 whitespace-nowrap">Tiempo</th>
+                    <th className="px-2 py-1 whitespace-nowrap">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {weeks.map(week => {
+                    const weekData = weeklyData[week];
+                    const displayWeights = weekData.seriesWeights && Array.isArray(weekData.seriesWeights) 
+                      ? weekData.seriesWeights.filter(w => w && w.trim() !== "").join(", ") 
+                      : weekData.weight || "0";
+                    const seriesCount = weekData.series || (weekData.seriesWeights ? weekData.seriesWeights.length : 1);
+                    
+                    return (
+                      <tr key={week}>
+                        <td className="px-2 py-1 text-center whitespace-nowrap">{week}</td>
+                        <td className="px-2 py-1 text-center max-w-[120px] truncate" title={displayWeights}>{displayWeights}</td>
+                        <td className="px-2 py-1 text-center whitespace-nowrap">
+                          {weekData.formattedTotalTime ? (
+                            <span className="text-green-600 font-semibold">{weekData.formattedTotalTime}</span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-2 py-1 whitespace-nowrap">
+                          <div className="flex gap-1 justify-center">
+                            <button
+                              className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
+                              title="Ver detalle"
+                            onClick={() => setShowWeeklyNotesModal({ open: true, notes: weeklyData[week].generalNotes, date: weeklyData[week].date, week })}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z" />
+                            </svg>
+                          </button>
+                        <button
+                          className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
+                          title="Editar"
+                          onClick={() => handleEditWeeklyTracking(exercise, week, weeklyData[week])}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                          </svg>
+                        </button>
+                        <button
+                          className="p-1 rounded bg-red-100 hover:bg-red-200 text-red-700"
+                          title="Eliminar"
+                          onClick={() => handleDeleteWeeklyTracking(exercise, week)}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                          </svg>
+                        </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Vista móvil - tarjetas */}
+            <div className="sm:hidden space-y-2 mb-2 max-w-full overflow-hidden">
+              {weeks.map(week => {
+                const weekData = weeklyData[week];
+                const displayWeights = weekData.seriesWeights && Array.isArray(weekData.seriesWeights) 
+                  ? weekData.seriesWeights.filter(w => w && w.trim() !== "").join(", ") 
+                  : weekData.weight || "0";
+                const seriesCount = weekData.series || (weekData.seriesWeights ? weekData.seriesWeights.length : 1);
+                
+                return (
+                  <div key={week} className="border border-gray-300 rounded-lg p-3 bg-white max-w-full overflow-hidden">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-semibold text-sm text-gray-800">Semana {week}</h4>
+                      <div className="flex gap-1 flex-shrink-0">
                         <button
                           className="p-1 rounded bg-blue-100 hover:bg-blue-200 text-blue-700"
                           title="Ver detalle"
@@ -723,15 +811,31 @@ const RoutineDetail = (props) => {
                           onClick={() => handleDeleteWeeklyTracking(exercise, week)}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.111 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                           </svg>
                         </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-gray-600">Pesos:</span>
+                        <div className="font-semibold break-words overflow-hidden" title={`${displayWeights} kg`}>{displayWeights} kg</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Tiempo:</span>
+                        <div className="font-semibold">
+                          {weekData.formattedTotalTime ? (
+                            <span className="text-green-600">{weekData.formattedTotalTime}</span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
             <div className="flex justify-center gap-2 mt-2" data-guide="progress-stats">
               <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg font-semibold shadow w-[100px] text-[10px] flex items-center justify-center whitespace-nowrap">
                 <span className="font-bold">Máx:</span>&nbsp;<span>{allWeights.length > 0 ? Math.max(...allWeights).toFixed(2) : '0.00'} kg</span>
@@ -743,7 +847,7 @@ const RoutineDetail = (props) => {
                 <span className="font-bold">Tonelaje:</span>&nbsp;<span>{tonelaje} kg</span>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     );
@@ -861,6 +965,7 @@ const RoutineDetail = (props) => {
     setWeekSeries(1);
     setSeriesWeights([""]);
     setSeriesTimes([""]);
+    setRoundExerciseWeights({}); // Limpiar datos del round
     setWeekNotes("");
     setWeekTotalTime("");
     setIsEditingWeekly(false);
@@ -881,6 +986,16 @@ const RoutineDetail = (props) => {
     const newSeriesTimes = [...seriesTimes];
     newSeriesTimes[seriesIndex] = time;
     setSeriesTimes(newSeriesTimes);
+  };
+
+  // Function to handle weight change for round exercises
+  const handleRoundExerciseWeightChange = (exerciseId, seriesIndex, weight) => {
+    const newRoundWeights = { ...roundExerciseWeights };
+    if (!newRoundWeights[exerciseId]) {
+      newRoundWeights[exerciseId] = Array(weekSeries).fill("");
+    }
+    newRoundWeights[exerciseId][seriesIndex] = weight;
+    setRoundExerciseWeights(newRoundWeights);
   };
 
   // Funciones para manejar el cronómetro
@@ -925,21 +1040,42 @@ const RoutineDetail = (props) => {
     setWeekNotes(""); // Limpiar notas para que el usuario las complete
     setWeekTotalTime(""); // Se usará el tiempo del cronómetro automáticamente
     
-    // Configurar el número de series basado en el ejercicio del cronómetro
-    const exerciseSeries = parseInt(timerExercise?.sets) || timeData.seriesTimes.length || 1;
-    setWeekSeries(exerciseSeries);
-    
-    // Configurar pesos de las series desde el cronómetro si están disponibles
-    if (timeData.seriesWeights && timeData.seriesWeights.length > 0) {
-      console.log('5. Aplicando pesos del cronómetro:', timeData.seriesWeights);
-      setSeriesWeights(timeData.seriesWeights);
+    // Si es un round, configurar para manejar múltiples ejercicios
+    if (timerExercise?.isRound) {
+      const roundExercises = timerExercise.exercises || [];
+      console.log('3. Es un round con ejercicios:', roundExercises);
+      
+      // Configurar el número de series basado en cantidadRounds
+      const exerciseSeries = parseInt(timerExercise?.cantidadRounds) || timeData.seriesTimes.length || 1;
+      setWeekSeries(exerciseSeries);
+      
+      // Inicializar pesos para cada ejercicio del round
+      const roundWeights = {};
+      roundExercises.forEach(exercise => {
+        roundWeights[exercise.id] = Array(exerciseSeries).fill("");
+      });
+      setRoundExerciseWeights(roundWeights);
+      
+      // Los tiempos de series se obtienen del cronómetro para rounds
+      setSeriesTimes(Array(exerciseSeries).fill(""));
+      
     } else {
-      setSeriesWeights(Array(exerciseSeries).fill(""));
+      // Configurar el número de series basado en el ejercicio del cronómetro
+      const exerciseSeries = parseInt(timerExercise?.sets) || timeData.seriesTimes.length || 1;
+      setWeekSeries(exerciseSeries);
+      
+      // Configurar pesos de las series desde el cronómetro si están disponibles
+      if (timeData.seriesWeights && timeData.seriesWeights.length > 0) {
+        console.log('5. Aplicando pesos del cronómetro:', timeData.seriesWeights);
+        setSeriesWeights(timeData.seriesWeights);
+      } else {
+        setSeriesWeights(Array(exerciseSeries).fill(""));
+      }
+      
+      // Los tiempos de series se obtienen del cronómetro para ejercicios individuales
+      setSeriesTimes(Array(exerciseSeries).fill(""));
     }
-    // Los tiempos de series se obtienen del cronómetro, no necesitan inicialización manual
-    setSeriesTimes(Array(exerciseSeries).fill(""));
     
-    console.log('3. Series configuradas:', exerciseSeries);
     console.log('4. Abriendo modal de seguimiento semanal...');
     
     setShowWeeklyModal(true);
@@ -1269,43 +1405,113 @@ const RoutineDetail = (props) => {
       }
       
       // Calcular peso promedio para compatibilidad
-      const validWeights = seriesWeights.filter(weight => weight && weight.trim() !== "").map(weight => parseFloat(weight));
-      const averageWeight = validWeights.length > 0 ? validWeights.reduce((sum, weight) => sum + weight, 0) / validWeights.length : 0;
+      let validWeights, averageWeight, seriesWeightsData;
+      
+      if (weeklyExercise?.isRound) {
+        // Para rounds, necesitamos manejar los pesos de múltiples ejercicios
+        console.log('Guardando datos de round:', roundExerciseWeights);
+        
+        // Para compatibilidad, calcularemos un peso promedio de todos los ejercicios del round
+        const allWeights = [];
+        Object.values(roundExerciseWeights).forEach(exerciseWeights => {
+          exerciseWeights.forEach(weight => {
+            if (weight && weight.trim() !== "") {
+              allWeights.push(parseFloat(weight));
+            }
+          });
+        });
+        
+        averageWeight = allWeights.length > 0 ? allWeights.reduce((sum, weight) => sum + weight, 0) / allWeights.length : 0;
+        seriesWeightsData = roundExerciseWeights; // Guardar la estructura completa del round
+      } else {
+        // Para ejercicios individuales, usar la lógica original
+        validWeights = seriesWeights.filter(weight => weight && weight.trim() !== "").map(weight => parseFloat(weight));
+        averageWeight = validWeights.length > 0 ? validWeights.reduce((sum, weight) => sum + weight, 0) / validWeights.length : 0;
+        seriesWeightsData = seriesWeights;
+      }
       
       // Preparar tiempos por serie si están disponibles
       const seriesTimesData = timerData && timerData.formattedSeriesTimes ? 
         timerData.formattedSeriesTimes.map(serieTime => serieTime.time) : 
         seriesTimes.filter(time => time && time.trim() !== ""); // Usar tiempos manuales si no hay cronómetro
       
-      const weeklyData = {
-        week: weekNumber,
-        weight: averageWeight.toFixed(2), // Keep for backward compatibility
-        seriesWeights: seriesWeights,
-        seriesTimes: seriesTimesData, // Tiempos por serie
-        series: weekSeries,
-        generalNotes: weekNotes,
-        date: isEditingWeekly ? editingWeeklyData?.date : new Date().toISOString().split('T')[0],
-        // Incluir tiempo total del cronómetro si está disponible, o el tiempo manual
-        ...(timerData && {
-          totalTime: timerData.totalTime,
-          formattedTotalTime: timerData.formattedTotalTime
-        }),
-        // Si no hay datos del cronómetro pero sí tiempo manual, usarlo
-        ...(!timerData && weekTotalTime && {
-          formattedTotalTime: weekTotalTime
-        })
-      };
-      const updateData = {
-        id: routineId,
-        action: isEditingWeekly ? 'updateWeeklyTracking' : 'addWeeklyTracking',
-        data: {
-          exerciseId: weeklyExercise.id,
-          weeklyData: weeklyData
+      // Si es un round, guardar datos para cada ejercicio individual
+      if (weeklyExercise?.isRound) {
+        console.log('Guardando datos de round para cada ejercicio individual');
+        
+        const roundExercises = weeklyExercise.exercises || [];
+        
+        // Guardar datos para cada ejercicio del round
+        for (const exercise of roundExercises) {
+          const exerciseWeights = roundExerciseWeights[exercise.id] || [];
+          const validExerciseWeights = exerciseWeights.filter(weight => weight && weight.trim() !== "").map(weight => parseFloat(weight));
+          const exerciseAverageWeight = validExerciseWeights.length > 0 ? 
+            validExerciseWeights.reduce((sum, weight) => sum + weight, 0) / validExerciseWeights.length : 0;
+          
+          const exerciseWeeklyData = {
+            week: weekNumber,
+            weight: exerciseAverageWeight.toFixed(2),
+            seriesWeights: exerciseWeights,
+            seriesTimes: seriesTimesData, // Compartir tiempos del round
+            series: weekSeries,
+            generalNotes: weekNotes,
+            date: isEditingWeekly ? editingWeeklyData?.date : new Date().toISOString().split('T')[0],
+            // Incluir tiempo total del cronómetro para cada ejercicio
+            ...(timerData && {
+              totalTime: timerData.totalTime,
+              formattedTotalTime: timerData.formattedTotalTime
+            }),
+            // Si no hay datos del cronómetro pero sí tiempo manual, usarlo
+            ...(!timerData && weekTotalTime && {
+              formattedTotalTime: weekTotalTime
+            })
+          };
+          
+          const exerciseUpdateData = {
+            id: routineId,
+            action: isEditingWeekly ? 'updateWeeklyTracking' : 'addWeeklyTracking',
+            data: {
+              exerciseId: exercise.id,
+              weeklyData: exerciseWeeklyData
+            }
+          };
+          
+          console.log(`Guardando datos para ejercicio ${exercise.name}:`, exerciseUpdateData);
+          onUpdateRoutine(exerciseUpdateData);
         }
-      };
-      console.log('Calling onUpdateRoutine with:', updateData);
-      // Llamar a la función para actualizar la rutina
-      onUpdateRoutine(updateData);
+      } else {
+        // Para ejercicios individuales, usar la lógica original
+        const weeklyData = {
+          week: weekNumber,
+          weight: averageWeight.toFixed(2), // Keep for backward compatibility
+          seriesWeights: seriesWeightsData,
+          seriesTimes: seriesTimesData, // Tiempos por serie
+          series: weekSeries,
+          generalNotes: weekNotes,
+          date: isEditingWeekly ? editingWeeklyData?.date : new Date().toISOString().split('T')[0],
+          // Incluir tiempo total del cronómetro si está disponible, o el tiempo manual
+          ...(timerData && {
+            totalTime: timerData.totalTime,
+            formattedTotalTime: timerData.formattedTotalTime
+          }),
+          // Si no hay datos del cronómetro pero sí tiempo manual, usarlo
+          ...(!timerData && weekTotalTime && {
+            formattedTotalTime: weekTotalTime
+          })
+        };
+        
+        const updateData = {
+          id: routineId,
+          action: isEditingWeekly ? 'updateWeeklyTracking' : 'addWeeklyTracking',
+          data: {
+            exerciseId: weeklyExercise.id,
+            weeklyData: weeklyData
+          }
+        };
+        
+        console.log('Calling onUpdateRoutine with:', updateData);
+        onUpdateRoutine(updateData);
+      }
       // Eliminar el refresco visual, confiar en el estado y props para actualizar la tabla
       handleCloseWeeklyModal();
     } catch (error) {
@@ -1655,24 +1861,24 @@ const RoutineDetail = (props) => {
                                   {!isCollapsed && (
                                     <div>
                                       {Array.isArray(group.exercises) && (
-                                        <div className="p-2 bg-gray-50 rounded-xl shadow flex flex-col gap-2">
+                                        <div className="p-2 bg-gray-50 rounded-xl shadow flex flex-col gap-2 max-w-full overflow-hidden">
                                           {group.exercises.map((ex, exerciseIndex) => {
                                             const isFirstExerciseInRound = exerciseIndex === 0; // Solo el primer ejercicio del round tendrá timer
                                             
                                             return (
                                             <div key={ex.id} className="flex flex-col gap-1 border-b last:border-b-0 pb-1 last:pb-0">
-                                              <div className="flex justify-between items-start gap-4">
+                                              <div className="flex justify-between items-start gap-2 sm:gap-4">
                                                 {/* Columna izquierda: título y detalles del ejercicio */}
-                                                <div className="flex-1">
+                                                <div className="flex-1 min-w-0">
                                                   <div className="flex items-center gap-2 mb-2">
-                                                    <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                                                    <h6 className="text-md font-semibold text-gray-800 truncate">{ex.name}</h6>
                                                     {ex.media && (
                                                       <button
-                                                        className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                                                        className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors flex-shrink-0"
                                                         title="Ver video del ejercicio"
                                                         onClick={() => window.open(ex.media, '_blank')}
                                                       >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                                                           <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                                           <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
                                                         </svg>
@@ -1680,21 +1886,21 @@ const RoutineDetail = (props) => {
                                                     )}
                                                   </div>
                                                   {renderExerciseDetails({ ...ex, hideRest: true })}
-                                                  {/* Seguimiento semanal solo en el primer ejercicio del round */}
-                                                  {isFirstExerciseInRound && renderWeeklyTracking(ex)}
+                                                  {/* Seguimiento semanal para cada ejercicio */}
+                                                  {renderWeeklyTracking(ex)}
                                                 </div>
                                                 
                                                 {/* Columna derecha: botones de acción en vertical */}
-                                                <div className="flex flex-col gap-2">
+                                                <div className="flex flex-col gap-1 sm:gap-2 flex-shrink-0">
                                                   {/* Timer solo en el primer ejercicio del round */}
                                                   {isFirstExerciseInRound && (
                                                     <button
                                                       data-guide="timer-button"
-                                                      className="p-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                                                      className="p-1 rounded-full bg-orange-100 hover:bg-orange-200 text-orange-700 transition-colors"
                                                       title="Cronómetro del round"
                                                       onClick={() => handleOpenTimerForRound(group.exercises, ex.round, cantidadRounds)}
                                                     >
-                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                                       </svg>
                                                     </button>
@@ -1708,7 +1914,7 @@ const RoutineDetail = (props) => {
                                                       title="Agregar seguimiento semanal"
                                                       onClick={() => handleOpenWeeklyModal(ex)}
                                                     >
-                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                                                       </svg>
                                                     </button>
@@ -1720,7 +1926,7 @@ const RoutineDetail = (props) => {
                                                       title="Editar ejercicio"
                                                       onClick={() => handleEditExerciseClick(ex)}
                                                     >
-                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.287 4.287 0 0 1-1.897 1.13L6 18l.8-2.685a4.287 4.287 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                                                       </svg>
                                                     </button>
@@ -1732,7 +1938,7 @@ const RoutineDetail = (props) => {
                                                       title="Eliminar ejercicio"
                                                       onClick={() => handleDeleteExercise(ex.id)}
                                                     >
-                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                                                       </svg>
                                                     </button>
@@ -1752,19 +1958,19 @@ const RoutineDetail = (props) => {
                               // Renderizar ejercicio individual sin round
                               const ex = group.exercise;
                               return (
-                                <div key={ex.id} className="p-2 bg-gray-50 rounded-xl shadow mb-1">
-                                  <div className="flex justify-between items-start gap-4">
+                                <div key={ex.id} className="p-2 bg-gray-50 rounded-xl shadow mb-1 max-w-full overflow-hidden">
+                                  <div className="flex justify-between items-start gap-2 sm:gap-4 max-w-full">
                                     {/* Columna izquierda: título y detalles del ejercicio */}
-                                    <div className="flex-1">
+                                    <div className="flex-1 min-w-0 max-w-full">
                                       <div className="flex items-center gap-2 mb-2">
-                                        <h6 className="text-md font-semibold text-gray-800">{ex.name}</h6>
+                                        <h6 className="text-md font-semibold text-gray-800 truncate">{ex.name}</h6>
                                         {ex.media && (
                                           <button
-                                            className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+                                            className="p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors flex-shrink-0"
                                             title="Ver video del ejercicio"
                                             onClick={() => window.open(ex.media, '_blank')}
                                           >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                                               <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                               <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
                                             </svg>
@@ -1776,14 +1982,14 @@ const RoutineDetail = (props) => {
                                     </div>
                                     
                                     {/* Columna derecha: botones de acción en vertical */}
-                                    <div className="flex flex-col gap-2">
+                                    <div className="flex flex-col gap-1 sm:gap-2 flex-shrink-0">
                                       <button
                                         data-guide="timer-button"
-                                        className="p-1 rounded-full bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                                        className="p-1 rounded-full bg-orange-100 hover:bg-orange-200 text-orange-700 transition-colors"
                                         title="Cronómetro del ejercicio"
                                         onClick={() => handleOpenTimer(ex)}
                                       >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                         </svg>
                                       </button>
@@ -1795,7 +2001,7 @@ const RoutineDetail = (props) => {
                                           title="Agregar seguimiento semanal"
                                           onClick={() => handleOpenWeeklyModal(ex)}
                                         >
-                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                                           </svg>
                                         </button>
@@ -1807,7 +2013,7 @@ const RoutineDetail = (props) => {
                                           title="Editar ejercicio"
                                           onClick={() => handleEditExerciseClick(ex)}
                                         >
-                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.287 4.287 0 0 1-1.897 1.13L6 18l.8-2.685a4.287 4.287 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                                           </svg>
                                         </button>
@@ -1819,7 +2025,7 @@ const RoutineDetail = (props) => {
                                           title="Eliminar ejercicio"
                                           onClick={() => handleDeleteExercise(ex.id)}
                                         >
-                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                                           </svg>
                                         </button>
@@ -1945,7 +2151,7 @@ const RoutineDetail = (props) => {
   };
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 bg-white rounded-2xl shadow-md w-full max-w-none mx-auto" data-guide="routine-exercises">
+    <div className="p-4 sm:p-6 md:p-8 bg-white rounded-2xl shadow-md w-full max-w-none mx-auto overflow-hidden" data-guide="routine-exercises">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800">
           {routine.name || 'Rutina sin nombre'}
@@ -2000,6 +2206,34 @@ const RoutineDetail = (props) => {
           </div>
           <div className="col-span-3">
             <span className="font-semibold">Descripción:</span> {routine.description || 'Sin descripción'}
+          </div>
+          <div className="col-span-3">
+            <span className="font-semibold">Total entrenado semana:</span>
+            <div className="mt-2">
+              {(() => {
+                const weeklyTotals = calculateWeeklyTrainingTotals();
+                const weekKeys = Object.keys(weeklyTotals).sort((a, b) => {
+                  // Ordenar por número de semana (S1, S2, etc.)
+                  const numA = parseInt(a.replace('S', '')) || 0;
+                  const numB = parseInt(b.replace('S', '')) || 0;
+                  return numA - numB;
+                });
+                
+                if (weekKeys.length === 0) {
+                  return <span className="text-gray-500 italic">No hay registros de tiempo de entrenamiento</span>;
+                }
+                
+                return (
+                  <div className="flex flex-wrap gap-3">
+                    {weekKeys.map(week => (
+                      <div key={week} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                        <span className="font-semibold">{week}:</span> {weeklyTotals[week]}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </div>
       </div>
@@ -2175,9 +2409,20 @@ const RoutineDetail = (props) => {
             {/* Header fijo */}
             <div className="p-6 border-b border-gray-200 flex-shrink-0">
               <h3 className="text-lg font-bold">{isEditingWeekly ? 'Editar seguimiento semanal' : 'Seguimiento Semanal'}</h3>
-              <p className="text-sm text-gray-600">
-                Ejercicio: <span className="font-semibold">{weeklyExercise?.name}</span>
-              </p>
+              {weeklyExercise?.isRound ? (
+                <div>
+                  <p className="text-sm text-gray-600">
+                    Round {weeklyExercise.roundNumber}: <span className="font-semibold">{weeklyExercise.exercises?.length || 0} ejercicios</span>
+                  </p>
+                  <div className="mt-1 text-xs text-gray-500">
+                    {weeklyExercise.exercises?.map(ex => ex.name).join(', ')}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600">
+                  Ejercicio: <span className="font-semibold">{weeklyExercise?.name}</span>
+                </p>
+              )}
               {timerData && (
                 <div className="mt-2 px-3 py-2 bg-green-50 border border-green-300 rounded-lg text-sm text-green-700">
                   ⏱️ Datos del cronómetro guardados. Solo se muestran semanas sin registros de tiempo existentes.
@@ -2213,57 +2458,105 @@ const RoutineDetail = (props) => {
                 )}
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Series</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {weeklyExercise?.isRound ? 'Rounds' : 'Series'}
+                </label>
                 <div className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-600">
-                  {weekSeries} serie{weekSeries > 1 ? 's' : ''} (del ejercicio)
+                  {weekSeries} {weeklyExercise?.isRound ? 'round' : 'serie'}{weekSeries > 1 ? 's' : ''} 
+                  {weeklyExercise?.isRound ? ' completos' : ' (del ejercicio)'}
                 </div>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Datos por serie</label>
-                {Array.from({ length: weekSeries }, (_, index) => (
-                  <div key={index} className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">Serie {index + 1}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Campo de peso */}
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Peso (kg)</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={seriesWeights[index] || ""}
-                          onChange={(e) => handleSeriesWeightChange(index, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          placeholder="Ej: 80.5"
-                        />
-                      </div>
-                      {/* Campo de tiempo */}
-                      <div>
-                        <label className="block text-xs text-gray-600 mb-1">Tiempo</label>
-                        {timerData && timerData.formattedSeriesTimes && timerData.formattedSeriesTimes[index] ? (
-                          <div className="w-full px-3 py-2 bg-green-50 border border-green-300 rounded-lg text-sm text-green-700 font-semibold">
-                            {timerData.formattedSeriesTimes[index].time}
-                          </div>
-                        ) : (
-                          <input
-                            type="text"
-                            value={seriesTimes[index] || ""}
-                            onChange={(e) => handleSeriesTimeChange(index, e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                            placeholder="mm:ss"
-                          />
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {weeklyExercise?.isRound ? 'Datos por round' : 'Datos por serie'}
+                </label>
+                
+                {/* Si es un round, mostrar por ejercicio */}
+                {weeklyExercise?.isRound ? (
+                  Array.from({ length: weekSeries }, (_, seriesIndex) => (
+                    <div key={seriesIndex} className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-semibold text-blue-700">Round {seriesIndex + 1}</span>
+                        {timerData && timerData.formattedSeriesTimes && timerData.formattedSeriesTimes[seriesIndex] && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            Tiempo: {timerData.formattedSeriesTimes[seriesIndex].time}
+                          </span>
                         )}
                       </div>
+                      
+                      {/* Ejercicios del round */}
+                      <div className="space-y-3">
+                        {weeklyExercise.exercises?.map((exercise) => (
+                          <div key={exercise.id} className="p-3 bg-white rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-700">{exercise.name}</span>
+                              <span className="text-xs text-gray-500">{exercise.sets} series</span>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">Peso (kg)</label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                value={roundExerciseWeights[exercise.id]?.[seriesIndex] || ""}
+                                onChange={(e) => handleRoundExerciseWeightChange(exercise.id, seriesIndex, e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                placeholder="Ej: 80.5"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  /* Si es un ejercicio individual, mostrar como antes */
+                  Array.from({ length: weekSeries }, (_, index) => (
+                    <div key={index} className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">Serie {index + 1}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Campo de peso */}
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Peso (kg)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={seriesWeights[index] || ""}
+                            onChange={(e) => handleSeriesWeightChange(index, e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            placeholder="Ej: 80.5"
+                          />
+                        </div>
+                        {/* Campo de tiempo */}
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Tiempo</label>
+                          {timerData && timerData.formattedSeriesTimes && timerData.formattedSeriesTimes[index] ? (
+                            <div className="w-full px-3 py-2 bg-green-50 border border-green-300 rounded-lg text-sm text-green-700 font-semibold">
+                              {timerData.formattedSeriesTimes[index].time}
+                            </div>
+                          ) : (
+                            <input
+                              type="text"
+                              value={seriesTimes[index] || ""}
+                              onChange={(e) => handleSeriesTimeChange(index, e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                              placeholder="mm:ss"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
                 
                 {/* Tiempo total */}
                 {timerData && timerData.formattedTotalTime ? (
                   <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700">Tiempo Total del Ejercicio:</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        {weeklyExercise?.isRound ? 'Tiempo Total del Round:' : 'Tiempo Total del Ejercicio:'}
+                      </span>
                       <span className="font-bold text-blue-600">{timerData.formattedTotalTime}</span>
                     </div>
                   </div>
@@ -2589,6 +2882,7 @@ const RoutineDetail = (props) => {
       {showTimer && timerExercise && (
         <ExerciseTimer 
           exercise={{
+            ...timerExercise, // Pasar todas las propiedades del timerExercise
             name: timerExercise.name,
             series: timerExercise.sets,
             repetitions: timerExercise.reps,
