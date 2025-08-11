@@ -73,6 +73,7 @@ const RoutineDetail = ({
   const [timerExercise, setTimerExercise] = React.useState(null);
   const [timerData, setTimerData] = React.useState(null); // Datos del cronómetro
   const [editingWeeklyData, setEditingWeeklyData] = React.useState(null); // Para editar datos existentes
+  const [currentExerciseIndex, setCurrentExerciseIndex] = React.useState(0); // Índice del ejercicio actual en el cronómetro
 
   const handleOpenWeeklyModal = (exercise) => {
     setWeeklyExercise(exercise);
@@ -88,6 +89,9 @@ const RoutineDetail = ({
 
   // Función para abrir el cronómetro
   const handleOpenTimer = (exercise) => {
+    // Encontrar el índice del ejercicio en la lista
+    const exerciseIndex = exercises.findIndex(ex => ex.id === exercise.id);
+    setCurrentExerciseIndex(exerciseIndex >= 0 ? exerciseIndex : 0);
     setTimerExercise(exercise);
     setShowTimer(true);
   };
@@ -95,6 +99,19 @@ const RoutineDetail = ({
   const handleCloseTimer = () => {
     setShowTimer(false);
     setTimerExercise(null);
+  };
+
+  // Función para manejar el cambio al siguiente ejercicio
+  const handleNextExercise = () => {
+    const nextIndex = currentExerciseIndex + 1;
+    if (nextIndex < exercises.length) {
+      const nextExercise = exercises[nextIndex];
+      setCurrentExerciseIndex(nextIndex);
+      setTimerExercise(nextExercise);
+      // Mantener el cronómetro abierto
+      return true; // Indica que se cambió al siguiente ejercicio
+    }
+    return false; // No hay más ejercicios
   };
 
   // Función para guardar tiempo del cronómetro en seguimiento semanal
@@ -776,6 +793,9 @@ const RoutineDetail = ({
           }}
           onClose={handleCloseTimer}
           onSaveTime={handleSaveTimeFromTimer}
+          routineExercises={exercises}
+          currentExerciseIndex={currentExerciseIndex}
+          onNextExercise={handleNextExercise}
         />
       )}
     </div>
