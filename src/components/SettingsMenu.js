@@ -6,6 +6,7 @@ import SecurityInfoModal from './SecurityInfoModal';
 import BlockedUsersPanel from './BlockedUsersPanel';
 import PhotoUpdateModal from './PhotoUpdateModal';
 import EditUserModal from './EditUserModal';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, onStartGuide, onRestartGuide }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +15,18 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
   const [showBlockedUsersPanel, setShowBlockedUsersPanel] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
+
+  // Hook para bloquear scroll cuando hay modales abiertos
+  const anyModalOpen = showChangePasswordModal || showSecurityInfoModal || showBlockedUsersPanel || showPhotoModal || showEditUserModal;
+  console.log('🔒 SettingsMenu - Estado modales:', {
+    showChangePasswordModal,
+    showSecurityInfoModal, 
+    showBlockedUsersPanel,
+    showPhotoModal,
+    showEditUserModal,
+    anyModalOpen
+  });
+  useScrollLock(anyModalOpen);
   
   const { 
     isWakeLockActive, 

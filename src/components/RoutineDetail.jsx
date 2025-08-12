@@ -1,6 +1,7 @@
 import React from "react";
 import { supabase } from "../supabaseClient";
 import ExerciseTimer from "./ExerciseTimer.jsx";
+import { useScrollLock } from '../hooks/useScrollLock';
 
 const RoutineDetail = ({
   routine,
@@ -75,15 +76,36 @@ const RoutineDetail = ({
   const [editingWeeklyData, setEditingWeeklyData] = React.useState(null); // Para editar datos existentes
   const [currentExerciseIndex, setCurrentExerciseIndex] = React.useState(0); // Índice del ejercicio actual en el cronómetro
 
+  // Hook para bloquear scroll cuando hay modales abiertos
+  useScrollLock(showExerciseModal || showWeeklyModal);
+
   const handleOpenWeeklyModal = (exercise) => {
     setWeeklyExercise(exercise);
-    setWeekNumber("");
+    
+    // Usar la semana predeterminada del entrenamiento si está disponible
+    const savedTrainingWeek = localStorage.getItem('ds_selectedTrainingWeek');
+    if (savedTrainingWeek) {
+      setWeekNumber(`S${savedTrainingWeek}`);
+    } else {
+      setWeekNumber("");
+    }
+    
     setWeekWeight("");
     setWeekNotes("");
     setWeekSeriesTimes([]); // Limpiar tiempos de series
     setSeriesWeights([]); // Limpiar pesos de series
-    setTimerData(null); // Limpiar datos del cronómetro
     setEditingWeeklyData(null); // Limpiar datos de edición
+    
+    // Detectar si el ejercicio usa dropsets en lugar de series
+    const isDropset = (!exercise?.sets || parseInt(exercise?.sets) === 0) && exercise?.dropset;
+    
+    // Crear timerData básico para saber si es dropset
+    if (isDropset) {
+      setTimerData({ isDropset: true });
+    } else {
+      setTimerData(null); // Limpiar datos del cronómetro para ejercicios normales
+    }
+    
     setShowWeeklyModal(true);
   };
 
@@ -123,12 +145,20 @@ const RoutineDetail = ({
     // Guardar los datos del cronómetro y abrir el modal de seguimiento semanal
     setTimerData(timeData);
     setWeeklyExercise(timerExercise);
-    setWeekNumber("");
+    
+    // Usar la semana predeterminada del entrenamiento si está disponible
+    const savedTrainingWeek = localStorage.getItem('ds_selectedTrainingWeek');
+    if (savedTrainingWeek) {
+      setWeekNumber(`S${savedTrainingWeek}`);
+    } else {
+      setWeekNumber("");
+    }
+    
     setWeekWeight("");
     setWeekNotes(""); // Limpiar notas para que el usuario las complete
     
     // Inicializar arrays de pesos según el número de series
-    const numSeries = parseInt(timerExercise?.sets) || 3;
+    const numSeries = parseInt(timerExercise?.sets) || parseInt(timerExercise?.dropset) || 3;
     setSeriesWeights(new Array(numSeries).fill(""));
     setWeekSeriesTimes(timeData.seriesTimes || []);
     
@@ -167,10 +197,19 @@ const RoutineDetail = ({
     setWeeklyExercise(exercise);
     setWeekNumber(week);
     setWeekNotes(data.notes || data.generalNotes || "");
-    setTimerData(null); // No hay datos del cronómetro al editar
     setEditingWeeklyData({ week, data }); // Marcar que estamos editando
     
-    const numSeries = parseInt(exercise.sets) || 3;
+    // Detectar si el ejercicio usa dropsets en lugar de series
+    const isDropset = (!exercise?.sets || parseInt(exercise?.sets) === 0) && exercise?.dropset;
+    
+    // Crear timerData básico para saber si es dropset al editar
+    if (isDropset) {
+      setTimerData({ isDropset: true });
+    } else {
+      setTimerData(null); // No hay datos del cronómetro al editar ejercicios normales
+    }
+    
+    const numSeries = parseInt(exercise.sets) || parseInt(exercise.dropset) || 3;
     
     // Si hay datos de series estructurados, cargarlos
     if (data.seriesData && Array.isArray(data.seriesData)) {
@@ -214,6 +253,7 @@ const RoutineDetail = ({
       // Datos de las series con pesos y tiempos
       seriesData: seriesWeights.map((weight, index) => ({
         serie: index + 1,
+        serieType: (timerData && timerData.isDropset) ? 'dropset' : 'serie', // Agregar tipo de serie
         weight: weight || "",
         // Priorizar tiempos del cronómetro, luego tiempos existentes
         time: (timerData && timerData.formattedSeriesTimes && timerData.formattedSeriesTimes[index]) 
@@ -305,12 +345,19 @@ const RoutineDetail = ({
                   {/* Ícono para agregar seguimiento semanal, solo para clientes */}
                   {!isEditable && canAddDailyTracking && (
                     <button
-                      className="p-1 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-700"
+                      data-guide="weekly-tracking"
+                      className="p-1 rounded-full"
+                      style={{ 
+                        backgroundColor: '#000000', 
+                        color: '#ffffff' 
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#374151'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#000000'}
                       title="Agregar seguimiento semanal"
                       onClick={() => handleOpenWeeklyModal(ex)}
                     >
                       {/* Ícono clipboard/plus */}
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                       </svg>
                     </button>
@@ -554,10 +601,16 @@ const RoutineDetail = ({
                     </p>
                   </div>
                 )}
-                {Array.from({ length: parseInt(weeklyExercise?.sets) || 3 }, (_, index) => (
+                {Array.from({ 
+                  length: parseInt(weeklyExercise?.sets) || 
+                          parseInt(weeklyExercise?.dropset) || 
+                          (timerData && timerData.seriesTimes ? timerData.seriesTimes.length : 3) 
+                }, (_, index) => (
                   <div key={index} className="mb-1 p-2 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700">Serie {index + 1}</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        {(timerData && timerData.isDropset) ? `Dropset ${index + 1}` : `Serie ${index + 1}`}
+                      </span>
                       {(timerData && timerData.formattedSeriesTimes && timerData.formattedSeriesTimes[index]) ? (
                         <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
                           ⏱️ {timerData.formattedSeriesTimes[index].time}

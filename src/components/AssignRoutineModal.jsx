@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 const AssignRoutineModal = ({ onAssign, onClose }) => {
   const [selectedClient, setSelectedClient] = useState('');
   const [users, setUsers] = useState([]); // Inicializar como array vacío
   const [usersLoading, setUsersLoading] = useState(true);
   const [usersError, setUsersError] = useState('');
+
+  // Bloquear scroll mientras el modal está abierto
+  useScrollLock(true);
 
   // Cargar usuarios desde Supabase cuando se abre el modal
   useEffect(() => {

@@ -9,6 +9,7 @@ import { NotificationService } from './services/NotificationService';
 import { NotificationProvider } from './hooks/useNotifications';
 import { useInactivityTimeout } from './hooks/useInactivityTimeout';
 import { LoginSecurityService } from './services/LoginSecurityServiceSimple';
+import { useScrollLock } from './hooks/useScrollLock';
 
 const ClientRoutineList = lazy(() => import('./components/ClientRoutineList'));
 const RoutineDetail = lazy(() => import('./components/RoutineDetail'));
@@ -52,8 +53,17 @@ const App = () => {
   const [showUserLoading, setShowUserLoading] = useState(false);
   const [showLoginLoading, setShowLoginLoading] = useState(false);
   const [loadingClientRoutines, setLoadingClientRoutines] = useState(false);
+  
+  // Estados para el popup de entrenamiento
+  const [showTrainingModal, setShowTrainingModal] = useState(false);
+  const [showWeekSelectionModal, setShowWeekSelectionModal] = useState(false);
+  const [selectedTrainingWeek, setSelectedTrainingWeek] = useState('');
+  const [availableWeeks, setAvailableWeeks] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [isRestored, setIsRestored] = useState(true);
+
+  // Hook para bloquear scroll cuando hay modales abiertos
+  useScrollLock(showTrainingModal || showWeekSelectionModal);
 
   // LOGOUT - Definido temprano para uso en hooks
   const handleLogout = useCallback(() => {
@@ -197,9 +207,10 @@ const App = () => {
           setCurrentUser(user);
           localStorage.setItem('ds_user', JSON.stringify(user));
           
+          // Mostrar popup de entrenamiento para clientes
           if (user.role === 'client') {
             setSelectedClient(user);
-            setCurrentPage('clientDashboard');
+            setShowTrainingModal(true); // Mostrar popup de entrenamiento
           } else if (user.role === 'admin') {
             setCurrentPage('adminHome');
           }
@@ -229,6 +240,133 @@ const App = () => {
       alert('Login con Google no implementado.');
     }
   }, [resetInactivityTimer]);
+
+  // Funciones para manejar el popup de entrenamiento
+  const handleTrainingResponse = async (isTraining) => {
+    setShowTrainingModal(false);
+    
+    if (isTraining) {
+      // Usuario va a entrenar, calcular semanas disponibles y preguntar por la semana
+      const weeks = await getRemainingWeeks(currentUser.client_id);
+      setAvailableWeeks(weeks);
+      setShowWeekSelectionModal(true);
+    } else {
+      // Usuario solo está de pasada, ir directamente al dashboard
+      setCurrentPage('clientDashboard');
+    }
+  };
+
+  const handleWeekSelection = (week) => {
+    setSelectedTrainingWeek(week);
+    setShowWeekSelectionModal(false);
+    setCurrentPage('clientDashboard');
+    
+    // Guardar la semana seleccionada en localStorage para uso posterior
+    localStorage.setItem('ds_selectedTrainingWeek', week);
+  };
+
+  const handleSkipWeekSelection = () => {
+    setShowWeekSelectionModal(false);
+    setCurrentPage('clientDashboard');
+    // No establecer semana predeterminada si el usuario la omite
+  };
+
+  // Función para calcular las semanas restantes de la rutina activa
+  const getRemainingWeeks = async (userId) => {
+    try {
+      console.log('🔍 Calculando semanas restantes para usuario:', userId);
+      
+      // Obtener rutinas activas del usuario
+      const { data: routines, error } = await supabase
+        .from('rutinas')
+        .select('*')
+        .eq('client_id', userId);
+
+      if (error) {
+        console.error('❌ Error obteniendo rutinas:', error);
+        return [1, 2, 3, 4]; // Fallback por defecto
+      }
+
+      console.log('📊 Rutinas encontradas:', routines?.length || 0);
+
+      if (!routines || routines.length === 0) {
+        console.log('⚠️ No se encontraron rutinas para el usuario');
+        return [1, 2, 3, 4]; // Fallback si no hay rutinas
+      }
+
+      // Buscar rutina activa (la que incluye la fecha actual)
+      const today = new Date();
+      console.log('📅 Fecha actual:', today.toISOString().split('T')[0]);
+      
+      const activeRoutine = routines.find(routine => {
+        if (!routine.startDate || !routine.endDate) return false;
+        const startDate = new Date(routine.startDate);
+        const endDate = new Date(routine.endDate);
+        const isActive = today >= startDate && today <= endDate;
+        console.log(`📋 Rutina "${routine.name}": ${routine.startDate} - ${routine.endDate}, activa: ${isActive}`);
+        return isActive;
+      });
+
+      if (!activeRoutine) {
+        console.log('⚠️ No hay rutina activa, usando la más reciente');
+        // Si no hay rutina activa, usar la más reciente
+        const sortedRoutines = routines.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+        const recentRoutine = sortedRoutines[0];
+        if (recentRoutine && recentRoutine.startDate && recentRoutine.endDate) {
+          console.log(`📋 Usando rutina más reciente: "${recentRoutine.name}"`);
+          return calculateRemainingWeeks(recentRoutine, today);
+        }
+        return [1, 2, 3, 4]; // Fallback
+      }
+
+      console.log(`✅ Rutina activa encontrada: "${activeRoutine.name}"`);
+      return calculateRemainingWeeks(activeRoutine, today);
+    } catch (error) {
+      console.error('❌ Error calculando semanas restantes:', error);
+      return [1, 2, 3, 4]; // Fallback
+    }
+  };
+
+  // Función auxiliar para calcular semanas restantes
+  const calculateRemainingWeeks = (routine, currentDate) => {
+    try {
+      const startDate = new Date(routine.startDate);
+      const endDate = new Date(routine.endDate);
+      
+      console.log(`📊 Calculando semanas para rutina: ${routine.startDate} - ${routine.endDate}`);
+      
+      // Calcular el total de semanas de la rutina
+      const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+      const totalWeeks = Math.ceil(totalDays / 7);
+      
+      console.log(`📈 Total de días: ${totalDays}, Total de semanas: ${totalWeeks}`);
+      
+      // Calcular la semana actual
+      const daysFromStart = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
+      const currentWeek = Math.floor(daysFromStart / 7) + 1;
+      
+      console.log(`📍 Días desde inicio: ${daysFromStart}, Semana actual: ${currentWeek}`);
+      
+      // Generar array de semanas restantes (incluyendo la actual)
+      const remainingWeeks = [];
+      for (let week = Math.max(1, currentWeek); week <= totalWeeks; week++) {
+        remainingWeeks.push(week);
+      }
+      
+      console.log(`✅ Semanas restantes: [${remainingWeeks.join(', ')}]`);
+      
+      // Si no quedan semanas o el cálculo da negativo, mostrar al menos las primeras 4
+      if (remainingWeeks.length === 0) {
+        console.log('⚠️ No quedan semanas, usando fallback');
+        return [1, 2, 3, 4];
+      }
+      
+      return remainingWeeks;
+    } catch (error) {
+      console.error('❌ Error en calculateRemainingWeeks:', error);
+      return [1, 2, 3, 4];
+    }
+  };
 
   // REGISTRO
   const handleRegister = useCallback(async (userData) => {
@@ -1254,6 +1392,85 @@ const App = () => {
           )}
         </Suspense>
       </main>
+
+      {/* Modal: ¿Vas a entrenar? */}
+      {showTrainingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="mb-4">
+                <svg className="w-16 h-16 mx-auto text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V9.375c0-.621.504-1.125 1.125-1.125h.75c.621 0 1.125.504 1.125 1.125v11.625c-1.125 0-2.25 0-3.375 0m3.375 0h-4.5m0-11.625h.75c.621 0 1.125.504 1.125 1.125v4.875c0 .621-.504 1.125-1.125 1.125H10.5m-2.25 0h.375c.621 0 1.125-.504 1.125-1.125V8.25c0-.621-.504-1.125-1.125-1.125H8.25m2.25 0h.375c.621 0 1.125-.504 1.125-1.125V8.25c0-.621-.504-1.125-1.125-1.125H8.25m2.25 0V6.375c0-.621-.504-1.125-1.125-1.125H7.5" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">¡Bienvenido!</h2>
+              <p className="text-gray-600 mb-6">
+                ¿Vienes a entrenar hoy o solo estás de pasada?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleTrainingResponse(false)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Solo de pasada
+                </button>
+                <button
+                  onClick={() => handleTrainingResponse(true)}
+                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  ¡Voy a entrenar!
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Selección de semana */}
+      {showWeekSelectionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="mb-4">
+                <svg className="w-16 h-16 mx-auto text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">¿Qué semana vas a entrenar?</h2>
+              <p className="text-gray-600 mb-6">
+                Esta será la semana predeterminada para todos los registros de hoy. Podrás cambiarla en cada ejercicio si necesitas.
+              </p>
+              
+              {availableWeeks.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {availableWeeks.map(week => (
+                    <button
+                      key={week}
+                      onClick={() => handleWeekSelection(week.toString())}
+                      className="bg-green-100 text-green-700 py-2 px-4 rounded-lg font-semibold hover:bg-green-200 transition-colors"
+                    >
+                      Semana {week}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-yellow-800 text-sm">
+                    No se encontraron semanas disponibles en tu rutina activa. Podrás seleccionar la semana manualmente en cada ejercicio.
+                  </p>
+                </div>
+              )}
+              
+              <button
+                onClick={handleSkipWeekSelection}
+                className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                Lo elegiré después
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SpeedInsights />
     </div>

@@ -134,11 +134,40 @@ const RoutineDetail = (props) => {
   };
 
   // Función para calcular el total de tiempo entrenado por semana
+  // Función para convertir tiempo formateado a segundos
+  const convertFormattedTimeToSeconds = (formattedTime) => {
+    if (!formattedTime || typeof formattedTime !== 'string') return 0;
+    
+    // Formatos soportados: "1h 59m 18s", "59:18", "5:30"
+    let totalSeconds = 0;
+    
+    // Formato con horas, minutos y segundos: "1h 59m 18s"
+    const hmsMatch = formattedTime.match(/(\d+)h\s*(\d+)m\s*(\d+)s/);
+    if (hmsMatch) {
+      const hours = parseInt(hmsMatch[1]) || 0;
+      const minutes = parseInt(hmsMatch[2]) || 0;
+      const seconds = parseInt(hmsMatch[3]) || 0;
+      totalSeconds = hours * 3600 + minutes * 60 + seconds;
+      return totalSeconds;
+    }
+    
+    // Formato MM:SS
+    const msMatch = formattedTime.match(/(\d+):(\d+)/);
+    if (msMatch) {
+      const minutes = parseInt(msMatch[1]) || 0;
+      const seconds = parseInt(msMatch[2]) || 0;
+      totalSeconds = minutes * 60 + seconds;
+      return totalSeconds;
+    }
+    
+    return 0;
+  };
+
   const calculateWeeklyTrainingTotals = () => {
     const weeklyTotals = {};
     
     // Recorrer todos los ejercicios
-    exercises.forEach(exercise => {
+    exercises.forEach((exercise, exerciseIndex) => {
       if (exercise.weeklyData) {
         Object.entries(exercise.weeklyData).forEach(([week, weekData]) => {
           if (weekData.totalTime && weekData.totalTime > 0) {
@@ -146,6 +175,15 @@ const RoutineDetail = (props) => {
               weeklyTotals[week] = 0;
             }
             weeklyTotals[week] += weekData.totalTime;
+          } else if (weekData.formattedTotalTime) {
+            // Si no hay totalTime pero sí formattedTotalTime, convertir a segundos
+            const timeInSeconds = convertFormattedTimeToSeconds(weekData.formattedTotalTime);
+            if (timeInSeconds > 0) {
+              if (!weeklyTotals[week]) {
+                weeklyTotals[week] = 0;
+              }
+              weeklyTotals[week] += timeInSeconds;
+            }
           }
         });
       }
@@ -493,6 +531,7 @@ const RoutineDetail = (props) => {
   const [weekTotalTime, setWeekTotalTime] = React.useState("");
   const [isEditingWeekly, setIsEditingWeekly] = React.useState(false);
   const [editingWeeklyData, setEditingWeeklyData] = React.useState(null);
+  const [isDropsetExercise, setIsDropsetExercise] = React.useState(false); // Para saber si es dropset
   
   // Estado para colapsar seguimiento semanal por ejercicio - Inicializar con todos los ejercicios colapsados
   const [collapsedWeeklyTracking, setCollapsedWeeklyTracking] = React.useState(() => {
@@ -528,6 +567,8 @@ const RoutineDetail = (props) => {
   const [timerExercise, setTimerExercise] = React.useState(null);
   const [timerData, setTimerData] = React.useState(null); // Datos del cronómetro
   const [currentExerciseIndex, setCurrentExerciseIndex] = React.useState(0); // Índice del ejercicio actual en el cronómetro
+  const [currentDay, setCurrentDay] = React.useState(null); // Día actual del cronómetro
+  const [dayExercises, setDayExercises] = React.useState([]); // Ejercicios del día actual
 
   // Estados para sectionOrder - Movidos fuera del bloque condicional
   const routineId = routine?.id || routine?.routine_id || routine?.client_id || 'default';
@@ -856,12 +897,24 @@ const RoutineDetail = (props) => {
 
   const handleOpenWeeklyModal = (exercise, weekValue = "") => {
     setWeeklyExercise(exercise);
-    setWeekNumber(weekValue);
+    
+    // Si no se especifica una semana, usar la semana predeterminada del entrenamiento
+    let defaultWeek = weekValue;
+    if (!defaultWeek) {
+      const savedTrainingWeek = localStorage.getItem('ds_selectedTrainingWeek');
+      if (savedTrainingWeek) {
+        defaultWeek = `S${savedTrainingWeek}`;
+      }
+    }
+    
+    setWeekNumber(defaultWeek);
     setWeekWeight("");
     
     // Get series count from exercise, default to 1 if not specified
-    const exerciseSeries = parseInt(exercise.sets) || 1;
+    const isDropset = (!exercise.sets || parseInt(exercise.sets) === 0) && exercise.dropset;
+    const exerciseSeries = parseInt(exercise.sets) || parseInt(exercise.dropset) || 1;
     setWeekSeries(exerciseSeries);
+    setIsDropsetExercise(isDropset);
     setSeriesWeights(Array(exerciseSeries).fill(""));
     setSeriesTimes(Array(exerciseSeries).fill(""));
     
@@ -879,8 +932,10 @@ const RoutineDetail = (props) => {
       setWeekNumber(weekValue);
       
       // Get series count from exercise, default to 1 if not specified
-      const exerciseSeries = parseInt(exercise.sets) || 1;
+      const isDropset = (!exercise.sets || parseInt(exercise.sets) === 0) && exercise.dropset;
+      const exerciseSeries = parseInt(exercise.sets) || parseInt(exercise.dropset) || 1;
       setWeekSeries(exerciseSeries);
+      setIsDropsetExercise(isDropset);
       
       // Handle series data - check if we have series weights or just a single weight
       if (weekData.seriesWeights && Array.isArray(weekData.seriesWeights)) {
@@ -1001,15 +1056,33 @@ const RoutineDetail = (props) => {
 
   // Funciones para manejar el cronómetro
   const handleOpenTimer = (exercise) => {
-    // Encontrar el índice del ejercicio en la lista
-    const exerciseIndex = exercises.findIndex(ex => ex.id === exercise.id);
+    // Determinar el día del ejercicio
+    const exerciseDay = exercise.day || 'Sin día';
+    setCurrentDay(exerciseDay);
+    
+    // Filtrar ejercicios del mismo día, manteniendo el orden original
+    const exercisesOfDay = exercises.filter(ex => (ex.day || 'Sin día') === exerciseDay);
+    setDayExercises(exercisesOfDay);
+    
+    // Encontrar el índice del ejercicio en la lista filtrada del día
+    const exerciseIndex = exercisesOfDay.findIndex(ex => ex.id === exercise.id);
     setCurrentExerciseIndex(exerciseIndex >= 0 ? exerciseIndex : 0);
     setTimerExercise(exercise);
     setShowTimer(true);
+    
+    console.log('🎯 Cronómetro iniciado para día:', exerciseDay, 'con', exercisesOfDay.length, 'ejercicios');
   };
 
   // Función específica para manejar el timer de rounds
   const handleOpenTimerForRound = (roundExercises, roundNumber, cantidadRounds) => {
+    // Determinar el día del round (usar el día del primer ejercicio del round)
+    const exerciseDay = roundExercises[0]?.day || 'Sin día';
+    setCurrentDay(exerciseDay);
+    
+    // Filtrar ejercicios del mismo día, manteniendo el orden original
+    const exercisesOfDay = exercises.filter(ex => (ex.day || 'Sin día') === exerciseDay);
+    setDayExercises(exercisesOfDay);
+    
     // Crear un objeto especial que representa el round completo
     const roundTimer = {
       id: `round-${roundNumber}`,
@@ -1018,11 +1091,18 @@ const RoutineDetail = (props) => {
       roundNumber: roundNumber,
       exercises: roundExercises,
       sets: cantidadRounds || 1, // Usar cantidadRounds como número de series
-      cantidadRounds: cantidadRounds
+      cantidadRounds: cantidadRounds,
+      day: exerciseDay // Agregar día al objeto round
     };
+    
+    // Encontrar el índice donde inicia este round en la lista del día
+    const roundStartIndex = exercisesOfDay.findIndex(ex => ex.round === roundNumber);
+    setCurrentExerciseIndex(roundStartIndex >= 0 ? roundStartIndex : 0);
     
     setTimerExercise(roundTimer);
     setShowTimer(true);
+    
+    console.log('🎯 Cronómetro de round iniciado para día:', exerciseDay, 'con', exercisesOfDay.length, 'ejercicios');
   };
 
   const handleCloseTimer = () => {
@@ -1030,16 +1110,75 @@ const RoutineDetail = (props) => {
     setTimerExercise(null);
   };
 
+  // Función para encontrar el siguiente ejercicio o round en el mismo día
+  const findNextExerciseOrRound = (currentIndex) => {
+    let nextIndex = currentIndex + 1;
+    
+    // Usar ejercicios del día actual en lugar de todos los ejercicios
+    while (nextIndex < dayExercises.length) {
+      const nextExercise = dayExercises[nextIndex];
+      const isRoundExercise = nextExercise.round && nextExercise.round !== '';
+      
+      if (isRoundExercise) {
+        // Es un ejercicio de round
+        const roundNumber = nextExercise.round;
+        const roundExercises = dayExercises.filter(ex => ex.round === roundNumber);
+        const cantidadRounds = nextExercise.cantidadRounds || 1;
+        
+        // Crear objeto de round
+        const roundTimer = {
+          id: `round-${roundNumber}`,
+          name: `Round ${roundNumber}`,
+          isRound: true,
+          roundNumber: roundNumber,
+          exercises: roundExercises,
+          sets: cantidadRounds,
+          cantidadRounds: cantidadRounds,
+          day: nextExercise.day || 'Sin día'
+        };
+        
+        // Calcular el índice después de este round (saltar todos los ejercicios del round)
+        const roundExerciseIds = roundExercises.map(ex => ex.id);
+        let skipToIndex = nextIndex;
+        while (skipToIndex < dayExercises.length && roundExerciseIds.includes(dayExercises[skipToIndex].id)) {
+          skipToIndex++;
+        }
+        
+        return {
+          exercise: roundTimer,
+          nextIndex: skipToIndex - 1, // -1 porque se incrementará después
+          isRound: true
+        };
+      } else {
+        // Es un ejercicio individual
+        return {
+          exercise: nextExercise,
+          nextIndex: nextIndex,
+          isRound: false
+        };
+      }
+    }
+    
+    return null; // No hay más ejercicios en el día
+  };
+
   // Función para manejar el cambio al siguiente ejercicio
   const handleNextExercise = () => {
-    const nextIndex = currentExerciseIndex + 1;
-    if (nextIndex < exercises.length) {
-      const nextExercise = exercises[nextIndex];
-      setCurrentExerciseIndex(nextIndex);
-      setTimerExercise(nextExercise);
-      // Mantener el cronómetro abierto
+    const result = findNextExerciseOrRound(currentExerciseIndex);
+    
+    if (result) {
+      setCurrentExerciseIndex(result.nextIndex);
+      setTimerExercise(result.exercise);
+      
+      if (result.isRound) {
+        console.log('🔄 Cambiando al round:', result.exercise.roundNumber, 'con ejercicios:', result.exercise.exercises.map(ex => ex.name));
+      } else {
+        console.log('🔄 Cambiando al ejercicio individual:', result.exercise.name);
+      }
+      
       return true; // Indica que se cambió al siguiente ejercicio
     }
+    
     return false; // No hay más ejercicios
   };
 
@@ -1052,7 +1191,15 @@ const RoutineDetail = (props) => {
     // Guardar los datos del cronómetro y abrir el modal de seguimiento semanal
     setTimerData(timeData);
     setWeeklyExercise(timerExercise);
-    setWeekNumber("");
+    
+    // Usar la semana predeterminada del entrenamiento si está disponible
+    const savedTrainingWeek = localStorage.getItem('ds_selectedTrainingWeek');
+    if (savedTrainingWeek) {
+      setWeekNumber(`S${savedTrainingWeek}`);
+    } else {
+      setWeekNumber("");
+    }
+    
     setWeekWeight("");
     setWeekNotes(""); // Limpiar notas para que el usuario las complete
     setWeekTotalTime(""); // Se usará el tiempo del cronómetro automáticamente
@@ -1078,8 +1225,10 @@ const RoutineDetail = (props) => {
       
     } else {
       // Configurar el número de series basado en el ejercicio del cronómetro
-      const exerciseSeries = parseInt(timerExercise?.sets) || timeData.seriesTimes.length || 1;
+      const isDropset = (!timerExercise?.sets || parseInt(timerExercise?.sets) === 0) && timerExercise?.dropset;
+      const exerciseSeries = parseInt(timerExercise?.sets) || parseInt(timerExercise?.dropset) || timeData.seriesTimes.length || 1;
       setWeekSeries(exerciseSeries);
+      setIsDropsetExercise(isDropset);
       
       // Configurar pesos de las series desde el cronómetro si están disponibles
       if (timeData.seriesWeights && timeData.seriesWeights.length > 0) {
@@ -1917,7 +2066,7 @@ const RoutineDetail = (props) => {
                                                       title="Cronómetro del round"
                                                       onClick={() => handleOpenTimerForRound(group.exercises, ex.round, cantidadRounds)}
                                                     >
-                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5 sm:w-6 sm:h-6">
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                                       </svg>
                                                     </button>
@@ -1927,11 +2076,11 @@ const RoutineDetail = (props) => {
                                                   {canAddDailyTracking && (
                                                     <button
                                                       data-guide="weekly-tracking"
-                                                      className="p-1 rounded-full bg-black hover:bg-gray-800 text-white"
+                                                      className="w-7 h-7 rounded-full bg-gray-900 hover:bg-black text-white shadow-sm transition-all duration-200 flex items-center justify-center"
                                                       title="Agregar seguimiento semanal"
                                                       onClick={() => handleOpenWeeklyModal(ex)}
                                                     >
-                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                                                       </svg>
                                                     </button>
@@ -2006,7 +2155,7 @@ const RoutineDetail = (props) => {
                                         title="Cronómetro del ejercicio"
                                         onClick={() => handleOpenTimer(ex)}
                                       >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5 sm:w-6 sm:h-6">
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                         </svg>
                                       </button>
@@ -2014,11 +2163,11 @@ const RoutineDetail = (props) => {
                                       {canAddDailyTracking && (
                                         <button
                                           data-guide="weekly-tracking"
-                                          className="p-1 rounded-full bg-black hover:bg-gray-800 text-white"
+                                          className="w-7 h-7 rounded-full bg-gray-900 hover:bg-black text-white shadow-sm transition-all duration-200 flex items-center justify-center"
                                           title="Agregar seguimiento semanal"
                                           onClick={() => handleOpenWeeklyModal(ex)}
                                         >
-                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
+                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-3.5 h-3.5 sm:w-4 sm:h-4">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                                           </svg>
                                         </button>
@@ -2170,9 +2319,34 @@ const RoutineDetail = (props) => {
   return (
     <div className="p-4 sm:p-6 md:p-8 bg-white rounded-2xl shadow-md w-full max-w-none mx-auto overflow-hidden" data-guide="routine-exercises">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">
-          {routine.name || 'Rutina sin nombre'}
-        </h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-gray-800">
+            {routine.name || 'Rutina sin nombre'}
+          </h2>
+          
+          {/* Indicador de semana de entrenamiento */}
+          {(() => {
+            const savedTrainingWeek = localStorage.getItem('ds_selectedTrainingWeek');
+            return savedTrainingWeek ? (
+              <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Semana {savedTrainingWeek}</span>
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('ds_selectedTrainingWeek');
+                    window.location.reload(); // Recargar para actualizar la UI
+                  }}
+                  className="ml-1 text-green-600 hover:text-green-800"
+                  title="Quitar semana predeterminada"
+                >
+                  ×
+                </button>
+              </div>
+            ) : null;
+          })()}
+        </div>
         <div className="flex gap-2">
           {/* Botón para guardar como plantilla */}
           {isEditable && exercises.length > 0 && (
@@ -2476,10 +2650,10 @@ const RoutineDetail = (props) => {
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {weeklyExercise?.isRound ? 'Rounds' : 'Series'}
+                  {weeklyExercise?.isRound ? 'Rounds' : (isDropsetExercise ? 'Dropsets' : 'Series')}
                 </label>
                 <div className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-600">
-                  {weekSeries} {weeklyExercise?.isRound ? 'round' : 'serie'}{weekSeries > 1 ? 's' : ''} 
+                  {weekSeries} {weeklyExercise?.isRound ? 'round' : (isDropsetExercise ? 'dropset' : 'serie')}{weekSeries > 1 ? 's' : ''} 
                   {weeklyExercise?.isRound ? ' completos' : ' (del ejercicio)'}
                 </div>
               </div>
@@ -2530,7 +2704,9 @@ const RoutineDetail = (props) => {
                   Array.from({ length: weekSeries }, (_, index) => (
                     <div key={index} className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">Serie {index + 1}</span>
+                        <span className="text-sm font-medium text-black-700">
+                          {isDropsetExercise ? `Dropset ${index + 1}` : `Serie ${index + 1}`}
+                        </span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         {/* Campo de peso */}
@@ -2908,9 +3084,10 @@ const RoutineDetail = (props) => {
           }}
           onClose={handleCloseTimer}
           onSaveTime={handleSaveTimeFromTimer}
-          routineExercises={exercises}
+          routineExercises={dayExercises} // Pasar solo ejercicios del día actual
           currentExerciseIndex={currentExerciseIndex}
           onNextExercise={handleNextExercise}
+          currentDay={currentDay} // Pasar el día actual
         />
       )}
     </div>

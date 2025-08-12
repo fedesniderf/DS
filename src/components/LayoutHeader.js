@@ -75,6 +75,8 @@ const LayoutHeader = ({
           </button>
         )}
         
+
+        
         {/* Sistema de notificaciones */}
         {showNotifications && (userId || currentUser) && (
           <NotificationCenter 
