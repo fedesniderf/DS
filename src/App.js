@@ -79,10 +79,12 @@ const App = () => {
 
   // Hook para manejo de inactividad (auto-logout después de 2 horas)
   const handleInactivityLogout = useCallback(() => {
-    console.log('🔒 Sesión cerrada por inactividad');
+    console.log('🔒 App.js: Sesión cerrada por inactividad');
     handleLogout();
   }, [handleLogout]);
 
+  console.log('🔧 App.js: Configurando useInactivityTimeout con usuario:', !!currentUser);
+  
   const { resetInactivityTimer } = useInactivityTimeout(
     2 * 60 * 60 * 1000, // 2 horas
     handleInactivityLogout,
