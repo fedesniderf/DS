@@ -83,8 +83,6 @@ const App = () => {
     handleLogout();
   }, [handleLogout]);
 
-  console.log('🔧 App.js: Configurando useInactivityTimeout con usuario:', !!currentUser);
-  
   const { resetInactivityTimer } = useInactivityTimeout(
     2 * 60 * 60 * 1000, // 2 horas
     handleInactivityLogout,
