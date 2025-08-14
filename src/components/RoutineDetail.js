@@ -2,6 +2,9 @@ import React from "react";
 import PFPETable from "./PFPETable";
 import { supabase } from "../supabaseClient";
 import ExerciseTimer from "./ExerciseTimer.jsx";
+import AutoCompleteInput from './AutoCompleteInput';
+import NotificationToast from './NotificationToast';
+import { EXERCISES_LIST } from '../data/exercisesList';
 
 // Utilidad para limpiar datos antiguos de dailyTracking
 function cleanOldDailyTracking(dailyTracking) {
@@ -358,6 +361,7 @@ const RoutineDetail = (props) => {
   const [exerciseCantidadRounds, setExerciseCantidadRounds] = React.useState(""); // Nuevo campo para cantidad de rounds
   const [exerciseNotes, setExerciseNotes] = React.useState(""); // Nuevo campo para notas adicionales
   const [pfpeData, setPfpeData] = React.useState({});
+  const [notification, setNotification] = React.useState(null);
 
   // Handler para editar ejercicio
   const handleEditExerciseClick = (ex) => {
@@ -378,6 +382,17 @@ const RoutineDetail = (props) => {
     setExerciseCantidadRounds(ex.cantidadRounds || ""); // Incluir el campo cantidadRounds
     setExerciseNotes(ex.notes || ""); // Incluir el campo notas adicionales
     setShowExerciseModal(true);
+  };
+
+  // Manejar selección de ejercicio con notificación
+  const handleExerciseSelect = (exerciseName) => {
+    setExerciseName(exerciseName);
+    setNotification({
+      message: `Ejercicio "${exerciseName}" seleccionado`,
+      type: 'success'
+    });
+    // Auto-ocultar notificación después de 3 segundos
+    setTimeout(() => setNotification(null), 3000);
   };
 
   // Calcular semanas de la rutina
@@ -2909,7 +2924,17 @@ const RoutineDetail = (props) => {
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <div className="col-span-3">
                   <label className="block text-xs font-medium text-gray-700 mb-1">Nombre del ejercicio</label>
-                  <input type="text" value={exerciseName} onChange={(e) => setExerciseName(e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs" placeholder="Ej: Sentadilla" style={{ fontSize: '12px' }} />
+                  <AutoCompleteInput
+                    value={exerciseName}
+                    onChange={handleExerciseSelect}
+                    options={EXERCISES_LIST}
+                    placeholder="Buscar ejercicio... (Ej. Sentadilla)"
+                    className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                    maxResults={8}
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    💡 {EXERCISES_LIST.length} ejercicios disponibles
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Series</label>
@@ -3040,6 +3065,15 @@ const RoutineDetail = (props) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Notificación flotante */}
+      {notification && (
+        <NotificationToast
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
       )}
 
       {/* Footer Section */}

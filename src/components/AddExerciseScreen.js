@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { generateUniqueId } from '../utils/helpers';
+import AutoCompleteInput from './AutoCompleteInput';
+import NotificationToast from './NotificationToast';
+import { EXERCISES_LIST } from '../data/exercisesList';
 
 const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
   const [name, setName] = useState('');
@@ -16,6 +19,7 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
   const [cadencia, setCadencia] = useState(''); // Nuevo campo para Cadencia
   const [round, setRound] = useState(''); // Nuevo campo para Round
   const [cantidadRounds, setCantidadRounds] = useState(''); // Nuevo campo para cantidad de rounds
+  const [notification, setNotification] = useState(null);
 
   const sectionOptions = [
     { value: '', label: 'Selecciona una sección' },
@@ -36,6 +40,17 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
     { value: '6', label: 'Día 6' },
     { value: '7', label: 'Día 7' },
   ];
+
+  // Manejar selección de ejercicio con notificación
+  const handleExerciseSelect = (exerciseName) => {
+    setName(exerciseName);
+    setNotification({
+      message: `Ejercicio "${exerciseName}" seleccionado`,
+      type: 'success'
+    });
+    // Auto-ocultar notificación después de 3 segundos
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   const handleAddExercise = () => {
     const newExercise = {
@@ -68,14 +83,18 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
         <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
           Nombre del Ejercicio:
         </label>
-        <input
-          type="text"
+        <AutoCompleteInput
           id="name"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
-          placeholder="Ej. Sentadilla"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={handleExerciseSelect}
+          options={EXERCISES_LIST}
+          placeholder="Buscar ejercicio... (Ej. Sentadilla)"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black transition-all duration-300 ease-in-out"
+          maxResults={8}
         />
+        <p className="text-xs text-gray-500 mt-1">
+          💡 Escribe para buscar entre {EXERCISES_LIST.length} ejercicios predefinidos o ingresa uno personalizado
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
@@ -308,6 +327,15 @@ const AddExerciseScreen = ({ onAddExercise = () => {}, onBack = () => {} }) => {
           Cancelar
         </button>
       </div>
+
+      {/* Notificación flotante */}
+      {notification && (
+        <NotificationToast
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 };
