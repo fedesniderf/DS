@@ -6,6 +6,7 @@ import SecurityInfoModal from './SecurityInfoModal';
 import BlockedUsersPanel from './BlockedUsersPanel';
 import PhotoUpdateModal from './PhotoUpdateModal';
 import EditUserModal from './EditUserModal';
+import HelpPage from './HelpPage';
 import { useScrollLock } from '../hooks/useScrollLock';
 
 const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, onStartGuide, onRestartGuide }) => {
@@ -15,15 +16,17 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
   const [showBlockedUsersPanel, setShowBlockedUsersPanel] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [showHelpPage, setShowHelpPage] = useState(false);
 
   // Hook para bloquear scroll cuando hay modales abiertos
-  const anyModalOpen = showChangePasswordModal || showSecurityInfoModal || showBlockedUsersPanel || showPhotoModal || showEditUserModal;
+  const anyModalOpen = showChangePasswordModal || showSecurityInfoModal || showBlockedUsersPanel || showPhotoModal || showEditUserModal || showHelpPage;
   console.log('🔒 SettingsMenu - Estado modales:', {
     showChangePasswordModal,
     showSecurityInfoModal, 
     showBlockedUsersPanel,
     showPhotoModal,
     showEditUserModal,
+    showHelpPage,
     anyModalOpen
   });
   useScrollLock(anyModalOpen);
@@ -35,8 +38,13 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
     preferences, 
     toggleDimming,
     currentBrightness,
-    isBrightnessSupported 
+    isBrightnessSupported,
+    userIntendedActive, // Nuevo estado para la interfaz
+    isLoading // Estado de carga de preferencias
   } = useEnhancedWakeLock();
+  
+  // Estado visual que combina intención del usuario y estado actual
+  const isVisuallyActive = userIntendedActive || isWakeLockActive;
   
   const menuRef = useRef(null);
 
@@ -54,6 +62,8 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
 
   console.log('Enhanced SettingsMenu renderizado'); // Debug log
   console.log('Wake Lock Active:', isWakeLockActive);
+  console.log('User Intended Active:', userIntendedActive);
+  console.log('Visually Active:', isVisuallyActive);
   console.log('Dimming Enabled:', preferences.dimScreenOnWakeLock);
   console.log('Current Brightness:', Math.round(currentBrightness * 100) + '%');
   console.log('Device:', /SamsungBrowser/i.test(navigator.userAgent) ? 'Samsung Internet' : 'Other Browser');
@@ -238,36 +248,52 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
                 {/* Control de Wake Lock */}
                 <button
                   onClick={toggleWakeLock}
-                  className="w-full flex items-center justify-between text-left py-2 hover:bg-gray-50 rounded-md px-2 transition-colors"
+                  disabled={isLoading}
+                  className={`w-full flex items-center justify-between text-left py-2 hover:bg-gray-50 rounded-md px-2 transition-colors ${
+                    isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <svg 
-                      className={`w-5 h-5 flex-shrink-0 ${isWakeLockActive ? 'text-yellow-600' : 'text-gray-600'}`}
-                      fill="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      {isWakeLockActive ? (
-                        // Icono de sol para "encendido"
-                        <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
-                      ) : (
-                        // Icono de batería para "apagado"
-                        <path d="M4.5 9.75V6A1.5 1.5 0 016 4.5h12A1.5 1.5 0 0119.5 6v3.75M4.5 9.75H18a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5zm15 0V6a.75.75 0 00-.75-.75H6a.75.75 0 00-.75.75v3.75h14.25z" />
-                      )}
-                    </svg>
+                    {isLoading ? (
+                      <svg className="w-5 h-5 flex-shrink-0 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg 
+                        className={`w-5 h-5 flex-shrink-0 ${isVisuallyActive ? 'text-yellow-600' : 'text-gray-600'}`}
+                        fill="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        {isVisuallyActive ? (
+                          // Icono de sol para "encendido"
+                          <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                        ) : (
+                          // Icono de batería para "apagado"
+                          <path d="M4.5 9.75V6A1.5 1.5 0 016 4.5h12A1.5 1.5 0 0119.5 6v3.75M4.5 9.75H18a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5zm15 0V6a.75.75 0 00-.75-.75H6a.75.75 0 00-.75.75v3.75h14.25z" />
+                        )}
+                      </svg>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-gray-900">
                         Mantener pantalla encendida
                       </div>
                       <div className="text-xs text-gray-500">
-                        {isWakeLockActive ? 'Pantalla siempre encendida' : 'Solo funciona en dispositivos compatibles'}
+                        {isLoading ? 
+                          'Cargando preferencias...' :
+                          (isVisuallyActive ? 
+                            (isWakeLockActive ? 'Pantalla siempre encendida' : 'Activando...') : 
+                            'Solo funciona en dispositivos compatibles'
+                          )
+                        }
                       </div>
                     </div>
                   </div>
                   <div className={`ml-3 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    isWakeLockActive ? 'bg-green-600' : 'bg-gray-200'
+                    isLoading ? 'bg-gray-300' : (isVisuallyActive ? 'bg-green-600' : 'bg-gray-200')
                   }`}>
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      isWakeLockActive ? 'translate-x-6' : 'translate-x-1'
+                      isLoading ? 'translate-x-3' : (isVisuallyActive ? 'translate-x-6' : 'translate-x-1')
                     }`} />
                   </div>
                 </button>
@@ -277,7 +303,10 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <button
                       onClick={toggleDimming}
-                      className="w-full flex items-center justify-between text-left"
+                      disabled={isLoading}
+                      className={`w-full flex items-center justify-between text-left ${
+                        isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     >
                       <div className="flex items-center space-x-3">
                         <svg 
@@ -293,18 +322,21 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
                             Reducir brillo automáticamente
                           </div>
                           <div className="text-xs text-gray-500">
-                            {preferences.dimScreenOnWakeLock 
-                              ? `Brillo al 50% cuando esté activo (actual: ${Math.round(currentBrightness * 100)}%)`
-                              : 'Mantener brillo normal cuando esté activo'
+                            {isLoading ?
+                              'Cargando preferencia...' :
+                              (preferences.dimScreenOnWakeLock 
+                                ? `Brillo al 50% cuando esté activo (actual: ${Math.round(currentBrightness * 100)}%)`
+                                : 'Mantener brillo normal cuando esté activo'
+                              )
                             }
                           </div>
                         </div>
                       </div>
                       <div className={`ml-3 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        preferences.dimScreenOnWakeLock ? 'bg-blue-600' : 'bg-gray-200'
+                        isLoading ? 'bg-gray-300' : (preferences.dimScreenOnWakeLock ? 'bg-blue-600' : 'bg-gray-200')
                       }`}>
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          preferences.dimScreenOnWakeLock ? 'translate-x-6' : 'translate-x-1'
+                          isLoading ? 'translate-x-3' : (preferences.dimScreenOnWakeLock ? 'translate-x-6' : 'translate-x-1')
                         }`} />
                       </div>
                     </button>
@@ -457,12 +489,94 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
               {/* Divider */}
               <div className="border-t border-gray-100 my-1" />
 
-              {/* Sección Ayuda - Solo para usuarios client */}
-              {currentUser?.role === 'client' && USER_GUIDE_CONFIG.ENABLED && (
+              {/* Sección Ayuda - Para todos los usuarios */}
+              <div className="px-4 py-2">
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Ayuda
+                </h4>
+                
+                {/* Centro de Ayuda */}
+                <button
+                  onClick={() => setShowHelpPage(true)}
+                  className="w-full flex items-center space-x-3 text-left py-2 hover:bg-gray-50 rounded-md px-2 transition-colors mb-1"
+                >
+                  <svg 
+                    className="w-5 h-5 text-gray-600 flex-shrink-0" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24" 
+                    strokeWidth="2"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" 
+                    />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900">Centro de Ayuda</div>
+                    <div className="text-xs text-gray-500">Documentación completa</div>
+                  </div>
+                </button>
+
+                {/* Reiniciar Guía - Solo para clientes */}
+                {currentUser?.role === 'client' && USER_GUIDE_CONFIG.ENABLED && (
+                  <button
+                    onClick={onRestartGuide}
+                    className="w-full flex items-center space-x-3 text-left py-2 hover:bg-gray-50 rounded-md px-2 transition-colors"
+                    data-guide="restart-guide"
+                  >
+                    <svg 
+                      className="w-5 h-5 text-gray-600 flex-shrink-0" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24" 
+                      strokeWidth="2"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" 
+                      />
+                    </svg>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900">Reiniciar Guía</div>
+                      <div className="text-xs text-gray-500">Ver tutorial paso a paso</div>
+                    </div>
+                  </button>
+                )}
+              </div>
+
+              {/* Sección Ayuda - Solo para usuarios client - Mantenida para compatibilidad */}
+              {false && currentUser?.role === 'client' && USER_GUIDE_CONFIG.ENABLED && (
                 <div className="px-4 py-2">
                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                     Ayuda
                   </h4>
+                  
+                  {/* Centro de Ayuda */}
+                  <button
+                    onClick={() => setShowHelpPage(true)}
+                    className="w-full flex items-center space-x-3 text-left py-2 hover:bg-gray-50 rounded-md px-2 transition-colors mb-1"
+                  >
+                    <svg 
+                      className="w-5 h-5 text-gray-600 flex-shrink-0" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24" 
+                      strokeWidth="2"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" 
+                      />
+                    </svg>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900">Centro de Ayuda</div>
+                      <div className="text-xs text-gray-500">Documentación completa</div>
+                    </div>
+                  </button>
                   
                   {/* Reiniciar Guía */}
                   <button
@@ -571,6 +685,13 @@ const SettingsMenu = ({ onLogout, currentUser, onChangePassword, onUserUpdate, o
             console.log('Usuario actualizado:', updatedUser);
             handleUserUpdate(updatedUser);
           }}
+        />
+      )}
+
+      {/* Modal de Centro de Ayuda */}
+      {showHelpPage && (
+        <HelpPage
+          onClose={() => setShowHelpPage(false)}
         />
       )}
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-const AdminHomeScreen = ({ onNavigateClientes, onNavigateTemplates }) => {
+const AdminHomeScreen = ({ onNavigateClientes, onNavigateTemplates, onNavigateProgressDashboard }) => {
   const [stats, setStats] = useState({
     clientesActivos: '--',
     rutinasActivas: '--',
@@ -64,15 +64,12 @@ const AdminHomeScreen = ({ onNavigateClientes, onNavigateTemplates }) => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 pt-2">
-      <div className="max-w-6xl mx-auto px-2 py-4">
-        {/* Header */}
-        <div className="text-center mb-4">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 mb-3">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Panel de Administrador</h1>
-            <p className="text-gray-600 text-base md:text-lg">Gestiona tu gimnasio de forma eficiente</p>
-          </div>
-        </div>
+    <div className="w-full p-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Panel de Administrador</h1>
+        <p className="text-gray-600 text-base md:text-lg">Gestiona tu gimnasio de forma eficiente</p>
+      </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
@@ -138,7 +135,7 @@ const AdminHomeScreen = ({ onNavigateClientes, onNavigateTemplates }) => {
         </div>
 
         {/* Main Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
           {/* Gestión de Clientes */}
           <div 
             className="group bg-white rounded-3xl p-4 md:p-6 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1"
@@ -194,6 +191,34 @@ const AdminHomeScreen = ({ onNavigateClientes, onNavigateTemplates }) => {
               <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium">Asignar rutinas</span>
             </div>
           </div>
+
+          {/* Dashboard de Seguimiento */}
+          <div 
+            className="group bg-white rounded-3xl p-4 md:p-6 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1"
+            onClick={onNavigateProgressDashboard}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Dashboard de Seguimiento</h2>
+            <p className="text-gray-600 mb-4 leading-relaxed text-sm md:text-base">
+              Monitorea el progreso detallado de todos tus clientes con filtros avanzados y análisis completo.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">Análisis completo</span>
+              <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">Filtros avanzados</span>
+              <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">Exportar datos</span>
+            </div>
+          </div>
         </div>
 
         {/* Footer Section */}
@@ -224,7 +249,6 @@ const AdminHomeScreen = ({ onNavigateClientes, onNavigateTemplates }) => {
             </a>
           </div>
         </div>
-      </div>
     </div>
   );
 };

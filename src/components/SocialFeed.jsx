@@ -4,6 +4,8 @@ import { useProfileImageModal } from '../hooks/useProfileImageModal';
 import ClickableAvatar from './ClickableAvatar';
 import ProfileImageModal from './ProfileImageModal';
 import UserExplorer from './UserExplorer';
+import InstagramSetup from './InstagramSetup';
+import instagramService from '../services/instagramService';
 
 const SocialFeed = ({ currentUser, onClose }) => {
   const [posts, setPosts] = useState([]);
@@ -15,6 +17,8 @@ const SocialFeed = ({ currentUser, onClose }) => {
   const [following, setFollowing] = useState([]);
   const [activeTab, setActiveTab] = useState('feed'); // feed, explore, requests
   const [showUserExplorer, setShowUserExplorer] = useState(false);
+  const [showInstagramSetup, setShowInstagramSetup] = useState(false);
+  const [isInstagramConnected, setIsInstagramConnected] = useState(false);
   
   // Hook para el modal de imagen de perfil
   const { showProfileImageModal, selectedProfileImage, handleProfileImageClick, closeModal } = useProfileImageModal();
@@ -61,6 +65,9 @@ const SocialFeed = ({ currentUser, onClose }) => {
     loadPosts();
     loadFollowRequests();
     loadFollowing();
+    
+    // Verificar conexión de Instagram
+    setIsInstagramConnected(instagramService.isInstagramConnected());
   }, []);
 
   const loadPosts = async () => {
@@ -654,6 +661,24 @@ const SocialFeed = ({ currentUser, onClose }) => {
             >
               Descubrir
             </button>
+            
+            {/* Botón Instagram */}
+            <button
+              onClick={() => setShowInstagramSetup(true)}
+              className={`pb-2 text-sm font-medium border-b-2 flex items-center space-x-1 ${
+                isInstagramConnected
+                  ? 'border-pink-500 text-pink-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.042-3.441.219-.937 1.404-5.965 1.404-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 01.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.357-.631-2.749-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24c6.624 0 11.99-5.367 11.99-11.987C24.007 5.367 18.641.001 12.017.001z"/>
+              </svg>
+              <span>Instagram</span>
+              {isInstagramConnected && (
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              )}
+            </button>
           </nav>
         </div>
 
@@ -854,6 +879,20 @@ const SocialFeed = ({ currentUser, onClose }) => {
         <UserExplorer 
           currentUser={currentUser} 
           onClose={() => setShowUserExplorer(false)} 
+        />
+      )}
+
+      {/* Instagram Setup Modal */}
+      {showInstagramSetup && (
+        <InstagramSetup 
+          currentUser={currentUser} 
+          onClose={() => {
+            setShowInstagramSetup(false);
+            // Recargar estado de conexión
+            setIsInstagramConnected(instagramService.isInstagramConnected());
+            // Recargar posts para mostrar nuevos posts importados
+            loadPosts();
+          }} 
         />
       )}
 

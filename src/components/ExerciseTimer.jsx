@@ -190,11 +190,6 @@ const ExerciseTimer = ({
   const handleStartPause = () => {
     if (!isRunning) {
       // Iniciar por primera vez
-      if (!isRound && currentWeight) {
-        const newSeriesWeights = [...seriesWeights];
-        newSeriesWeights[currentSeries - 1] = currentWeight;
-        setSeriesWeights(newSeriesWeights);
-      }
       setIsRunning(true);
       setIsPaused(false);
     } else if (isPaused) {
@@ -210,11 +205,6 @@ const ExerciseTimer = ({
   const handleRestContinue = () => {
     if (isResting) {
       // Continuar - terminar descanso y empezar siguiente serie/ejercicio
-      if (!isRound && currentWeight) {
-        const newSeriesWeights = [...seriesWeights];
-        newSeriesWeights[currentSeries - 1] = currentWeight;
-        setSeriesWeights(newSeriesWeights);
-      }
       setIsResting(false);
       setTime(0); // Resetear tiempo para la nueva serie/ejercicio
     } else {
@@ -239,6 +229,13 @@ const ExerciseTimer = ({
         setSeriesTimes(newSeriesTimes);
         
         if (currentSeries < totalSeries) {
+          // Guardar el peso de la serie actual antes de limpiar
+          if (currentWeight) {
+            const newSeriesWeights = [...seriesWeights];
+            newSeriesWeights[currentSeries - 1] = currentWeight;
+            setSeriesWeights(newSeriesWeights);
+          }
+          
           // Hay más series, pasar al descanso
           setIsResting(true);
           setCurrentSeries(currentSeries + 1);
@@ -1170,38 +1167,107 @@ const ExerciseTimer = ({
 
             {/* Información del ejercicio */}
             <div className="bg-blue-50 rounded-md p-3 mb-3">
-              <h4 className="font-semibold text-gray-800 mb-2 text-lg">
+              <h4 className="font-semibold text-gray-800 mb-2 text-lg text-center">
                 {isRound ? 'Información del Round' : 'Información del Ejercicio'}
               </h4>
               
               <div className="grid grid-cols-2 gap-3 text-sm">
+                {/* Series/Dropset */}
                 <div>
-                  <span className="text-gray-600">{isRound ? 'Rounds:' : 'Series:'}</span>
+                  <span className="text-gray-600">
+                    {exercise?.dropset ? 'Dropsets:' : (isRound ? 'Rounds:' : 'Series:')}
+                  </span>
                   <div className="font-semibold text-lg text-blue-600">
-                    {isRound ? exercise?.cantidadRounds : exercise?.series || 'N/A'}
+                    {isRound ? exercise?.cantidadRounds : (exercise?.sets || exercise?.dropset || exercise?.series || 'N/A')}
                   </div>
                 </div>
+                
+                {/* Repeticiones */}
                 {!isRound && (
                   <div>
                     <span className="text-gray-600">Repeticiones:</span>
                     <div className="font-semibold text-lg text-blue-600">
-                      {exercise?.repetitions || 'N/A'}
+                      {exercise?.reps || exercise?.repetitions || 'N/A'}
                     </div>
                   </div>
                 )}
+
+                {/* Peso */}
+                {exercise?.weight && (
+                  <div>
+                    <span className="text-gray-600">Peso:</span>
+                    <div className="font-semibold text-lg text-blue-600">
+                      {exercise?.weight} kg
+                    </div>
+                  </div>
+                )}
+
+                {/* Tiempo */}
+                {exercise?.time && (
+                  <div>
+                    <span className="text-gray-600">Tiempo:</span>
+                    <div className="font-semibold text-lg text-blue-600">
+                      {exercise?.time}s
+                    </div>
+                  </div>
+                )}
+
+                {/* RIR */}
+                {exercise?.rir && (
+                  <div>
+                    <span className="text-gray-600">RIR:</span>
+                    <div className="font-semibold text-lg text-blue-600">
+                      {exercise?.rir}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cadencia */}
+                {exercise?.cadencia && (
+                  <div>
+                    <span className="text-gray-600">Cadencia:</span>
+                    <div className="font-semibold text-lg text-blue-600">
+                      {exercise?.cadencia}
+                    </div>
+                  </div>
+                )}
+
+                {/* Round (para ejercicios individuales que tengan round) */}
+                {!isRound && exercise?.round && (
+                  <div>
+                    <span className="text-gray-600">Round:</span>
+                    <div className="font-semibold text-lg text-blue-600">
+                      {exercise?.round}
+                    </div>
+                  </div>
+                )}
+
+                {/* Media */}
+                {exercise?.media && (
+                  <div>
+                    <span className="text-gray-600">Media:</span>
+                    <div className="font-semibold text-lg text-blue-600">
+                      {exercise?.media}
+                    </div>
+                  </div>
+                )}
+
+                {/* Descanso */}
                 {exercise?.rest && (
                   <div className="col-span-2">
                     <span className="text-gray-600">Descanso:</span>
-                    <div className="font-semibold text-lg text-green-600">
-                      {exercise.rest}
+                    <div className="font-semibold text-lg text-blue-600">
+                      {exercise?.rest}s
                     </div>
                   </div>
                 )}
-                {exercise?.weight && (
+
+                {/* Notas - si existen, ocupar toda la fila */}
+                {exercise?.notes && (
                   <div className="col-span-2">
-                    <span className="text-gray-600">Peso:</span>
-                    <div className="font-semibold text-lg text-purple-600">
-                      {exercise.weight}
+                    <span className="text-gray-600">Notas:</span>
+                    <div className="font-semibold text-sm text-blue-600 bg-blue-100 p-2 rounded mt-1">
+                      {exercise?.notes}
                     </div>
                   </div>
                 )}

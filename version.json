@@ -1,8 +1,8 @@
 {
-  "version": "3.0.4",
+  "version": "3.0.6",
   "name": "DS Training Management System",
   "description": "Sistema de gestión de entrenamiento con menú de configuración completo",
-  "release_date": "2025-08-09",
+  "release_date": "2025-08-14",
   "changelog": {
     "3.0.1": {
       "date": "2025-08-08",
@@ -84,6 +84,76 @@
       "features": [],
       "fixes": [],
       "technical_changes": []
+    },
+    "3.0.5": {
+      "date": "2025-08-14",
+      "description": "Información completa de ejercicios en cronómetro",
+      "type": "patch",
+      "features": [
+        "Expandida la sección 'Información del Ejercicio' en el cronómetro para mostrar todos los campos disponibles",
+        "Información del ejercicio ahora incluye: Series/Dropsets/Rounds, Repeticiones, Peso, Tiempo, RIR, Cadencia, Round, Media, Descanso y Notas",
+        "Título de 'Información del Ejercicio' centrado para mejor presentación visual"
+      ],
+      "fixes": [
+        "Removidos campos irrelevantes (Día y Sección) de la información del cronómetro para mejor enfoque durante el entrenamiento"
+      ],
+      "technical_changes": [
+        "Modificado ExerciseTimer.jsx para mostrar condicionalmente todos los campos con datos del ejercicio",
+        "Implementado grid responsive de 2 columnas que se adapta según el contenido disponible",
+        "Agregado formato especial para notas con fondo destacado",
+        "Optimizada visualización con campos que ocupan toda la fila para información importante (descanso y notas)"
+      ],
+      "components": {
+        "modified": [
+          "ExerciseTimer.jsx - Expandida sección de información del ejercicio con todos los campos disponibles"
+        ]
+      },
+      "ui_improvements": [
+        "Mejor experiencia de usuario durante el entrenamiento con información completa del ejercicio",
+        "Diseño más informativo sin sobrecargar la interfaz",
+        "Presentación condicional que solo muestra campos con datos"
+      ]
+    },
+    "3.0.6": {
+      "date": "2025-08-14",
+      "description": "Optimización de layout - Eliminación de contenedores innecesarios",
+      "type": "patch",
+      "features": [
+        "Aplicación ahora utiliza todo el ancho de pantalla disponible",
+        "Eliminado fondo gris general - ahora usa fondo blanco limpio",
+        "Contenedores principales simplificados para mejor uso del espacio",
+        "Header optimizado con padding reducido",
+        "Componentes principales sin contenedores restrictivos"
+      ],
+      "fixes": [
+        "Eliminadas restricciones de ancho máximo innecesarias",
+        "Removidos contenedores anidados que limitaban el espacio de pantalla",
+        "Optimizado padding y márgenes para mejor uso del espacio"
+      ],
+      "technical_changes": [
+        "App.js: Eliminado bg-gray-100, max-w-4xl y p-6 del contenedor principal",
+        "AdminHomeScreen.js: Removido fondo gradiente y contenedores restrictivos",
+        "RoutineDetail.js: Eliminado bg-white, rounded-2xl, shadow-md y padding excesivo",
+        "LayoutHeader.js: Reducido padding del header (p-4 -> px-4 py-3)",
+        "AuthScreen.js y RegisterScreen.js: Actualizado fondo de gris a blanco",
+        "Estructura general simplificada para máximo aprovechamiento de pantalla"
+      ],
+      "components": {
+        "modified": [
+          "App.js - Contenedor principal optimizado",
+          "AdminHomeScreen.js - Layout simplificado",
+          "RoutineDetail.js - Contenedor principal sin restricciones",
+          "LayoutHeader.js - Padding optimizado",
+          "AuthScreen.js - Fondo actualizado",
+          "RegisterScreen.js - Fondo actualizado"
+        ]
+      },
+      "ui_improvements": [
+        "Mejor aprovechamiento del espacio de pantalla en todos los dispositivos",
+        "Interface más moderna y limpia sin contenedores innecesarios",
+        "Mayor área útil para mostrar contenido",
+        "Diseño más consistente entre componentes"
+      ]
     }
   },
   "requirements": {

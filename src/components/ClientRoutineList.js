@@ -3,6 +3,7 @@ import { generateUniqueId } from '../utils/helpers';
 import { useProfileImageModal } from '../hooks/useProfileImageModal';
 import ClickableAvatar from './ClickableAvatar';
 import ProfileImageModal from './ProfileImageModal';
+import PerformanceDashboard from './PerformanceDashboard';
 
 const ClientRoutineList = ({
   client,
@@ -518,6 +519,21 @@ const ClientRoutineList = ({
             <p className="text-gray-600 text-center py-4">No hay rutinas registradas aún.</p>
           )}
         </>
+      )}
+
+      {/* Sección de Gráficos de Progreso */}
+      {routines && routines.length > 0 && (
+        <div className="mt-8 border-t border-gray-200 pt-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">Tu progreso</h3>
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+            <PerformanceDashboard 
+              clientId={client?.id || client?.user_id}
+              showClientSelector={false}
+              compactView={true}
+              currentUser={client}
+            />
+          </div>
+        </div>
       )}
 
       {/* El formulario para agregar rutina solo aparece si isEditable es true */}

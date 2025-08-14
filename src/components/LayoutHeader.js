@@ -49,7 +49,7 @@ const LayoutHeader = ({
   });
   
   return (
-    <header className="bg-white shadow-md p-4 flex items-center justify-between sticky top-0 z-10" data-guide="navigation">
+    <header className="bg-white shadow-md px-4 py-3 flex items-center justify-between sticky top-0 z-10" data-guide="navigation">
       <div className="flex items-center gap-3 flex-shrink-0">
         {showBackButton && (
           <button onClick={onBackClick} className="p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0">

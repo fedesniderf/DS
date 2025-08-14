@@ -9,8 +9,8 @@ const AuthScreen = ({ onLogin, onGoToRegister }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md border border-gray-200">
         {/* Logo dentro del cuadro de iniciar sesión */}
         <div className="mb-8 flex justify-center">
           <img src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc0hyznI9uUK73FIu6QMZBiVNxCwz4OT8kREWfS" alt="DS Entrenamiento Logo" className="w-48 h-auto" /> {/* Ajusta w-48 para que quepa bien */}

@@ -8,9 +8,9 @@
 export const VERSION_CONFIG = {
   // Información actual de la versión
   current: {
-    version: '3.0.4',
-    name: 'Version 3.0.4',
-    release_date: '2025-08-09',
+    version: '3.0.6',
+    name: 'Optimización de layout - Eliminación de contenedores innecesarios',
+    release_date: '2025-08-14',
     stability: 'stable'
   },
 

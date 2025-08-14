@@ -18,6 +18,7 @@ const RegisterScreen = lazy(() => import('./components/RegisterScreen'));
 const AddExerciseScreen = lazy(() => import('./components/AddExerciseScreen'));
 const UserManagementScreen = lazy(() => import('./components/UserManagementScreen'));
 const ClientDashboardAdmin = lazy(() => import('./components/ClientDashboardAdmin'));
+const AdminProgressDashboard = lazy(() => import('./components/AdminProgressDashboard'));
 
 const App = () => {
   // Eliminar usuario
@@ -84,7 +85,7 @@ const App = () => {
   }, [handleLogout]);
 
   const { resetInactivityTimer } = useInactivityTimeout(
-    2 * 60 * 60 * 1000, // 2 horas
+    90 * 60 * 1000, // 90 minutos
     handleInactivityLogout,
     !!currentUser // Solo activo cuando hay usuario logueado
   );
@@ -469,6 +470,7 @@ const App = () => {
     setCurrentPage('userManagement');
   };
   const handleGoToTemplates = () => setCurrentPage('routineTemplates');
+  const handleGoToProgressDashboard = () => setCurrentPage('progressDashboard');
   // ...existing code...
   // ...existing code...
   // ...existing code...
@@ -517,6 +519,8 @@ const App = () => {
     } else if (currentPage === 'userManagement') {
       setCurrentPage('adminHome');
     } else if (currentPage === 'routineTemplates') {
+      setCurrentPage('adminHome');
+    } else if (currentPage === 'progressDashboard') {
       setCurrentPage('adminHome');
     } else if (currentPage === 'adminClientDashboard') {
       handleLogout();
@@ -1256,7 +1260,7 @@ const App = () => {
 
   return (
     <NotificationProvider>
-      <div className="min-h-screen bg-gray-100 font-sans antialiased">
+      <div className="min-h-screen bg-white font-sans antialiased">
         <LayoutHeader
           title={getHeaderTitle()}
           onBackClick={handleBack}
@@ -1271,7 +1275,7 @@ const App = () => {
           onUserUpdate={updateCurrentUser}
         />
 
-        <main className="p-6 max-w-4xl mx-auto">
+        <main className="w-full">
           <Suspense fallback={<div>Cargando contenido...</div>}>
             {/* Sección para el Coach (Administrador) */}
             {currentUser && currentUser.role === 'admin' && (
@@ -1316,6 +1320,7 @@ const App = () => {
                 <AdminHomeScreen
                   onNavigateClientes={handleGoToClientes}
                   onNavigateTemplates={handleGoToTemplates}
+                  onNavigateProgressDashboard={handleGoToProgressDashboard}
                 />
               )}
               {currentUser.role === 'admin' && currentPage === 'routineTemplates' && (
@@ -1324,6 +1329,11 @@ const App = () => {
                   clients={users.filter(user => user.role === 'client')}
                   onGoBack={() => setCurrentPage('adminHome')}
                   onAssignRoutine={handleAssignRoutineFromTemplate}
+                />
+              )}
+              {currentUser.role === 'admin' && currentPage === 'progressDashboard' && (
+                <AdminProgressDashboard
+                  onBack={() => setCurrentPage('adminHome')}
                 />
               )}
               {!showUserLoading && currentPage === 'adminViewClientRoutines' && selectedClient && !loadingClientRoutines && (

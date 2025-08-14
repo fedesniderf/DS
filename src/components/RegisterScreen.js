@@ -125,8 +125,8 @@ const RegisterScreen = ({ onRegister, onGoToLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-white p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md border border-gray-200">
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Regístrate</h2>
 
         <div className="mb-4">
